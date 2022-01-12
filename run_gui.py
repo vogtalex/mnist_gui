@@ -47,16 +47,7 @@ class Net(nn.Module):
 
 
 
-# Create training and test data loader for MNIST
-training_data = torchvision.datasets.MNIST(
-    '/files/',
-    train=True,
-    download=True,
-    transform=torchvision.transforms.Compose([torchvision.transforms.ToTensor(),
-                                              torchvision.transforms.Normalize((0.1307,), (0.3081,))]
-                                             )
-)
-
+# Create test data loader for MNIST
 test_loader = torch.utils.data.DataLoader(
     datasets.MNIST('../data', train=False, download=True, transform=transforms.Compose([
         transforms.ToTensor(),
@@ -64,42 +55,26 @@ test_loader = torch.utils.data.DataLoader(
     batch_size=1, shuffle=True)
 
 
-# Setup numerous variables for training and testing
-train_dataloader = DataLoader(training_data, 64, shuffle=True)
-epochs = 3
-learning_rate = 0.01
-momentum = 0.5
-log_interval = 10
-batch_size = 64
+# Use a pretrained model
+pretrained_model = "model_weights.pth"
+
+# Initialize the network
+model = Net()
+model.load_state_dict(torch.load(pretrained_model))
 
 # Creates a random seed
 random_seed = 1
 torch.backends.cudnn.enabled = False
 torch.manual_seed(random_seed)
 
-
-# Use a pretrained model
-pretrained_model = "model_weights.pth"
-
-
-# Sets up Epsilons to run through for testing
-epsilons = [0, .05, .1, .15, .2, .25, .3]
-use_cuda = True
-
-
-# Attempts to use cuda if available
-print("CUDA Available: ", torch.cuda.is_available())
-device = torch.device("cuda" if (
-    use_cuda and torch.cuda.is_available()) else "cpu")
-
-# Initialize the network
-model = Net()
-model.load_state_dict(torch.load(pretrained_model))
-model2 = Net().to(device)
-
 # Creates loss function and optimizer
 loss_fn = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
+# Starter code if using cuda
+use_cuda = True
+device = torch.device("cuda" if (
+    use_cuda and torch.cuda.is_available()) else "cpu")
 
 
 # FGSM attack code
@@ -115,7 +90,6 @@ def fgsm_attack(image, epsilon, data_grad):
 
 
 # Tests neural network on FGSM of various epsilons and saves images
-
 def test(model, device, test_loader, epsilon):
 
     # Accuracy counter
@@ -199,7 +173,12 @@ examples = []
 misclassified_examples = []
 model.eval()
 
+# Sets up Epsilons to run through for testing
+epsilons = [0, .05, .1, .15, .2, .25, .3]
+
+
 # Run test for each epsilon
+print("Model running through test data...")
 for eps in epsilons:
     acc, ex, misEx = test(model, device, test_loader, eps)
     accuracies.append(acc)
@@ -254,13 +233,15 @@ path3 = "saved_figure3.png"
 correctCount = 0
 totalCount = 1
 
-
+# Iterates the total count to iterate through images
 def countIterator():
     global totalCount
     totalCount = totalCount + 1
-    print(totalCount)
     return totalCount
 
+def quitFunction():
+    root.destroy()
+    quit()
 
 # Function to display perturbed images for user based on user input
 def numClick():
@@ -331,6 +312,8 @@ def myClick():
     totalCount = totalCount + 1
 
 
+
+
 # GUI
 root = Tk()
 root.title("Human Testing of Adversarial Training")
@@ -362,7 +345,6 @@ root.grid_columnconfigure(3, weight=2)
 # Create a photoimage object of the image in the path
 image1 = Image.open(path1)
 test = ImageTk.PhotoImage(image1, master=root)
-print(path1)
 Label(image_frame, image=test).grid(
     row=0, column=0, sticky="nsew", padx=2, pady=2)
 
@@ -396,6 +378,9 @@ myButton = Button(number_frame, text="Click Me!",
                   pady=50, command=partial(numClick))
 myButton.grid(row=2, column=0, sticky="nsew", padx=2, pady=2)
 
+exitButton = Button(number_frame, text="Quit",
+                  pady=50, command=quitFunction)
+exitButton.grid(row=0, column=1, sticky="nsew", padx=2, pady=2)
 
 # Position image
 root.mainloop()
