@@ -25,42 +25,27 @@ from PIL import Image, ImageTk
 
 from functools import partial
 
+#simon imports
+from functions import *
+from models.distilled import *
 
-# Initialize Neural Network
-class Net(nn.Module):
-    def __init__(self):
-        super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
-        self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
-        self.conv2_drop = nn.Dropout2d()
-        self.fc1 = nn.Linear(320, 50)
-        self.fc2 = nn.Linear(50, 10)
-
-    def forward(self, x):
-        x = F.relu(F.max_pool2d(self.conv1(x), 2))
-        x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
-        x = x.view(-1, 320)
-        x = F.relu(self.fc1(x))
-        x = F.dropout(x, training=self.training)
-        x = self.fc2(x)
-        return F.log_softmax(x, dim=1)
-
-
-
-# Create test data loader for MNIST
 test_loader = torch.utils.data.DataLoader(
     datasets.MNIST('../data', train=False, download=True, transform=transforms.Compose([
         transforms.ToTensor(),
     ])),
     batch_size=1, shuffle=True)
 
+# Starter code if using cuda
+use_cuda = True
+device = torch.device("cuda:0" if (
+    use_cuda and torch.cuda.is_available()) else "cpu")
 
 # Use a pretrained model
 pretrained_model = "model_weights.pth"
 
 # Initialize the network
 model = Net()
-model.load_state_dict(torch.load(pretrained_model))
+model.load_state_dict(torch.load(pretrained_model,map_location=device))
 
 # Creates a random seed
 random_seed = 1
@@ -70,12 +55,6 @@ torch.manual_seed(random_seed)
 # Creates loss function and optimizer
 loss_fn = nn.CrossEntropyLoss()
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-
-# Starter code if using cuda
-use_cuda = True
-device = torch.device("cuda" if (
-    use_cuda and torch.cuda.is_available()) else "cpu")
-
 
 # FGSM attack code
 def fgsm_attack(image, epsilon, data_grad):
@@ -109,6 +88,7 @@ def test(model, device, test_loader, epsilon):
         # Forward pass the data through the model
         output = model(data)
         # get the index of the max log-probability
+        #exit()
         init_pred = output.max(1, keepdim=True)[1]
 
         # If the initial prediction is wrong, dont bother attacking, just move on
