@@ -1,10 +1,12 @@
+from functions import *
+from models.distilled import *
+
 import torch
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 import time
 import tkinter as tk
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 import torch
 import torch.onnx as onnx
@@ -15,7 +17,6 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 import numpy as np
-import matplotlib.pyplot as plt
 import torchvision
 
 import tkinter as tk
@@ -25,9 +26,11 @@ from PIL import Image, ImageTk
 
 from functools import partial
 
-#simon imports
-from functions import *
-from models.distilled import *
+#mtpltlib bug:
+matplotlib.use('TkAgg')
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
 
 test_loader = torch.utils.data.DataLoader(
     datasets.MNIST('../data', train=False, download=True, transform=transforms.Compose([
@@ -304,7 +307,7 @@ image_frame = tk.Frame(root, background="#FFF0C1", bd=1, relief="sunken")
 input_frame = tk.Frame(root, background="#D2E2FB", bd=1, relief="sunken")
 visual_aid_frame = tk.Frame(root, background="#CCE4CA", bd=1, relief="sunken")
 output_frame = tk.Frame(root, background="#F5C2C1", bd=1, relief="sunken")
-number_frame = tk.Frame(root, background="#0000FF.", bd=1, relief="sunken")
+number_frame = tk.Frame(root, background="#FFF0C1", bd=1, relief="sunken")
 image_frame.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)
 input_frame.grid(row=1, column=0, sticky="nsew", padx=2, pady=2)
 visual_aid_frame.grid(row=0, column=1, rowspan=2,
