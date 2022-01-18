@@ -1,0 +1,7 @@
+Simon:
+#Integrate T-SNE visualization to GUI
+#capture accuracy and loss for each iteration
+#when generating attacks, log objective value and distance of that point from original example.
+
+Sasha:
+#CSV output

@@ -3,6 +3,7 @@ from models.distilled import *
 
 import torch
 import numpy as np
+import os
 #import matplotlib.pyplot as plt
 
 import time
@@ -18,6 +19,7 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 import numpy as np
 import torchvision
+from torch.autograd import Variable
 
 import tkinter as tk
 from tkinter import *
@@ -69,6 +71,38 @@ def fgsm_attack(image, epsilon, data_grad):
     perturbed_image = torch.clamp(perturbed_image, 0, 1)
     # Return the perturbed image
     return perturbed_image
+
+
+
+def gen_features():
+    model.eval()
+    cnt = 0
+    out_target = []
+    out_data = []
+    out_output = []
+    for data, target in test_loader:
+        cnt += len(data)
+        print("processing: %d/%d" % (cnt, len(test_loader.dataset)))
+
+        output = model(data)
+        output_np = output.data.cpu().numpy()
+        target_np = target.data.cpu().numpy()
+        data_np = data.data.cpu().numpy()
+
+        out_output.append(output_np)
+        out_target.append(target_np[:, np.newaxis])
+        out_data.append(np.squeeze(data_np))
+
+    output_array = np.concatenate(out_output, axis=0)
+    target_array = np.concatenate(out_target, axis=0)
+    data_array = np.concatenate(out_data, axis=0)
+
+    np.save(os.path.join('./', 'output.npy'), output_array, allow_pickle=False)
+    np.save(os.path.join('./', 'target.npy'), target_array, allow_pickle=False)
+    np.save(os.path.join('./', 'data.npy'), data_array, allow_pickle=False)
+
+gen_features()
+exit(0)
 
 
 # Tests neural network on FGSM of various epsilons and saves images
