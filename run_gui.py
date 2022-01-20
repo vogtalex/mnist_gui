@@ -101,7 +101,46 @@ def gen_features():
     np.save(os.path.join('./', 'target.npy'), target_array, allow_pickle=False)
     np.save(os.path.join('./', 'data.npy'), data_array, allow_pickle=False)
 
-gen_features()
+def gen_adv_features():
+    model.eval()
+    cnt = 0
+    out_target = []
+    out_data = torch.Tensor()
+    out_output = []
+    c = 0
+    for data, target in test_loader:
+        cnt += len(data)
+        print("processing: %d/%d" % (cnt, len(test_loader.dataset)))
+
+        delta = fgsm(model,data,target,0.2)
+        output = model(data + delta)
+        output_np = output.data.cpu().numpy()
+        target_np = target.data.cpu().numpy()
+        target_np = output.max(1, keepdim=True)[1][0].numpy()
+        data_np = data.data.cpu().numpy()
+        data_np = data + delta
+
+        out_output.append(output_np)
+        out_target.append(target_np[:, np.newaxis])
+        #out_data.append(np.squeeze(data_np))
+        out_data = torch.cat((out_data,data_np))
+        #out_data.append(data_np)
+
+
+    output_array = np.concatenate(out_output, axis=0)
+    target_array = np.concatenate(out_target, axis=0)
+    #data_array = np.concatenate(out_data, axis=0)
+
+    np.save(os.path.join('./', 'advoutput.npy'), output_array, allow_pickle=False)
+    np.save(os.path.join('./', 'advtarget.npy'), target_array, allow_pickle=False)
+    #np.save(os.path.join('./', 'advdata.npy'), data_array, allow_pickle=False)
+    torch.save(out_data,'advdata.npy')
+
+
+print('adv')
+gen_adv_features()
+#print('reg')
+#gen_features()
 exit(0)
 
 

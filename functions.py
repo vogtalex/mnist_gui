@@ -23,6 +23,11 @@ def SoftCrossEntropyLoss(input, target):
 
 
 def plot_images(X,y,yp,M,N,name):
+    print(X.shape())
+    print(y.shape())
+    print(yp.shape())
+    print('hihihih')
+    exit()
     plt.clf()
     f,ax = plt.subplots(M,N, sharex=True, sharey=True, figsize=(N,M*1.3))
     for i in range(M):
@@ -32,7 +37,8 @@ def plot_images(X,y,yp,M,N,name):
             plt.setp(title, color=('g' if yp[i*N+j].max(dim=0)[1] == y[i*N+j] else 'r'))
             ax[i][j].set_axis_off()
     plt.tight_layout()
-    plt.savefig(name)
+    #plt.savefig(name)
+    plt.show()
 
 
 def fgsm(model, X, y, epsilon):
@@ -41,10 +47,12 @@ def fgsm(model, X, y, epsilon):
     loss = torch.nn.functional.nll_loss(model(X+delta), y)
     #loss = nn.CrossEntropyLoss()(model(X + delta), y)
     loss.backward()
+    """
     print(delta.grad.detach().sign().cpu()[0,0,...])
     plt.imshow(delta.grad.detach().sign().cpu()[0,0,...])
     plt.savefig("test")
     exit(0)
+   """
 
     """plt.figure(figsize=(5,5))
     plt.plot(epsilons, b, label='baseline')
