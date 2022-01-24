@@ -1,3 +1,4 @@
+from models.net import *
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -24,26 +25,6 @@ from tkinter import *
 from PIL import Image, ImageTk
 
 from functools import partial
-
-
-# Initialize Neural Network
-class Net(nn.Module):
-    def __init__(self):
-        super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
-        self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
-        self.conv2_drop = nn.Dropout2d()
-        self.fc1 = nn.Linear(320, 50)
-        self.fc2 = nn.Linear(50, 10)
-
-    def forward(self, x):
-        x = F.relu(F.max_pool2d(self.conv1(x), 2))
-        x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
-        x = x.view(-1, 320)
-        x = F.relu(self.fc1(x))
-        x = F.dropout(x, training=self.training)
-        x = self.fc2(x)
-        return F.log_softmax(x, dim=1)
 
 
 # Create test data loader for MNIST
@@ -242,38 +223,6 @@ def quitFunction():
     root.destroy()
     quit()
 
-# Function to display perturbed images for user based on user input
-
-
-def numClick():
-    currNum = a.get()
-    temp = 0
-    # curr = len(d) - 1
-    curr = 499
-    images = []
-    while temp < 6 and curr > 0:
-        label, new_label, image = misclassified0_15[curr]
-        if label == int(currNum):
-            images.append(image)
-            temp = temp + 1
-        curr = curr - 1
-
-    for currIterator in range(6):
-        currImage = images[currIterator]
-        plt.imshow(currImage, cmap="gray")
-        plt.savefig('saved_figure3.png')
-
-        image1 = Image.open(path3)
-        test = ImageTk.PhotoImage(image1, master=root)
-        label1 = tk.Label(number_frame, image=test)
-        label1.image = test
-        if currIterator < 3:
-            label1.grid(row=3, column=currIterator,
-                        sticky="nsew", padx=2, pady=2)
-        else:
-            label1.grid(row=4, column=(currIterator - 3),
-                        sticky="nsew", padx=2, pady=2)
-
 
 # Function for button for user guess
 def myClick():
@@ -286,11 +235,10 @@ def myClick():
     if (int(currNum) == newLabel):
         currCount = currCount + 1
         myLabel = Label(output_frame, text="Correct!")
-        myLabel.grid(row=0, column=2, rowspan=2, sticky="nsew", padx=2, pady=2)
+        myLabel.pack(padx=10, pady=5, fill=tk.BOTH)
     else:
         myLabel2 = Label(output_frame, text="Incorrect")
-        myLabel2.grid(row=0, column=2, rowspan=2,
-                      sticky="nsew", padx=2, pady=2)
+        myLabel2.pack(padx=10, pady=5, fill=tk.BOTH)
 
     # Create new image
     label = generateNewImage(totalCount)
@@ -329,7 +277,6 @@ input_frame.grid(row=1, column=0, sticky="nsew", padx=2, pady=2)
 visual_aid_frame.grid(row=0, column=1, rowspan=2,
                       sticky="nsew", padx=2, pady=2)
 output_frame.grid(row=0, column=2, rowspan=2, sticky="nsew", padx=2, pady=2)
-number_frame.grid(row=0, column=3, rowspan=2, sticky="nsew", padx=2, pady=2)
 
 
 # Configure frames
@@ -338,7 +285,6 @@ root.grid_rowconfigure(1, weight=2)
 root.grid_columnconfigure(0, weight=3)
 root.grid_columnconfigure(1, weight=2)
 root.grid_columnconfigure(2, weight=2)
-root.grid_columnconfigure(3, weight=2)
 
 
 # Create a photoimage object of the image in the path
@@ -364,18 +310,6 @@ convAnswer = str(answer)
 stringModel = stringModel + convAnswer
 def_label = tk.Label(visual_aid_frame, text=stringModel)
 def_label.pack(padx=10, pady=5, fill=tk.BOTH)
-
-# Show number based on user input
-num_label = tk.Label(
-    number_frame, text="What number would you like to see perturbed images of?")
-num_label.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)
-
-a = Entry(number_frame, width=50)
-a.grid(row=1, column=0, sticky="nsew", padx=2, pady=2)
-
-myButton = Button(number_frame, text="Click Me!",
-                  pady=50, command=partial(numClick))
-myButton.grid(row=2, column=0, sticky="nsew", padx=2, pady=2)
 
 exitButton = Button(number_frame, text="Quit",
                     pady=50, command=quitFunction)
