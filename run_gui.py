@@ -46,7 +46,6 @@ class Net(nn.Module):
         return F.log_softmax(x, dim=1)
 
 
-
 # Create test data loader for MNIST
 test_loader = torch.utils.data.DataLoader(
     datasets.MNIST('../data', train=False, download=True, transform=transforms.Compose([
@@ -166,7 +165,6 @@ def test(model, device, test_loader, epsilon):
     return final_acc, examples, adv_examples
 
 
-
 # Sets model to evaluation and creates arrays for images to be saved to
 accuracies = []
 examples = []
@@ -206,7 +204,6 @@ def generateNewImage(count):
     return label
 
 
-
 # Generates an image of epsilon 0.15
 def generateNewMisclassifiedImage(count):
     label, new_label, image, = misclassified0_15[count]
@@ -214,7 +211,6 @@ def generateNewMisclassifiedImage(count):
     plt.imshow(image, cmap="gray")
     plt.savefig('saved_figure2.png')
     return label
-
 
 
 # Initializes the height and width of image for GUI
@@ -234,16 +230,21 @@ correctCount = 0
 totalCount = 1
 
 # Iterates the total count to iterate through images
+
+
 def countIterator():
     global totalCount
     totalCount = totalCount + 1
     return totalCount
+
 
 def quitFunction():
     root.destroy()
     quit()
 
 # Function to display perturbed images for user based on user input
+
+
 def numClick():
     currNum = a.get()
     temp = 0
@@ -312,8 +313,6 @@ def myClick():
     totalCount = totalCount + 1
 
 
-
-
 # GUI
 root = Tk()
 root.title("Human Testing of Adversarial Training")
@@ -324,7 +323,7 @@ image_frame = tk.Frame(root, background="#FFF0C1", bd=1, relief="sunken")
 input_frame = tk.Frame(root, background="#D2E2FB", bd=1, relief="sunken")
 visual_aid_frame = tk.Frame(root, background="#CCE4CA", bd=1, relief="sunken")
 output_frame = tk.Frame(root, background="#F5C2C1", bd=1, relief="sunken")
-number_frame = tk.Frame(root, background="#0000FF.", bd=1, relief="sunken")
+number_frame = tk.Frame(root, background="#0000FF", bd=1, relief="sunken")
 image_frame.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)
 input_frame.grid(row=1, column=0, sticky="nsew", padx=2, pady=2)
 visual_aid_frame.grid(row=0, column=1, rowspan=2,
@@ -379,7 +378,7 @@ myButton = Button(number_frame, text="Click Me!",
 myButton.grid(row=2, column=0, sticky="nsew", padx=2, pady=2)
 
 exitButton = Button(number_frame, text="Quit",
-                  pady=50, command=quitFunction)
+                    pady=50, command=quitFunction)
 exitButton.grid(row=0, column=1, sticky="nsew", padx=2, pady=2)
 
 # Position image
