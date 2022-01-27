@@ -1,32 +1,72 @@
 # Load Python Libraries
 import numpy as np
 import gzip, pickle
-from tsne import bh_sne
 import matplotlib.pyplot as plt
 from sklearn import datasets
 from sklearn.manifold import TSNE
 from functions import *
-limit = 10
+import torch
+limit = 100
 
-output = np.load('./output.npy').astype(np.float64)[:limit]
-data = np.load('./data.npy')
-target = np.load('./target.npy')[:limit]
-advoutput = np.load('./advoutput.npy').astype(np.float64)[:limit]
-advtarget = np.load('./advtarget.npy')[:limit]
-advdata = np.load('./advdata.npy')[:limit]
+labelling = np.load('./npys/labels.npy').astype(np.float64)[:limit]
+output = np.load('./npys/output.npy').astype(np.float64)[:limit]
+data = torch.load('./npys/data.npy')
+data = torch.flatten(data,2,3)
+data = torch.flatten(data,1)
+data = data.numpy()[:limit]
+target = np.load('./npys/target.npy')[:limit]
+
+advoutput = np.load('./npys/advoutput.npy').astype(np.float64)[:limit]
+
+advdata = torch.load('./npys/advdata.npy')
+advdata = torch.flatten(advdata,2,3)
+advdata = torch.flatten(advdata,1)
+advdata = advdata.numpy()[:limit]
+
 print('data shape: ', data.shape)
-print('target shape: ', advtarget.shape)
-print('output shape: ', advoutput.shape)
+print('target shape: ', target.shape)
+print('output shape: ', output.shape)
+#print(data[0])
 
-#target = target.tolist()
 fig, ax = plt.subplots()
 
-output = np.append(output, advoutput, axis=0)
-print('new shape: ', output.shape)
+#for combining data/advdata
+data = np.append(data, advdata, axis=0)
 
-tsne = TSNE(n_components=2, random_state=1)
-X_2d = tsne.fit_transform(output)
+tsne = TSNE(n_components=2, random_state=3)
+X_2d = tsne.fit_transform(data)
 
+labels = list(range(0, 10))
+target_ids = range(10)
+colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'aquamarine', 'orange', 'purple'
+
+#plt.scatter(X_2d[:limit, 0], X_2d[:limit, 1], s=5, c='r', label='normal')
+#plt.scatter(X_2d[limit:, 0], X_2d[limit:, 1], s=2, c='b', label='attacked')
+
+unatt = X_2d[:100]
+att = X_2d[100:]
+
+ax.scatter(att[..., 0],
+           att[..., 1],
+           c='fuchsia',
+           label="attacked",
+           s=5,
+           picker=True)
+
+for i, c, label in zip(target_ids, colors, labels):
+
+    ax.scatter(unatt[(labelling == i), 0],
+               unatt[(labelling == i), 1],
+               c=c,
+               label=label,
+               s=5,
+               picker=True)
+
+#ax.scatter(output_2d[:, 0], output_2d[:, 1], c=target)
+plt.legend()
+plt.show()
+exit(0)
+#HEED MY WORDS AND DO NOT MOVE PAST THIS POINT
 
 def onclick(event):
     print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
