@@ -6,9 +6,9 @@ Setup Environment:
 
 How to run run_gui.py:
 
-    1. Replace class Net with your neural network (line 30)
+    1. Add neural network to models folder
     2. Save your model weights from training into "model_weights.pth"
-    3. OPTIONAL: Add CUDA support and different attack
+    3. Save images in array as data.npy. This can be just done through numpy "save('data.npy', images)". Images would be the array of images. (create_images.py is an example)
     4. python run_gui.py
 
-P.S. Let me know if there are any issues.
+P.S. Let me know if you need help with saving images. Let me know if there are any issues as well.
