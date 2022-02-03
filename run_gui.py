@@ -72,46 +72,14 @@ def fgsm_attack(image, epsilon, data_grad):
     # Return the perturbed image
     return perturbed_image
 
-
-
-def gen_features():
-    model.eval()
-    cnt = 0
-    out_target = []
-    out_data = []
-    out_output = []
-    for data, target in test_loader:
-        cnt += 1
-        if cnt > 1000:
-            break
-
-        print("processing: %d/%d" % (cnt, len(test_loader.dataset)))
-
-        output = model(data)
-        output_np = output.data.cpu().numpy()
-        target_np = target.data.cpu().numpy()
-        data_np = data.data.cpu().numpy()
-
-        out_output.append(output_np)
-        out_target.append(target_np[:, np.newaxis])
-        out_data.append(np.squeeze(data_np))
-
-    output_array = np.concatenate(out_output, axis=0)
-    target_array = np.concatenate(out_target, axis=0)
-    data_array = np.concatenate(out_data, axis=0)
-
-    np.save(os.path.join('./', 'output.npy'), output_array, allow_pickle=False)
-    np.save(os.path.join('./', 'target.npy'), target_array, allow_pickle=False)
-    np.save(os.path.join('./', 'data.npy'), data_array, allow_pickle=False)
-
 def gen_adv_features():
     model.eval()
     cnt = 0
 
     labels = []
 
-    out_data = torch.Tensor()
-    out_adv_data = torch.Tensor()
+    out_data = []
+    out_adv_data= []
 
     out_target = []
 
@@ -119,18 +87,17 @@ def gen_adv_features():
     out_adv_output = []
     for data, target in test_loader:
         cnt += 1
-        if cnt > 100:
-            break
         print("processing: %d/%d" % (cnt, len(test_loader.dataset)))
 
-        delta = fgsm(model,data,target,0.2)
-        #delta = pgd_linf(model,data,target,0.1,1e-2,40)
+        #delta = fgsm(model,data,target,0.2)
+        delta = pgd_linf(model,data,target,0.1,1e-2,40)
 
         output = model(data)
         adv_output = model(data + delta)
 
         output_np = output.data.cpu().numpy()
         adv_output_np = adv_output.data.cpu().numpy()
+        #print(np.argmax(output_np),np.argmax(adv_output_np))
 
 
         labels.append(target.numpy()[0])
@@ -140,12 +107,17 @@ def gen_adv_features():
         ######################
 
         out_output.append(output_np)
-        out_adv_output.append(output_np)
+        out_adv_output.append(adv_output_np)
 
         out_target.append(target_np[:, np.newaxis])
 
-        out_data = torch.cat((out_data,data))
-        out_adv_data = torch.cat((out_adv_data,adv_data))
+        data = torch.flatten(data,2,3)
+        data = torch.flatten(data,0)
+        out_data.append(data.numpy())
+
+        adv_data = torch.flatten(adv_data,2,3)
+        adv_data = torch.flatten(adv_data,0)
+        out_adv_data.append(adv_data.numpy())
 
 
     output_array = np.concatenate(out_output, axis=0)
@@ -156,8 +128,10 @@ def gen_adv_features():
     np.save('./npys/labels.npy', labels, allow_pickle=False)
     np.save('./npys/advoutput.npy', adv_output_array, allow_pickle=False)
     np.save('./npys/target.npy', target_array, allow_pickle=False)
-    torch.save(out_data,'./npys/data.npy')
-    torch.save(out_adv_data,'./npys/advdata.npy')
+    np.save('./npys/data.npy',out_data,allow_pickle=False)
+    np.save('./npys/advdata.npy',out_adv_data,allow_pickle=False)
+    #torch.save(out_data,'./npys/data.npy')
+    #torch.save(out_adv_data,'./npys/advdata.npy')
 
 
 gen_adv_features()
