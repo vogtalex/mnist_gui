@@ -2,6 +2,7 @@ import csv
 import os
 
 csvName = "response.csv"
+QAName = "QA.csv"
 
 def writeToCSV(array):
     with open(csvName, 'a', newline='') as csvfile:
@@ -17,6 +18,11 @@ def readFromCSV(array):
 def writeDataCSV(userPrediction, trueValue):
     array = [userPrediction, trueValue]
     writeToCSV(array)
+
+def writeToCSV_QA(array):
+    with open(QAName, 'a', newline='') as csvfile:
+        writer = csv.writer(csvfile, lineterminator='\n')
+        writer.writerow(array)
 
 def outputCSV():
     outputArray = []
