@@ -51,7 +51,7 @@ IMAGE_HEIGHT = 200
 IMAGE_WIDTH = 200
 
 # Count of image displayed currently and count guessed correctly in the GUI
-global totalCount 
+global totalCount
 totalCount = 0
 
 # Generates an unlabeled image
@@ -82,7 +82,7 @@ def myUnlabeledClick():
 
     if totalCount == 0 :
         generateUnlabeledImage(totalCount)
-    
+
     currNum = e.get()
 
     #Add guess to CSV
@@ -142,14 +142,17 @@ myButton.grid(row=1, column=0, sticky="nsew", padx=2, pady=2)
 
 
 exit_button = Button(root, text="Exit",
-                    command=root.quit, 
-                    height = 3, 
-                    width = 50, 
-                    background= '#D11A2A', 
+                    command=root.quit,
+                    height = 3,
+                    width = 50,
+                    background= '#D11A2A',
                     fg= 'white',
                     font=50)
 exit_button.grid(row=2, column=0, pady=20)
 
+
+# handles user Xing out of window
+root.protocol("WM_DELETE_WINDOW",root.quit)
 
 # Loop
 root.mainloop()
@@ -200,10 +203,10 @@ for x in range(3):
     QA_Array.append(v[x].get())
 
 exit_button = Button(root2, text="Exit",
-                    command=root.quit, 
-                    height = 3, 
-                    width = 50, 
-                    background= '#D11A2A', 
+                    command=root.quit,
+                    height = 3,
+                    width = 50,
+                    background= '#D11A2A',
                     fg= 'white',
                     font=50)
 exit_button.pack(pady=2)
