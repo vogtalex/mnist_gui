@@ -48,89 +48,100 @@ def get_nth_key(dictionary, n=0):
             return key
     raise IndexError("dictionary index out of range")
 
-def set_enabled(root, enabled):
-    for option, config in options.items():
-        config["enabled"] = enabled[option].get()
+def on_quit():
+    global exitFlag
+    exitFlag = True
     root.destroy()
-
-def set_paths(root, paths):
-    for visualization, path in paths.items():
-        options[visualization][outputDir] = path
-
-
-    for option, config in options.items():
-        config.pop("function")
-        config.pop("buttonText")
-
-    print(options)
-    root.quit()
 
 # create output keys for dictionary
 for option, config in options.items():
     config["enabled"] = False
     config["outputDir"] = None
 
-root = Tk()
-root.configure(bg=BACKGROUND_COLOR)
-root.title("Visualization setup")
+class setup(tk.Tk):
+    def __init__(self,*args,**kwargs):
+        tk.Tk.__init__(self,*args,**kwargs)
+        self.configure(bg=BACKGROUND_COLOR)
+        self.title("Visualization setup")
 
-# set window size based
-root.geometry(str(GUI_WIDTH)+"x"+str(GUI_HEIGHT))
+        # set window size based
+        self.geometry(str(GUI_WIDTH)+"x"+str(GUI_HEIGHT))
 
-label = Label(root, text="Select which visualizations you want to enable:")
-label.grid(row=0,column=0)
+        label = Label(self, text="Select which visualizations you want to enable:")
+        label.grid(row=0,column=0)
 
-options_frame = Frame(root)
-options_frame.grid()
+        options_frame = Frame(self)
+        options_frame.grid()
 
-# used to track which options the user selected to enable
-enabled = {}
+        # used to track which options the user selected to enable
+        self.enabled = {}
 
-# create checkboxes for each option in options dictionary
-for option, config in options.items():
-    is_selected = BooleanVar()
-    cb = Checkbutton(options_frame, text=option, variable=is_selected, onvalue=1, offvalue=0)
-    enabled[option] = is_selected
-    cb.grid()
+        # create checkboxes for each option in options dictionary
+        for option, config in options.items():
+            is_selected = BooleanVar()
+            cb = Checkbutton(options_frame, text=option, variable=is_selected, onvalue=1, offvalue=0)
+            self.enabled[option] = is_selected
+            cb.grid()
 
-submit = Button(root, text="submit", command = lambda: set_enabled(root, enabled))
-submit.grid()
+        submit = Button(self, text="submit", command = lambda: self.set_enabled())
+        submit.grid()
 
-# handles user Xing out of window
-root.protocol("WM_DELETE_WINDOW",root.destroy)
+        # handles user Xing out of window
+        self.protocol("WM_DELETE_WINDOW", on_quit)
 
-# start options window
+    def set_enabled(self):
+        for option, config in options.items():
+            config["enabled"] = self.enabled[option].get()
+        self.destroy()
+
+class setupOptions(tk.Tk):
+    def __init__(self,*args,**kwargs):
+        tk.Tk.__init__(self,*args,**kwargs)
+
+        # Additional setup for enabled visualizationsself
+        self.configure(bg=BACKGROUND_COLOR)
+        self.title("Additional setup")
+
+        # used to track paths of options for each visualization
+        self.paths = {}
+
+        curr_row=0
+        for option, config in options.items():
+            if(config["enabled"]):
+                label = Label(self, text = config["buttonText"])
+                label.grid(row = curr_row, column=0)
+
+                # call function in dict
+                button = Button(self, text="upload", command = lambda config=config: config["function"](config))
+
+                button.grid(row = curr_row, column=1)
+
+                curr_row+=1
+
+        # (paths[option] =
+        finish = Button(self, text="finish", command = lambda: self.set_paths())
+        finish.grid()
+
+        # handles user Xing out of window
+        self.protocol("WM_DELETE_WINDOW", on_quit)
+
+    def set_paths(self):
+        for visualization, path in self.paths.items():
+            options[visualization][outputDir] = path
+
+        for option, config in options.items():
+            config.pop("function")
+            config.pop("buttonText")
+
+        self.destroy()
+
+exitFlag = False
+root = setup()
 root.mainloop()
 
 print(options)
 
-# Additional setup for enabled visualizations
-selection = Tk()
-selection.configure(bg=BACKGROUND_COLOR)
-selection.title("Additional setup")
-
-# used to track paths of options for each visualization
-paths = {}
-
-curr_row=0
-for option, config in options.items():
-    if(config["enabled"]):
-        label = Label(selection, text = config["buttonText"])
-        label.grid(row = curr_row, column=0)
-
-        # call function in dict
-        button = Button(selection, text="upload", command = lambda config=config: config["function"](config))
-
-        button.grid(row = curr_row, column=1)
-
-        curr_row+=1
-
-# (paths[option] =
-finish = Button(selection, text="finish", command = lambda: set_paths(selection, paths))
-finish.grid()
-
-# handles user Xing out of window
-selection.protocol("WM_DELETE_WINDOW", selection.destroy)
-
-# start setup window
-selection.mainloop()
+if not exitFlag:
+    root = setupOptions()
+    root.mainloop()
+    print(options)
