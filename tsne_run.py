@@ -6,26 +6,34 @@ from sklearn import datasets
 from sklearn.manifold import TSNE
 from functions import *
 import torch
-limit = 60000
-idx = 7
+limit = 10000
+idx = 6
 
 trainlabels = np.load('./npys/trainlabels.npy').astype(np.float64)[:limit]
-testlabels = np.load('./npys/testlabels.npy').astype(np.float64)[:limit]
 trainoutput = np.load('./npys/trainoutput.npy').astype(np.float64)[:limit]
 traindata = np.load('./npys/traindata.npy').astype(np.float64)[:limit]
 #traintarget = np.load('./npys/traintarget.npy')[:limit]
 
-advoutput = np.load('./npys/advoutput.npy').astype(np.float64)[:limit]
-advdata = np.load('./npys/advdata.npy').astype(np.float64)[:limit]
+testlabels = np.load('./npys/e3/testlabels.npy').astype(np.float64)[:limit]
+advoutput = np.load('./npys/e3/advoutput.npy').astype(np.float64)[:limit]
+advdata = np.load('./npys/e3/advdata.npy').astype(np.float64)[:limit]
 
+exlabels = np.load('./npys/examples/testlabels.npy').astype(np.float64)[:limit]
+exoutput = np.load('./npys/examples/advoutput.npy').astype(np.float64)[:limit]
+exdata = np.load('./npys/examples/advdata.npy').astype(np.float64)[:limit]
 
-def findNearest(data,advdata,idx,k=10):
+print("advdata ",advdata.shape)
+print("testlabels ",testlabels.shape)
+print("advoutput ",advoutput.shape)
+
+def findNearest():
+    k=10
     print("Index: ",idx)
-    example = advdata[idx]
-    label = np.argmax(advoutput[idx])
+    example = exdata[idx]
+    label = np.argmax(exoutput[idx])
     print("Model prediction: ", label)
 
-    l = traindata - example
+    l = advdata - example
 
     norms = np.linalg.norm(l,axis=1)
 
@@ -33,13 +41,13 @@ def findNearest(data,advdata,idx,k=10):
     top = np.argpartition(norms,k-1)
 
     ########
-    print("True label: ", int(testlabels[idx]))
+    print("True label: ", int(exlabels[idx]))
     print("Nearest 10 labels: ")
     print(top[:k])
-    print([(int(trainlabels[i])) for i in top[:k]])
+    print([(int(testlabels[i])) for i in top[:k]])
     #print("Distance to nearest 10 points: ")
     print([(norms[idx]) for idx in top[1:k]])
-    return norms, top[1:k],label,int(testlabels[idx])
+    return norms, top[1:k],label,int(exlabels[idx])
 
 def findNearestTrue(data,advdata,idx,k=10):
     print("Index: ",idx)
@@ -62,8 +70,8 @@ def findNearestTrue(data,advdata,idx,k=10):
     print([(norms[idx]) for idx in top[1:k]])
     return norms, top[1:k],label,int(trainlabels[idx])
 
-norms,idxs,prediction,truelabel = findNearestTrue(traindata,advdata,idx)
-#norms,idxs,prediction,truelabel = findNearest(traindata,advdata,idx)
+#norms,idxs,prediction,truelabel = findNearestTrue(traindata,advdata,idx)
+norms,idxs,prediction,truelabel = findNearest()
 
 print('data shape: ', traindata.shape)
 print('labels shape: ', trainlabels.shape)
@@ -72,16 +80,13 @@ print('output shape: ', trainoutput.shape)
 
 fig, (ax1,ax2) = plt.subplots(1,2)
 
-print(traindata.shape)
-print(advdata.shape)
+print("advdata ",advdata.shape)
 #for combining data/advdata
 #data = np.append(data, advdata, axis=0)
 
-print(traindata.shape)
-
 X_2d = []
-if exists("./npys/embedding.npy"):
-    X_2d = np.load('./npys/embedding.npy').astype(np.float64)
+if exists("./npys/e1/embedding.npy"):
+    X_2d = np.load('./npys/e3/embedding.npy').astype(np.float64)
 else:
     tsne = TSNE(n_components=2, random_state=3,perplexity=100)
     X_2d = tsne.fit_transform(traindata)
@@ -99,9 +104,19 @@ colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'aquamarine', 'orange', 'purple'
 #unatt = X_2d
 
 #label for class
+'''
 for i, c, label in zip(target_ids, colors, labels):
     ax1.scatter(X_2d[(trainlabels[...] == i), 0],
                X_2d[(trainlabels[...] == i), 1],
+               c=c,
+               label=label,
+               s=3,
+               picker=True)
+'''
+
+for i, c, label in zip(target_ids, colors, labels):
+    ax1.scatter(X_2d[(testlabels[...] == i), 0],
+               X_2d[(testlabels[...] == i), 1],
                c=c,
                label=label,
                s=3,
@@ -143,8 +158,8 @@ cb = ax2.scatter(X_2d[idxs,0],X_2d[idxs,1],
 
 title = "Model Prediction: %d, Actual Label: %d" % (prediction,truelabel)
 ax2.set_title(title)
-'''
 
+'''
 ax2.scatter(adv[idx,0],att[idx,1],
            c='red',
            label="attacked",
@@ -154,12 +169,13 @@ ax2.scatter(adv[idx,0],att[idx,1],
 
 #p=ax2.get_children()[2]
 plt.colorbar(cb,label="norm")
-#plt.clim(np.argmin(norms),np.argmax(norms))
+cb.set_clim(np.argmin(norms),np.argmax(norms))
 
 #ax.scatter(output_2d[:, 0], output_2d[:, 1], c=target)
 ax1.legend()
 plt.show()
 exit(0)
+
 
 """
 def onclick(event):

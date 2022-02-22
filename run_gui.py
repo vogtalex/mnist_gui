@@ -32,13 +32,14 @@ from functools import partial
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from itertools import islice
 
 
 test_loader = torch.utils.data.DataLoader(
     datasets.MNIST('../data', train=False, download=True, transform=transforms.Compose([
         transforms.ToTensor(),
     ])),
-    batch_size=1, shuffle=True)
+    batch_size=1, shuffle=False)
 
 train_loader = torch.utils.data.DataLoader(
     datasets.MNIST('../data', train=True, download=True, transform=transforms.Compose([
@@ -95,9 +96,11 @@ def gen_adv_features_test():
     for data, target in test_loader:
         cnt += 1
         print("processing: %d/%d" % (cnt, len(test_loader.dataset)))
+        if cnt > 9000:
+            break;
 
-        delta = fgsm(model,data,target,0.2)
-        #delta = pgd_linf(model,data,target,0.1,1e-2,40)
+        #delta = fgsm(model,data,target,0.2)
+        delta = pgd_linf(model,data,target,0.05,1e-2,40)
 
         #output = model(data)
         adv_output = model(data + delta)
@@ -132,11 +135,11 @@ def gen_adv_features_test():
     #target_array = np.concatenate(out_target, axis=0)
 
     #np.save('./npys/output.npy', output_array, allow_pickle=False)
-    np.save('./npys/testlabels.npy', labels, allow_pickle=False)
-    np.save('./npys/advoutput.npy', adv_output_array, allow_pickle=False)
+    np.save('./npys/e1/testlabels.npy', labels, allow_pickle=False)
+    np.save('./npys/e1/advoutput.npy', adv_output_array, allow_pickle=False)
     #np.save('./npys/target.npy', target_array, allow_pickle=False)
     #np.save('./npys/data.npy',out_data,allow_pickle=False)
-    np.save('./npys/advdata.npy',out_adv_data,allow_pickle=False)
+    np.save('./npys/e1/advdata.npy',out_adv_data,allow_pickle=False)
     #torch.save(out_data,'./npys/data.npy')
     #torch.save(out_adv_data,'./npys/advdata.npy')
 
@@ -203,7 +206,7 @@ def gen_adv_features_train():
     #torch.save(out_adv_data,'./npys/advdata.npy')
 
 gen_adv_features_test()
-gen_adv_features_train()
+#gen_adv_features_train()
 exit(0)
 
 
