@@ -8,10 +8,11 @@ from sklearn.manifold import TSNE
 from functions import *
 import torch
 limit = 10000
-idx = 6
+idx = 10
 
 npys = './npys'
 eps = 'e1'
+exeps = 'e1'
 examples = 'examples'
 
 def get_data(npys,eps,examples):
@@ -26,9 +27,9 @@ def get_data(npys,eps,examples):
     advdata = np.load(os.path.join(npys,eps,'advdata.npy')).astype(np.float64)[:limit]
     
     #example data
-    exlabels = np.load(os.path.join(npys,examples,'testlabels.npy')).astype(np.float64)[:limit]
-    exoutput = np.load(os.path.join(npys,examples,'advoutput.npy')).astype(np.float64)[:limit]
-    exdata = np.load(os.path.join(npys,examples,'advdata.npy')).astype(np.float64)[:limit]
+    exlabels = np.load(os.path.join(npys,examples,exeps,'testlabels.npy')).astype(np.float64)[:limit]
+    exoutput = np.load(os.path.join(npys,examples,exeps,'advoutput.npy')).astype(np.float64)[:limit]
+    exdata = np.load(os.path.join(npys,examples,exeps,'advdata.npy')).astype(np.float64)[:limit]
     return trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata
 
 trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,eps,examples)
@@ -79,6 +80,9 @@ else:
     X_2d = tsne.fit_transform(traindata)
     np.save('./embedding.npy', X_2d, allow_pickle=False)
 
+img = exdata[idx].reshape((28,28))
+plt.imshow(img, cmap='gray')
+
 ###HISTOGRAMS###################
 """EPSILON 0.1"""
 
@@ -87,7 +91,7 @@ norms,idxs,prediction,truelabel = findNearest()
 fig1, axs1 = plt.subplots(10)
 
 for i in range(10):
-    axs1[i].hist(norms[(testlabels[...] == i)], bins=40,range=(8,14),density=True)
+    axs1[i].hist(norms[(testlabels[...] == i)], bins=100,range=(8,14),density=True)
     axs1[i].text(13,.25,str(i),ha='center')
 
 title = "Epsilon: 0.1\nModel Prediction: %d\nActual Label: %d\nAverage Distance: %f" % (prediction,truelabel,float(sum(norms))/len(norms))
@@ -101,7 +105,7 @@ norms,idxs,prediction,truelabel = findNearest()
 fig2, axs2 = plt.subplots(10)
 
 for i in range(10):
-    axs2[i].hist(norms[(testlabels[...] == i)], bins=40,range=(8,14),density=True)
+    axs2[i].hist(norms[(testlabels[...] == i)], bins=100,range=(8,14),density=True)
     axs2[i].text(13,.25,str(i),ha='center')
 
 title = "Epsilon: 0.2\nModel Prediction: %d\nActual Label: %d\nAverage Distance: %f" % (prediction,truelabel,float(sum(norms))/len(norms))
@@ -115,7 +119,7 @@ norms,idxs,prediction,truelabel = findNearest()
 
 fig3, axs3 = plt.subplots(10)
 for i in range(10):
-    axs3[i].hist(norms[(testlabels[...] == i)], bins=40,range=(8,14),density=True)
+    axs3[i].hist(norms[(testlabels[...] == i)], bins=100,range=(8,14),density=True)
     axs3[i].text(13,.25,str(i),ha='center')
 
 title = "Epsilon: 0.3\nModel Prediction: %d\nActual Label: %d\nAverage Distance: %f" % (prediction,truelabel,float(sum(norms))/len(norms))
@@ -124,7 +128,6 @@ plt.suptitle(title)
 ##############
 
 plt.show()
-exit()
 
 
 def plot_embedding(labels,target_ids,colors,X_2d,testlabels,norms,idxs):
