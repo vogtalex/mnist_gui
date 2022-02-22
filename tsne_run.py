@@ -1,5 +1,6 @@
 # Load Python Libraries
 import numpy as np
+import os
 import gzip, pickle
 import matplotlib.pyplot as plt
 from sklearn import datasets
@@ -9,18 +10,24 @@ import torch
 limit = 10000
 idx = 6
 
-trainlabels = np.load('./npys/trainlabels.npy').astype(np.float64)[:limit]
-trainoutput = np.load('./npys/trainoutput.npy').astype(np.float64)[:limit]
-traindata = np.load('./npys/traindata.npy').astype(np.float64)[:limit]
-#traintarget = np.load('./npys/traintarget.npy')[:limit]
+npys = './npys'
+eps = 'e3'
+examples = 'examples'
 
-testlabels = np.load('./npys/e3/testlabels.npy').astype(np.float64)[:limit]
-advoutput = np.load('./npys/e3/advoutput.npy').astype(np.float64)[:limit]
-advdata = np.load('./npys/e3/advdata.npy').astype(np.float64)[:limit]
+#train data
+trainlabels = np.load(os.path.join(npys,'trainlabels.npy')).astype(np.float64)[:limit]
+trainoutput = np.load(os.path.join(npys,'trainoutput.npy')).astype(np.float64)[:limit]
+traindata = np.load(os.path.join(npys,'traindata.npy')).astype(np.float64)[:limit]
 
-exlabels = np.load('./npys/examples/testlabels.npy').astype(np.float64)[:limit]
-exoutput = np.load('./npys/examples/advoutput.npy').astype(np.float64)[:limit]
-exdata = np.load('./npys/examples/advdata.npy').astype(np.float64)[:limit]
+#adversarial data
+testlabels = np.load(os.path.join(npys,eps,'testlabels.npy')).astype(np.float64)[:limit]
+advoutput = np.load(os.path.join(npys,eps,'advoutput.npy')).astype(np.float64)[:limit]
+advdata = np.load(os.path.join(npys,eps,'advdata.npy')).astype(np.float64)[:limit]
+
+#example data
+exlabels = np.load(os.path.join(npys,examples,'testlabels.npy')).astype(np.float64)[:limit]
+exoutput = np.load(os.path.join(npys,examples,'advoutput.npy')).astype(np.float64)[:limit]
+exdata = np.load(os.path.join(npys,examples,'advdata.npy')).astype(np.float64)[:limit]
 
 print("advdata ",advdata.shape)
 print("testlabels ",testlabels.shape)
@@ -49,48 +56,28 @@ def findNearest():
     print([(norms[idx]) for idx in top[1:k]])
     return norms, top[1:k],label,int(exlabels[idx])
 
-def findNearestTrue(data,advdata,idx,k=10):
-    print("Index: ",idx)
-    example = traindata[idx]
-    label = np.argmax(trainoutput[idx])
-    print("Model prediction: ", label)
-
-    l = traindata - example
-
-    norms = np.linalg.norm(l,axis=1)
-
-
-    top = np.argpartition(norms,k-1)
-
-    ########
-    print("True label: ", int(trainlabels[idx]))
-    print("Nearest 10 labels: ")
-    print([(int(trainlabels[idx])) for idx in top[:k]])
-    #print("Distance to nearest 10 points: ")
-    print([(norms[idx]) for idx in top[1:k]])
-    return norms, top[1:k],label,int(trainlabels[idx])
-
-#norms,idxs,prediction,truelabel = findNearestTrue(traindata,advdata,idx)
 norms,idxs,prediction,truelabel = findNearest()
+print(norms)
 
 print('data shape: ', traindata.shape)
 print('labels shape: ', trainlabels.shape)
 print('output shape: ', trainoutput.shape)
-#print(data[0])
 
 fig, (ax1,ax2) = plt.subplots(1,2)
 
-print("advdata ",advdata.shape)
+
 #for combining data/advdata
 #data = np.append(data, advdata, axis=0)
 
 X_2d = []
-if exists("./npys/e1/embedding.npy"):
-    X_2d = np.load('./npys/e3/embedding.npy').astype(np.float64)
+#if exists("./npys/e1/embedding.npy"):
+if exists(os.path.join(npys,eps,'embedding.npy')):
+    #X_2d = np.load('./npys/e1/embedding.npy').astype(np.float64)
+    X_2d = np.load(os.path.join(npys,eps,'embedding.npy')).astype(np.float64)
 else:
     tsne = TSNE(n_components=2, random_state=3,perplexity=100)
     X_2d = tsne.fit_transform(traindata)
-    np.save('./npys/embedding.npy', X_2d, allow_pickle=False)
+    np.save('./embedding.npy', X_2d, allow_pickle=False)
 
 labels = list(range(0, 10))
 target_ids = range(10)
@@ -98,10 +85,6 @@ colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'aquamarine', 'orange', 'purple'
 
 #plt.scatter(X_2d[:limit, 0], X_2d[:limit, 1], s=5, c='r', label='normal')
 #plt.scatter(X_2d[limit:, 0], X_2d[limit:, 1], s=2, c='b', label='attacked')
-
-#unatt = X_2d[:limit]
-#att = X_2d[limit:]
-#unatt = X_2d
 
 #label for class
 '''
@@ -122,7 +105,7 @@ for i, c, label in zip(target_ids, colors, labels):
                s=3,
                picker=True)
 
-ax1.set_title("Test Data TSNE Embedding")
+ax1.set_title("Test Data")
 
 #label for norms
 """
@@ -156,7 +139,11 @@ cb = ax2.scatter(X_2d[idxs,0],X_2d[idxs,1],
            s=10,
            picker=True)
 
-title = "Model Prediction: %d, Actual Label: %d" % (prediction,truelabel)
+print('max distance', max(norms))
+print('min distance', min(norms))
+print('avg distance', sum(norms)/len(norms))
+
+title = "Model Prediction: %d\nActual Label: %d\nAverage Distance: %f" % (prediction,truelabel,float(sum(norms))/len(norms))
 ax2.set_title(title)
 
 '''
@@ -169,19 +156,11 @@ ax2.scatter(adv[idx,0],att[idx,1],
 
 #p=ax2.get_children()[2]
 plt.colorbar(cb,label="norm")
-cb.set_clim(np.argmin(norms),np.argmax(norms))
+cb.set_clim(5,15)
 
 #ax.scatter(output_2d[:, 0], output_2d[:, 1], c=target)
 ax1.legend()
 plt.show()
-exit(0)
-
-
-"""
-def onclick(event):
-    print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
-          ('double' if event.dblclick else 'single', event.button,
-           event.x, event.y, event.xdata, event.ydata))
 
 
 def onpick(event):
@@ -190,84 +169,9 @@ def onpick(event):
     print("bloop")
     of = thispoint.get_offsets()[0]
     print(of)
-    #idx = list(X_2d).index(of.all())
     idx = np.argwhere(X_2d == of)[0][0]
     print(data.shape)
     np.expand_dims(data,axis=(0,1))
     print(data.shape)
     exit()
     plot_images(data[idx],target[idx][0],output[idx],3,6,"deleteme.png")
-
-
-labels = list(range(0, 10))
-target_ids = range(10)
-colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'aquamarine', 'orange', 'purple'
-unattacked = X_2d[:limit]
-attacked = X_2d[limit:]
-
-
-pairs = zip(xs,zs)
-
-for i, c, label in zip(target_ids, colors, labels):
-    ax.scatter(X_2d[(target[...,0] == i), 0],
-               X_2d[(target[...,0] == i), 1],
-               c=c,
-               label=label,
-               s=3,
-               picker=True)
-
-
-plt.legend()
-plt.savefig('./coloredavn.png', bbox_inches='tight')
-#fig.canvas.mpl_connect('button_press_event',onclick)
-fig.canvas.mpl_connect('pick_event',onpick)
-#fig.canvas.callbacks.connect('pick_event',on_pick)
-plt.show()
-exit()
-
-'''
-for i, c, label in zip(target_ids, colors, labels):
-    xs = X_2d[100:]
-    plt.scatter(xs[(advtarget[...,0] == i), 0], xs[(advtarget[...,0] == i), 1], s=3, c=c)
-
-'''
-#plt.scatter(X_2d[:10000, 0], X_2d[:10000, 1], s=5, c='r', label='normal')
-#plt.scatter(X_2d[10000:, 0], X_2d[10000:, 1], s=2, c='b', label='attacked')
-plt.legend()
-plt.savefig('./coloredavn.png', bbox_inches='tight')
-plt.show()
-exit()
-
-labels = list(range(0, 10))
-target_ids = range(10)
-colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'aquamarine', 'orange', 'purple'
-
-tsne = TSNE(n_components=2, random_state=1)
-X_2d = tsne.fit_transform(output)
-
-for i, c, label in zip(target_ids, colors, labels):
-    plt.scatter(X_2d[target[...,0] == i, 0], X_2d[target[...,0] == i, 1], s=10, c=c, label=label)
-plt.legend()
-plt.savefig('./x2d.png', bbox_inches='tight')
-plt.show()
-
-exit()
-
-plt.scatter(output_2d[:, 0], output_2d[:, 1], c=target)
-target_ids = range(len(data.target_names))
-
-
-exit()
-
-output_2d = bh_sne(output)
-
-np.save('./output_2d.npy', output_2d, allow_pickle=False)
-
-
-plt.rcParams['figure.figsize'] = 20, 20
-plt.scatter(output_2d[:, 0], output_2d[:, 1], c=target)
-plt.legend()
-plt.savefig('./output_2d.png', bbox_inches='tight')
-plt.show()
-
-"""
