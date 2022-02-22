@@ -2,3 +2,6 @@
 *.png
 __pycache__
 *.pyc
+npys
+myenv
+
