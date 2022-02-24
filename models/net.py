@@ -9,6 +9,8 @@ from os.path import exists
 
 device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 
+# Initialize Neural Network
+
 
 class Net(nn.Module):
     def __init__(self):

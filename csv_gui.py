@@ -4,10 +4,13 @@ import os
 csvName = "response.csv"
 QAName = "QA.csv"
 
+
 def writeToCSV(array):
     with open(csvName, 'a', newline='') as csvfile:
-        writer = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
+        writer = csv.writer(csvfile, delimiter=',',
+                            quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
         writer.writerow(array)
+
 
 def readFromCSV(array):
     with open(csvName, newline='') as csvfile:
@@ -15,14 +18,18 @@ def readFromCSV(array):
         for row in reader:
             array.append(row)
 
+
 def writeDataCSV(userPrediction, trueValue):
     array = [userPrediction, trueValue]
     writeToCSV(array)
 
+
 def writeToCSV_QA(array):
     with open(QAName, 'a', newline='') as csvfile:
-        writer = csv.writer(csvfile, lineterminator='\n')
+        writer = csv.writer(csvfile, delimiter=',',
+                            quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
         writer.writerow(array)
+
 
 def outputCSV():
     outputArray = []
@@ -30,10 +37,12 @@ def outputCSV():
     for idx in range(len(outputArray)):
         print(outputArray[idx])
 
+
 def initializeCSV():
     file = 'response.csv'
     if(os.path.exists(file) and os.path.isfile(file)):
         os.remove(file)
+
 
 def formatCSV():
     csvName = 'formatted.csv'
@@ -52,7 +61,7 @@ def formatCSV():
             correctNumString += str(outputArray[idx][1])
         totalNumString += str(outputArray[idx][1])
         totalCount += 1
-    
+
     formattedArray.append(correctCount)
     formattedArray.append(totalCount)
     writeToCSV(formattedArray)

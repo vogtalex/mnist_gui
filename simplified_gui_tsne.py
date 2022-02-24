@@ -2,12 +2,14 @@ from ast import Global
 from pyexpat import model
 from models.net import *
 from csv_gui import *
+from tsne_run import *
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
 import time
 import tkinter as tk
+from tkinter import messagebox as mb
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 import torch
@@ -28,18 +30,25 @@ from tkinter import *
 from PIL import Image, ImageTk
 
 from functools import partial
+import json
 
 from numpy import load
 
+npys = './npys'
+eps = 'e3'
+examples = 'examples'
+limit = 10000
 
-images_orig = np.load('./npys/advdata.npy').astype(np.float64)
+images_orig = np.load(os.path.join(npys, examples, 'advdata.npy')
+                      ).astype(np.float64)[:limit]
+
+# images_orig = np.load('./npys/advdata.npy').astype(np.float64)
 images = []
 for i in range(len(images_orig)):
     images.append(images_orig[i].reshape(28, 28))
-print(images[5].shape)
 
 # Variables initialized for my dataset. Can be changed for different user
-path1 = "saved_figure.png"
+path1 = "saved_image.png"
 path2 = "tsne_output.png"
 imageTitle = "What is this number?"
 
@@ -83,7 +92,15 @@ def openImage():
     test = ImageTk.PhotoImage(image1, master=root)
     label1 = tk.Label(image_frame, image=test)
     label1.image = test
-    label1.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)
+    label1.grid(row=0, column=0, padx=2, pady=2)
+
+
+def openTSNE():
+    image2 = Image.open(path2)
+    test2 = ImageTk.PhotoImage(image2, master=root)
+    label2 = tk.Label(image_frame, image=test2)
+    label2.image = test2
+    label2.grid(row=0, column=1, padx=2, pady=2)
 
 
 def myUnlabeledClick():
@@ -92,13 +109,16 @@ def myUnlabeledClick():
 
     if totalCount == 0:
         generateUnlabeledImage(totalCount)
+        generateTSNE(totalCount)
 
     currNum = e.get()
 
     # Add guess to CSV
-    writeDataCSV(currNum, currNum)
+    writeToCSV(currNum)
 
     totalCount = countIterator()
+    generateTSNE(totalCount)
+    openTSNE()
     generateUnlabeledImage(totalCount)
     openImage()
 
@@ -130,10 +150,8 @@ root.grid_columnconfigure(1, weight=0)
 generateUnlabeledImage(0)
 openImage()
 
-image1 = Image.open(path2)
-test = ImageTk.PhotoImage(image1, master=root)
-Label(image_frame, image=test).grid(
-    row=0, column=1, sticky="nsew", padx=2, pady=2)
+generateTSNE(0)
+openTSNE()
 
 # Creates entry box for user guess
 e = Entry(input_frame, width=50, justify=CENTER, font=20)
@@ -166,61 +184,221 @@ exit_button.grid(row=2, column=0, pady=20)
 root.mainloop()
 
 # Format CSV from user input
-formatCSV()
+# formatCSV()
 
-# QA
-root2 = Tk()
-root2.title("Survey:")
+# # QA
+# root2 = Tk()
+# root2.title("Survey:")
 
-questions = [
-    "On a scale from 1 - 5, how certain did you feel about your answers?",
-    "Do the visualizations influence your decision in determining the image?",
-    "Would you recommend the utilization of this tool?"
-]
+# questions = [
+#     "On a scale from 1 - 5, how certain did you feel about your answers?",
+#     "Do the visualizations influence your decision in determining the image?",
+#     "Would you recommend the utilization of this tool?"
+# ]
 
-mult_choice = {
-    "yes": 1,
-    "no": 0
-}
+# mult_choice = {
+#     "yes": 1,
+#     "no": 0
+# }
 
-scale = {
-    "1": 1,
-    "2": 2,
-    "3": 3,
-    "4": 4,
-    "5": 5
-}
+# scale = {
+#     "1": 1,
+#     "2": 2,
+#     "3": 3,
+#     "4": 4,
+#     "5": 5
+# }
 
-v = [tk.IntVar(root2, idx) for idx in range(3)]
-QA_Array = []
+# # v = [tk.IntVar(root2, idx) for idx in range(3)]
+# var = IntVar()
+# var1 = IntVar()
+# var2 = IntVar()
 
-for idx, text in enumerate(questions):
+# for idx, text in enumerate(questions):
 
-    tk.Label(root2, text=text, wraplength=270, justify='left').pack(padx=20)
+#     tk.Label(root2, text=text, wraplength=270, justify='left').pack(padx=20)
 
-    if idx == 0:
-        for choice, value in scale.items():
-            button = tk.Radiobutton(
-                root2, text=choice, variable=v[idx], value=value, justify='left')
-            button.pack(padx=(20, 0))
-    else:
-        for choice, value in mult_choice.items():
-            tk.Radiobutton(root2, text=choice,
-                           variable=v[idx], value=value).pack(padx=(30, 0))
+#     if idx == 0:
+#         for choice, value in scale.items():
+#             Radiobutton(root2, text=choice, variable=var,
+#                         value=value, justify='left').pack(padx=(30, 0))
 
-# Currently broken. Doesn't produce corret values from radio buttons
-for x in range(3):
-    QA_Array.append(v[x].get())
+#     if idx == 1:
+#         for choice, value in mult_choice.items():
+#             Radiobutton(root2, text=choice,
+#                         variable=var1, value=value).pack(padx=(30, 0))
+#     if idx == 2:
+#         for choice, value in mult_choice.items():
+#             Radiobutton(root2, text=choice,
+#                         variable=var2, value=value).pack(padx=(30, 0))
 
-exit_button = Button(root2, text="Exit",
-                     command=root.quit,
-                     height=3,
-                     width=50,
-                     background='#D11A2A',
-                     fg='white',
-                     font=50)
-exit_button.pack(pady=2)
+# # Currently broken. Doesn't produce corret values from radio buttons
+# # for x in range(3):
+# #     QA_Array.append(v[x].get())
 
-root2.mainloop()
+# print(var)
 
-writeToCSV_QA(QA_Array)
+# exit_button = Button(root2, text="Exit",
+#                      command=root.quit,
+#                      height=3,
+#                      width=50,
+#                      background='#D11A2A',
+#                      fg='white',
+#                      font=50)
+# exit_button.pack(pady=2)
+
+# x = var.get()
+# y = var1.get()
+# z = var2.get()
+
+# root2.mainloop()
+
+# writeToCSV_QA(str(x))
+# writeToCSV_QA(str(y))
+# writeToCSV_QA(str(z))
+
+# Uses code from https://www.geeksforgeeks.org/python-mcq-quiz-game-using-tkinter/
+
+
+class Quiz:
+    def __init__(self):
+        self.qno = 0
+        self.disp_title()
+        self.disp_ques()
+        self.opt_sel = IntVar()
+        self.opts = self.radio_buttons()
+        self.disp_opt()
+        self.buttons()
+        self.total_size = len(question)
+        self.correct = 0
+
+    def disp_res(self):
+
+        wrong_count = self.total_size - self.correct
+        correct = f"Correct: {self.correct}"
+        wrong = f"Wrong: {wrong_count}"
+
+        score = int(self.correct / self.total_size * 100)
+        result = f"Score: {score}%"
+
+        mb.showinfo("Result", f"{result}\n{correct}\n{wrong}")
+
+    def check_ans(self, qno):
+        writeToCSV_QA(str(self.opt_sel.get()))
+        if self.opt_sel.get() == answer[qno]:
+            return True
+
+    def next_btn(self):
+
+        if self.check_ans(self.qno):
+            self.correct += 1
+
+        self.qno += 1
+
+        if self.qno == self.total_size:
+            ws.destroy()
+        else:
+            self.disp_ques()
+            self.disp_opt()
+
+    def buttons(self):
+
+        next_button = Button(
+            ws,
+            text="Next",
+            command=self.next_btn,
+            width=10,
+            bg="#F2780C",
+            fg="white",
+            font=("ariel", 16, "bold")
+        )
+
+        next_button.place(x=350, y=380)
+
+        quit_button = Button(
+            ws,
+            text="Quit",
+            command=ws.destroy,
+            width=5,
+            bg="black",
+            fg="white",
+            font=("ariel", 16, " bold")
+        )
+
+        quit_button.place(x=700, y=50)
+
+    def disp_opt(self):
+        val = 0
+        self.opt_sel.set(0)
+
+        for option in options[self.qno]:
+            self.opts[val]['text'] = option
+            val += 1
+
+    def disp_ques(self):
+
+        qno = Label(
+            ws,
+            text=question[self.qno],
+            width=60,
+            font=('ariel', 16),
+            anchor='w',
+            wraplength=700,
+            justify='center'
+        )
+
+        qno.place(x=70, y=100)
+
+    def disp_title(self):
+
+        title = Label(
+            ws,
+            text="OSU GUI QA",
+            width=50,
+            bg="#F2A30F",
+            fg="white",
+            font=("ariel", 20, "bold")
+        )
+
+        title.place(x=0, y=2)
+
+    def radio_buttons(self):
+
+        q_list = []
+
+        y_pos = 150
+
+        while len(q_list) < 4:
+
+            radio_btn = Radiobutton(
+                ws,
+                text=" ",
+                variable=self.opt_sel,
+                value=len(q_list)+1,
+                font=("ariel", 14)
+            )
+            q_list.append(radio_btn)
+
+            radio_btn.place(x=100, y=y_pos)
+
+            y_pos += 40
+
+        return q_list
+
+
+ws = Tk()
+
+ws.geometry("800x450")
+
+ws.title("OSU GUI QA")
+
+with open('data.json') as f:
+    data = json.load(f)
+
+question = (data['question'])
+options = (data['options'])
+answer = (data['answer'])
+
+quiz = Quiz()
+
+ws.mainloop()

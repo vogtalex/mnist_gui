@@ -2,4 +2,7 @@
 *.png
 __pycache__
 *.pyc
-*.npy
+*traindata.npy
+!npys/embedding.npy
+!npys/e*/embedding.npy
+

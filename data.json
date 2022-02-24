@@ -1,0 +1,31 @@
+{
+    "question": [
+      "Q1. On a scale from 1 - 4, how certain did you feel about your answers?",
+      "Q2. The visualizations influence my decision in determining the image.",
+      "Q3. I recommend the utilization of this tool."
+    ],
+    "answer": [
+      1,
+      2,
+      3,
+      2
+    ],
+    "options": [
+  
+      ["1",
+        "2",
+        "3",
+        "4"
+      ],
+      ["Strongly Agree",
+        "Agree",
+        "Disagree",
+        "Strongly Disagree"
+      ],
+      ["Strongly Agree",
+        "Agree",
+        "Disagree",
+        "Strongly Disagree"
+      ]
+    ]
+  }
