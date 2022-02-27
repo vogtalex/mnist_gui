@@ -133,7 +133,7 @@ root.title("Human Testing of Adversarial Training")
 # Setup frames
 # global image_frame
 image_frame = tk.Frame(root, background="#FFFFFF", bd=1, relief="sunken")
-input_frame = tk.Frame(root, background="#FFFFFF", bd=1, relief="sunken")
+input_frame = tk.Frame(root, bd=1, relief="sunken")
 QA_frame = tk.Frame(root, background="#FFFFFF", bd=1, relief="sunken")
 image_frame.grid(row=0, column=0, padx=2, pady=2)
 input_frame.grid(row=1, column=0, padx=2, pady=2)
@@ -154,20 +154,30 @@ generateTSNE(0)
 openTSNE()
 
 # Creates entry box for user guess
-e = Entry(input_frame, width=50, justify=CENTER, font=20)
-e.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)
+lbl = Label(input_frame, text="What does this image depict?", font=20)
+lbl.grid(row=0, column=0, sticky="nsew", padx=5, pady=20)
+
+e = Entry(input_frame, width=30, justify=CENTER, font=20)
+e.grid(row=0, column=1, sticky="nsew", padx=5, pady=20)
 e.insert(0, "Enter your guess here")
+
+lbl = Label(input_frame, text="Which visualizations led you to this answer?", justify=LEFT, font=20)
+lbl.grid(row=1, column=0, sticky="nsew", padx=5, pady=20)
+
+a = Entry(input_frame, width=30, justify=CENTER, font=20)
+a.grid(row=1, column=1, sticky="nsew", padx=5, pady=20)
 
 
 # Adds a Button
 myButton = Button(input_frame,
-                  text="Submit Prediction",
-                  pady=50,
+                  text="Submit",
                   height=3,
-                  width=50,
+                  width=30,
                   font=20,
+                  background='#343a40',
+                  fg='white',
                   command=partial(myUnlabeledClick))
-myButton.grid(row=1, column=0, sticky="nsew", padx=2, pady=2)
+myButton.grid(row=2, column=1, pady=20)
 
 
 exit_button = Button(root, text="Exit",
@@ -177,8 +187,9 @@ exit_button = Button(root, text="Exit",
                      background='#D11A2A',
                      fg='white',
                      font=50)
-exit_button.grid(row=2, column=0, pady=20)
+exit_button.grid(row=3, column=0, pady=20)
 
+root.configure(background="white")
 
 # Loop
 root.mainloop()
