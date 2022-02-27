@@ -15,6 +15,7 @@ from numpy import save
 GUI_HEIGHT = 300
 GUI_WIDTH = 500
 BACKGROUND_COLOR = None
+OUTPUT_FILE_NAME = "config.json"
 
 def loadImg(config):
     global img
@@ -34,29 +35,24 @@ def loadImg(config):
     save("data.npy", images)
     config["outputDir"] = os.path.join(os.getcwd(), "data.npy")
 
-# options setup
+# options setup by program creator. Unfortunately functions to be added have to be defined beforehand
 options = {"images":{"function":loadImg, "buttonText":"Upload images"},
     "TSNE":{"function":None, "buttonText":"Upload something"},
     "Generic":{"function":None, "buttonText":"Generic select"}}
 
-# from https://stackoverflow.com/a/44687752/17215948
-def get_nth_key(dictionary, n=0):
-    if n < 0:
-        n += len(dictionary)
-    for i, key in enumerate(dictionary.keys()):
-        if i == n:
-            return key
-    raise IndexError("dictionary index out of range")
-
+# function to run when Xing out of either setup window
 def on_quit():
     global exitFlag
     exitFlag = True
     root.destroy()
 
-# create output keys for dictionary
+# create keys used for output in dictionary
 for option, config in options.items():
     config["enabled"] = False
     config["outputDir"] = None
+
+# define exitFlag
+exitFlag = False
 
 class setup(tk.Tk):
     def __init__(self,*args,**kwargs):
@@ -64,7 +60,7 @@ class setup(tk.Tk):
         self.configure(bg=BACKGROUND_COLOR)
         self.title("Visualization setup")
 
-        # set window size based
+        # set window size based on constants
         self.geometry(str(GUI_WIDTH)+"x"+str(GUI_HEIGHT))
 
         label = Label(self, text="Select which visualizations you want to enable:")
@@ -89,6 +85,7 @@ class setup(tk.Tk):
         # handles user Xing out of window
         self.protocol("WM_DELETE_WINDOW", on_quit)
 
+    # set enable status of options based on enabled dictionary
     def set_enabled(self):
         for option, config in options.items():
             config["enabled"] = self.enabled[option].get()
@@ -107,18 +104,18 @@ class setupOptions(tk.Tk):
 
         curr_row=0
         for option, config in options.items():
+            # only create button/label if that option is enabled
             if(config["enabled"]):
                 label = Label(self, text = config["buttonText"])
                 label.grid(row = curr_row, column=0)
 
-                # call function in dict
+                # call function from options dict
                 button = Button(self, text="upload", command = lambda config=config: config["function"](config))
 
                 button.grid(row = curr_row, column=1)
 
                 curr_row+=1
 
-        # (paths[option] =
         finish = Button(self, text="finish", command = lambda: self.set_paths())
         finish.grid()
 
@@ -126,22 +123,33 @@ class setupOptions(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", on_quit)
 
     def set_paths(self):
+        # set paths of enabled visualizations
         for visualization, path in self.paths.items():
             options[visualization][outputDir] = path
 
+        # remove dictionary entries only used for setup
         for option, config in options.items():
             config.pop("function")
             config.pop("buttonText")
 
-        self.destroy()
+        self.quit()
 
-exitFlag = False
+# selecting which visualizations to use
 root = setup()
 root.mainloop()
 
-print(options)
-
+# if user didn't X out of window, run next setup window
 if not exitFlag:
+    # add
     root = setupOptions()
     root.mainloop()
-    print(options)
+
+# if user didn't X out of either window, save to file.
+if not exitFlag:
+    with open(OUTPUT_FILE_NAME, 'w') as fp:
+        json.dump(options, fp, indent=4)
+
+# example of opening the json file
+f=open(OUTPUT_FILE_NAME)
+test=json.load(f)
+print(test)
