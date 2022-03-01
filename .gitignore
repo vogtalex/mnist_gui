@@ -1,2 +1,8 @@
+*.pth
+*.png
 __pycache__/
 config.json
+*.pyc
+*traindata.npy
+!npys/embedding.npy
+!npys/e*/embedding.npy

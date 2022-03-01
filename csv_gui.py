@@ -19,10 +19,12 @@ def writeDataCSV(userPrediction, trueValue):
     array = [userPrediction, trueValue]
     writeToCSV(array)
 
+
 def writeToCSV_QA(array):
     with open(QAName, 'a', newline='') as csvfile:
-        writer = csv.writer(csvfile, lineterminator='\n')
+        writer = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
         writer.writerow(array)
+
 
 def outputCSV():
     outputArray = []
@@ -52,7 +54,7 @@ def formatCSV():
             correctNumString += str(outputArray[idx][1])
         totalNumString += str(outputArray[idx][1])
         totalCount += 1
-    
+
     formattedArray.append(correctCount)
     formattedArray.append(totalCount)
     writeToCSV(formattedArray)
