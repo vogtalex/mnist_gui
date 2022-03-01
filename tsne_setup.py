@@ -211,8 +211,8 @@ def gen_adv_features_train():
     # torch.save(out_adv_data,'./npys/advdata.npy')
 
 
-gen_adv_features_test()
-# gen_adv_features_train()
+# gen_adv_features_test()
+gen_adv_features_train()
 exit(0)
 
 

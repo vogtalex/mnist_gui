@@ -171,9 +171,8 @@ def generateTSNE(idx):
 
     #ax.scatter(output_2d[:, 0], output_2d[:, 1], c=target)
     ax1.legend()
-    plt.savefig('./tsne_output.png', bbox_inches='tight')
-    plt.close()
-
+    plt.tight_layout()
+    return fig
 
 # def onpick(event):
 #     mouseevent = event.mouseevent

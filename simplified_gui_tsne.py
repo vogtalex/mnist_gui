@@ -75,7 +75,7 @@ def generateUnlabeledImage(count):
     image = images[count]
     plt.title(imageTitle)
     plt.imshow(image, cmap="gray")
-    plt.savefig(path1)
+    return plt.gcf()
 
 
 # Iterates the total count to iterate through images
@@ -84,32 +84,18 @@ def countIterator():
     totalCount = totalCount + 1
     return totalCount
 
-# Opens image and places new image on gui
-
-
-def openImage():
-    image1 = Image.open(path1)
-    test = ImageTk.PhotoImage(image1, master=root)
-    label1 = tk.Label(image_frame, image=test)
-    label1.image = test
-    label1.grid(row=0, column=0, padx=2, pady=2)
-
-
-def openTSNE():
-    image2 = Image.open(path2)
-    test2 = ImageTk.PhotoImage(image2, master=root)
-    label2 = tk.Label(image_frame, image=test2)
-    label2.image = test2
-    label2.grid(row=0, column=1, padx=2, pady=2)
-
+def embedMatplot(fig, col):
+    canvas = FigureCanvasTkAgg(fig, master=root)
+    canvas.draw()
+    canvas.get_tk_widget().grid(row=0, column=col, padx=2, pady=2)
 
 def myUnlabeledClick():
     # Create new image
     global totalCount
 
-    if totalCount == 0:
-        generateUnlabeledImage(totalCount)
-        generateTSNE(totalCount)
+    # if totalCount == 0:
+    #     generateUnlabeledImage(totalCount)
+    #     generateTSNE(totalCount)
 
     currNum = e.get()
 
@@ -117,11 +103,8 @@ def myUnlabeledClick():
     writeToCSV(currNum)
 
     totalCount = countIterator()
-    generateTSNE(totalCount)
-    openTSNE()
-    generateUnlabeledImage(totalCount)
-    openImage()
-
+    embedMatplot(generateTSNE(totalCount),1)
+    embedMatplot(generateUnlabeledImage(totalCount),0)
 
 # Initialize CSV by deleting prior csv "response.csv"
 initializeCSV()
@@ -147,11 +130,8 @@ root.grid_columnconfigure(0, weight=1)
 root.grid_columnconfigure(1, weight=0)
 
 # Create a photoimage object of the image in the path
-generateUnlabeledImage(0)
-openImage()
-
-generateTSNE(0)
-openTSNE()
+embedMatplot(generateUnlabeledImage(0),0)
+embedMatplot(generateTSNE(0),1)
 
 # Creates entry box for user guess
 lbl = Label(input_frame, text="What does this image depict?", font=20)
