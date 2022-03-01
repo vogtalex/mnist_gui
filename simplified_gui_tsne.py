@@ -69,14 +69,11 @@ global totalCount
 totalCount = 0
 
 # Generates an unlabeled image
-
-
 def generateUnlabeledImage(count):
     image = images[count]
     plt.title(imageTitle)
     plt.imshow(image, cmap="gray")
     return plt.gcf()
-
 
 # Iterates the total count to iterate through images
 def countIterator():
@@ -84,6 +81,7 @@ def countIterator():
     totalCount = totalCount + 1
     return totalCount
 
+# embeds the visualization in the appropriate column
 def embedMatplot(fig, col):
     canvas = FigureCanvasTkAgg(fig, master=root)
     canvas.draw()
@@ -93,18 +91,17 @@ def myUnlabeledClick():
     # Create new image
     global totalCount
 
-    # if totalCount == 0:
-    #     generateUnlabeledImage(totalCount)
-    #     generateTSNE(totalCount)
-
     currNum = e.get()
 
     # Add guess to CSV
     writeToCSV(currNum)
 
     totalCount = countIterator()
-    embedMatplot(generateTSNE(totalCount),1)
+
+    # clear current matplots and embed new new ones
+    plt.clf()
     embedMatplot(generateUnlabeledImage(totalCount),0)
+    embedMatplot(generateTSNE(totalCount),1)
 
 # Initialize CSV by deleting prior csv "response.csv"
 initializeCSV()
@@ -121,7 +118,6 @@ QA_frame = tk.Frame(root, background="#FFFFFF", bd=1, relief="sunken")
 image_frame.grid(row=0, column=0, padx=2, pady=2)
 input_frame.grid(row=1, column=0, padx=2, pady=2)
 QA_frame.grid(row=1, column=1, padx=2, pady=2)
-
 
 # Configure frames
 root.grid_rowconfigure(0, weight=1)
@@ -147,7 +143,6 @@ lbl.grid(row=1, column=0, sticky="nsew", padx=5, pady=20)
 a = Entry(input_frame, width=30, justify=CENTER, font=20)
 a.grid(row=1, column=1, sticky="nsew", padx=5, pady=20)
 
-
 # Adds a Button
 myButton = Button(input_frame,
                   text="Submit",
@@ -158,7 +153,6 @@ myButton = Button(input_frame,
                   fg='white',
                   command=partial(myUnlabeledClick))
 myButton.grid(row=2, column=1, pady=20)
-
 
 exit_button = Button(root, text="Exit",
                      command=root.quit,
@@ -172,6 +166,7 @@ exit_button.grid(row=3, column=0, pady=20)
 root.configure(background="white")
 
 # Loop
+root.protocol("WM_DELETE_WINDOW", root.destroy)
 root.mainloop()
 
 # Format CSV from user input
@@ -250,7 +245,6 @@ root.mainloop()
 
 # Uses code from https://www.geeksforgeeks.org/python-mcq-quiz-game-using-tkinter/
 
-
 class Quiz:
     def __init__(self):
         self.qno = 0
@@ -264,7 +258,6 @@ class Quiz:
         self.correct = 0
 
     def disp_res(self):
-
         wrong_count = self.total_size - self.correct
         correct = f"Correct: {self.correct}"
         wrong = f"Wrong: {wrong_count}"
@@ -280,7 +273,6 @@ class Quiz:
             return True
 
     def next_btn(self):
-
         if self.check_ans(self.qno):
             self.correct += 1
 
@@ -293,7 +285,6 @@ class Quiz:
             self.disp_opt()
 
     def buttons(self):
-
         next_button = Button(
             ws,
             text="Next",
@@ -327,7 +318,6 @@ class Quiz:
             val += 1
 
     def disp_ques(self):
-
         qno = Label(
             ws,
             text=question[self.qno],
@@ -341,7 +331,6 @@ class Quiz:
         qno.place(x=70, y=100)
 
     def disp_title(self):
-
         title = Label(
             ws,
             text="OSU GUI QA",
@@ -354,7 +343,6 @@ class Quiz:
         title.place(x=0, y=2)
 
     def radio_buttons(self):
-
         q_list = []
 
         y_pos = 150
@@ -376,7 +364,6 @@ class Quiz:
 
         return q_list
 
-
 ws = Tk()
 
 ws.geometry("800x450")
@@ -392,4 +379,5 @@ answer = (data['answer'])
 
 quiz = Quiz()
 
+ws.protocol("WM_DELETE_WINDOW", ws.destroy)
 ws.mainloop()
