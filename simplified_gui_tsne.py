@@ -114,10 +114,8 @@ root.title("Human Testing of Adversarial Training")
 # global image_frame
 image_frame = tk.Frame(root, background="#FFFFFF", bd=1, relief="sunken")
 input_frame = tk.Frame(root, bd=1, relief="sunken")
-QA_frame = tk.Frame(root, background="#FFFFFF", bd=1, relief="sunken")
 image_frame.grid(row=0, column=0, padx=2, pady=2)
-input_frame.grid(row=1, column=0, padx=2, pady=2)
-QA_frame.grid(row=1, column=1, padx=2, pady=2)
+input_frame.grid(row=1, column=0, padx=2, pady=2, columnspan=2)
 
 # Configure frames
 root.grid_rowconfigure(0, weight=1)
@@ -161,7 +159,7 @@ exit_button = Button(root, text="Exit",
                      background='#D11A2A',
                      fg='white',
                      font=50)
-exit_button.grid(row=3, column=0, pady=20)
+exit_button.grid(row=3, column=0, pady=20, columnspan=2)
 
 root.configure(background="white")
 
