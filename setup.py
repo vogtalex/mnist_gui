@@ -10,6 +10,7 @@ import numpy as np
 import json
 import webbrowser
 import os
+from functools import partial
 from numpy import save
 
 GUI_HEIGHT = 300
@@ -110,7 +111,7 @@ class setupOptions(tk.Tk):
                 label.grid(row = curr_row, column=0)
 
                 # call function from options dict
-                button = Button(self, text="upload", command = lambda config=config: config["function"](config))
+                button = Button(self, text="upload", command = partial(self.runFunction, config))
 
                 button.grid(row = curr_row, column=1)
 
@@ -121,6 +122,10 @@ class setupOptions(tk.Tk):
 
         # handles user Xing out of window
         self.protocol("WM_DELETE_WINDOW", on_quit)
+
+    def runFunction(self, config):
+        if config["function"] != None:
+            config["function"](config)
 
     def set_paths(self):
         # set paths of enabled visualizations

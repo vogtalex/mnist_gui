@@ -19,12 +19,10 @@ def writeDataCSV(userPrediction, trueValue):
     array = [userPrediction, trueValue]
     writeToCSV(array)
 
-
 def writeToCSV_QA(array):
     with open(QAName, 'a', newline='') as csvfile:
         writer = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_MINIMAL, lineterminator='\n')
         writer.writerow(array)
-
 
 def outputCSV():
     outputArray = []

@@ -173,16 +173,3 @@ def generateTSNE(idx):
     ax1.legend()
     plt.tight_layout()
     return fig
-
-# def onpick(event):
-#     mouseevent = event.mouseevent
-#     thispoint = event.artist
-#     print("bloop")
-#     of = thispoint.get_offsets()[0]
-#     print(of)
-#     idx = np.argwhere(X_2d == of)[0][0]
-#     print(data.shape)
-#     np.expand_dims(data, axis=(0, 1))
-#     print(data.shape)
-#     exit()
-#     plot_images(data[idx], target[idx][0], output[idx], 3, 6, "deleteme.png")
