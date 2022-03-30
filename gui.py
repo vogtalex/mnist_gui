@@ -12,10 +12,17 @@ from PIL import Image, ImageTk
 
 OUTPUT_PATH = Path(__file__).parent
 ASSETS_PATH = OUTPUT_PATH / Path("assets")
-
+exitFlag = False
 
 def relative_to_assets(path: str) -> Path:
     return ASSETS_PATH / Path(path)
+
+def exitProgram():
+    global exitFlag
+    print("Exiting Program")
+    exitFlag = True
+    exit()
+    window.destroy()
 
 global totalCount
 totalCount = 0
@@ -170,8 +177,7 @@ for x in scale:
     height += 30
 
 
-
-
-
+window.protocol("WM_DELETE_WINDOW", exitProgram)
 window.resizable(False, False)
-window.mainloop()
+if (exitFlag == False):
+    window.mainloop()
