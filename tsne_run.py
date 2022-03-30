@@ -172,4 +172,5 @@ def generateTSNE(idx):
     #ax.scatter(output_2d[:, 0], output_2d[:, 1], c=target)
     ax1.legend()
     plt.tight_layout()
+    plt.figure(figsize=(4,3))
     return fig

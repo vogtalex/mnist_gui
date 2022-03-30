@@ -59,7 +59,7 @@ device = torch.device("cuda:0" if (
     use_cuda and torch.cuda.is_available()) else "cpu")
 
 # Use a pretrained model
-pretrained_model = "model_weights.pth"
+pretrained_model = "lenet_mnist_model.pth"
 
 # Initialize the network
 model = Net()
@@ -211,8 +211,9 @@ def gen_adv_features_train():
     # torch.save(out_adv_data,'./npys/advdata.npy')
 
 
-# gen_adv_features_test()
+
 gen_adv_features_train()
+gen_adv_features_test()
 exit(0)
 
 
