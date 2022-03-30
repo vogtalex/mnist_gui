@@ -6,11 +6,10 @@ Setup Environment:
 
 How to run run_gui.py:
 
-    1. Add neural network to models folder
-    2. Save your model weights from training into "model_weights.pth"
-    3. Save images in array as data.npy. This can be just done through numpy "save('data.npy', images)". 
-    Images represents the following structure in an array [modelPrediction, trueValue, image].
-    create_images.py is an example of saving images.
+    1. Add neural network architecture to models folder
+    2. Save your model weights from training into "lenet_mnist_model.pth" 
+    -Developer Note: Change this into search for .pth file
+    3. python tsne_setup.py
     4. python run_gui.py
 
 P.S. Let me know if you need help with saving images. Let me know if there are any issues as well.
