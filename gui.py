@@ -1,5 +1,5 @@
 from pathlib import Path
-from gui_helper import generateTSNE, generateUnlabeledImage
+from gui_helper import generateTSNE, generateUnlabeledImage, generateTSNEPlots
 
 # from tkinter import *
 # Explicit imports to satisfy Flake8
@@ -52,7 +52,9 @@ def myClick():
     if (config['images']['enabled'] == True):
         embedMatplot(generateUnlabeledImage(totalCount),0, 0)
     if (config['TSNE']['enabled'] == True):
-        embedMatplot(generateTSNE(totalCount),1, 0)
+        embedMatplot(generateTSNEPlots(totalCount, 0),1, 0)
+    if (config['TSNE']['enabled'] == True):
+        embedMatplot(generateTSNEPlots(totalCount, 1),0, 1)
 
 window = Tk()
 

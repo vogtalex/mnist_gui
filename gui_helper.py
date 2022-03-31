@@ -3,6 +3,7 @@ from pyexpat import model
 from models.net import *
 from csv_gui import *
 from tsne_run import *
+from updated_tsne import *
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
