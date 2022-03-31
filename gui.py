@@ -9,6 +9,12 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from PIL import Image, ImageTk
+import json
+
+with open('config.json') as f:
+   config = json.load(f)
+
+
 
 OUTPUT_PATH = Path(__file__).parent
 ASSETS_PATH = OUTPUT_PATH / Path("assets")
@@ -43,8 +49,10 @@ def myClick():
 
     # clear current matplots and embed new new ones
     plt.clf()
-    embedMatplot(generateUnlabeledImage(totalCount),0, 0)
-    embedMatplot(generateTSNE(totalCount),1, 0)
+    if (config['images']['enabled'] == True):
+        embedMatplot(generateUnlabeledImage(totalCount),0, 0)
+    if (config['TSNE']['enabled'] == True):
+        embedMatplot(generateTSNE(totalCount),1, 0)
 
 window = Tk()
 
