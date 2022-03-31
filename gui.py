@@ -1,5 +1,5 @@
 from pathlib import Path
-from gui_helper import generateTSNE, generateUnlabeledImage, generateTSNEPlots
+from gui_helper import generateUnlabeledImage, generateTSNEPlots
 
 # from tkinter import *
 # Explicit imports to satisfy Flake8

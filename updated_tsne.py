@@ -34,16 +34,16 @@ def generateTSNEPlots(idx, plotID):
 
     trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,eps,examples)
 
-    print("advdata ",advdata.shape)
-    print("testlabels ",testlabels.shape)
-    print("advoutput ",advoutput.shape)
+    # print("advdata ",advdata.shape)
+    # print("testlabels ",testlabels.shape)
+    # print("advoutput ",advoutput.shape)
 
     def findNearest():
         k=10
-        print("Index: ",idx)
+        # print("Index: ",idx)
         example = exdata[idx]
         label = np.argmax(exoutput[idx])
-        print("Model prediction: ", label)
+        # print("Model prediction: ", label)
 
         l = advdata - example
 
@@ -52,20 +52,20 @@ def generateTSNEPlots(idx, plotID):
 
         top = np.argpartition(norms,k-1)
 
-        print("True label: ", int(exlabels[idx]))
-        print("Nearest 10 labels: ")
-        print(top[:k])
-        print([(int(testlabels[i])) for i in top[:k]])
-        #print("Distance to nearest 10 points: ")
-        print([(norms[idx]) for idx in top[1:k]])
+        # print("True label: ", int(exlabels[idx]))
+        # print("Nearest 10 labels: ")
+        # print(top[:k])
+        # print([(int(testlabels[i])) for i in top[:k]])
+        # #print("Distance to nearest 10 points: ")
+        # print([(norms[idx]) for idx in top[1:k]])
         return norms, top[1:k],label,int(exlabels[idx])
 
     norms,idxs,prediction,truelabel = findNearest()
-    print(norms)
+    # print(norms)
 
-    print('data shape: ', traindata.shape)
-    print('labels shape: ', trainlabels.shape)
-    print('output shape: ', trainoutput.shape)
+    # print('data shape: ', traindata.shape)
+    # print('labels shape: ', trainlabels.shape)
+    # print('output shape: ', trainoutput.shape)
 
 
 
