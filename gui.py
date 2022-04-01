@@ -1,4 +1,5 @@
 from pathlib import Path
+from csv_gui import initializeCSV, writeToCSV
 from gui_helper import generateUnlabeledImage, generateTSNEPlots
 
 # from tkinter import *
@@ -14,7 +15,7 @@ import json
 with open('config.json') as f:
    config = json.load(f)
 
-
+outputArray = []
 
 OUTPUT_PATH = Path(__file__).parent
 ASSETS_PATH = OUTPUT_PATH / Path("assets")
@@ -27,6 +28,8 @@ def exitProgram():
     global exitFlag
     print("Exiting Program")
     exitFlag = True
+    initializeCSV()
+    writeToCSV(outputArray)
     exit()
     window.destroy()
 
@@ -39,6 +42,7 @@ def countIterator():
     return totalCount
 
 def embedMatplot(fig, col, r):
+    fig.set_size_inches(6, 4)
     canvas = FigureCanvasTkAgg(fig, master=frame)
     canvas.draw()
     canvas.get_tk_widget().grid(row=r, column=col, padx=2, pady=2)
@@ -46,6 +50,13 @@ def embedMatplot(fig, col, r):
 def myClick():
     global totalCount
     totalCount = countIterator()
+    if totalCount != 1:
+        userData = []
+        userData.append(entry_1.get())
+        userData.append(selected_visual.get())
+        userData.append(confidence.get())
+        print(userData)
+        outputArray.append(userData)
 
     # clear current matplots and embed new new ones
     plt.clf()
@@ -144,9 +155,9 @@ canvas.create_window(150, 750, window=button_1)
 #Radio Button 1
 selected_visual = StringVar()
 selected_visual.set(' ')
-selections = (('Image', 'I'),
-         ('TSNE', 'T'),
-         ('Histogram', 'H'))
+selections = (('Image', 'Image'),
+         ('TSNE', 'TSNE'),
+         ('Histogram', 'Histogram'))
 
 height = 300
 for visual in selections:
@@ -167,9 +178,9 @@ for visual in selections:
 #Radio Button 2
 confidence = StringVar()
 confidence.set(' ')
-scale = (('High Confidence', 'I'),
-         ('Moderate Confidence', 'T'),
-         ('Low Confidence', 'H'))
+scale = (('High Confidence', 'High Confidence'),
+         ('Moderate Confidence', 'Moderate Confidence'),
+         ('Low Confidence', 'Low Confidence'))
 
 height = 480
 for x in scale:
