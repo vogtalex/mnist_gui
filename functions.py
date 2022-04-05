@@ -10,7 +10,6 @@ from os.path import exists
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def SoftCrossEntropyLoss(input, target):
-
   logprobs = torch.nn.functional.log_softmax(input, dim = 1)
   print("1")
   print(logprobs)
@@ -19,7 +18,6 @@ def SoftCrossEntropyLoss(input, target):
   print("2")
   print(val)
   return val / input.shape[0]
-
 
 
 def plot_images(X,y,yp,M,N,name):
@@ -67,9 +65,6 @@ def fgsm(model, X, y, epsilon):
     return epsilon * delta.grad.detach().sign()
 
 
-# In[121]:
-
-
 def pgd(model, X, y, epsilon, alpha, num_iter):
     """ Construct FGSM adversarial examples on the examples X"""
     delta = torch.zeros_like(X, requires_grad=True)
@@ -101,9 +96,6 @@ def pgd_linf(model, X, y, epsilon, alpha, num_iter):
     return delta.detach()
 
 
-# In[15]:
-
-
 def pgd_linf_targ(model, X, y, epsilon, alpha, num_iter, y_targ):
     """ Construct targeted adversarial examples on the examples X"""
     delta = torch.zeros_like(X, requires_grad=True)
@@ -119,9 +111,6 @@ def pgd_linf_targ(model, X, y, epsilon, alpha, num_iter, y_targ):
         #print(delta.data)
         delta.grad.zero_()
     return delta.detach()
-
-
-# In[82]:
 
 
 def epoch_adversarial(model, loader, attack, *args):
