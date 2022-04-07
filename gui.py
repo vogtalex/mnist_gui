@@ -2,7 +2,6 @@ from pathlib import Path
 from csv_gui import initializeCSV, writeToCSV
 from gui_helper import generateUnlabeledImage, generateTSNEPlots
 
-# from tkinter import *
 # Explicit imports to satisfy Flake8
 from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
 from tkinter import *

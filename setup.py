@@ -1,7 +1,7 @@
 import torch
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from tkinter.filedialog import askopenfilenames
+from tkinter.filedialog import askopenfilenames, askdirectory
 from tkinter import *
 import tkinter as tk
 from PIL import Image, ImageTk
@@ -36,9 +36,18 @@ def loadImg(config):
     save("data.npy", images)
     config["outputDir"] = os.path.join(os.getcwd(), "data.npy")
 
+def loadModel(config):
+    config["outputDir"].pop()
+    Tk().withdraw()
+    model = askopenfilenames(title="Select model",filetypes = [("Python file","*.py")])
+    weights = askopenfilenames(title="Select model weights",filetypes = [("Pytorch model weight file","*.pth")])
+    config["modelDir"]=model
+    config["weightDir"]=weights
+
+
 # options setup by program creator. Unfortunately functions to be added have to be defined beforehand
 options = {"images":{"function":loadImg, "buttonText":"Upload images"},
-    "TSNE":{"function":None, "buttonText":"Upload something"},
+    "TSNE":{"function":loadModel, "buttonText":"Upload something"},
     "Generic":{"function":None, "buttonText":"Generic select"}}
 
 # function to run when Xing out of either setup window

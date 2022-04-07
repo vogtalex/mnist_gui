@@ -2,8 +2,6 @@
 from itertools import islice
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib import pyplot as plt
-from models.net import *
-
 from functions import *
 
 import torch
@@ -14,7 +12,6 @@ import os
 import time
 import tkinter as tk
 
-import torch
 import torch.onnx as onnx
 import torchvision.models as models
 import torch.nn as nn
@@ -22,7 +19,6 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
-import numpy as np
 import torchvision
 from torch.autograd import Variable
 
@@ -36,6 +32,16 @@ from functools import partial
 
 from numpy import load
 
+import sys
+# temp variable representing the filepath from config file
+filepath = "C:\\Users\\sasha\\Desktop\\AML research\\gui\\models\\net.py"
+# split file into name and path
+head,tail = os.path.split(filepath)
+# temporarily add directory where python file is present to path
+sys.path.append(head)
+# format import with specific module name and execute the import
+imp="from %s import*"%tail[:-3]
+exec(imp)
 
 # mtpltlib bug:
 matplotlib.use('TkAgg')
