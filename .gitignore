@@ -5,4 +5,4 @@ __pycache__
 *traindata.npy
 !npys/embedding.npy
 !npys/e*/embedding.npy
-
+embedding.npy
