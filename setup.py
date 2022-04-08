@@ -37,17 +37,18 @@ def loadImg(config):
     config["outputDir"] = os.path.join(os.getcwd(), "data.npy")
 
 def loadModel(config):
-    config["outputDir"].pop()
+    config.pop("outputDir",None)
     Tk().withdraw()
     model = askopenfilenames(title="Select model",filetypes = [("Python file","*.py")])
     weights = askopenfilenames(title="Select model weights",filetypes = [("Pytorch model weight file","*.pth")])
-    config["modelDir"]=model
-    config["weightDir"]=weights
+    # paths are saved as tuples. Converts first element of tuple into the needed path and then converts to string for saving to json
+    config["modelDir"]=str(Path(model[0]))
+    config["weightDir"]=str(Path(weights[0]))
 
 
 # options setup by program creator. Unfortunately functions to be added have to be defined beforehand
 options = {"images":{"function":loadImg, "buttonText":"Upload images"},
-    "TSNE":{"function":loadModel, "buttonText":"Upload something"},
+    "TSNE":{"function":loadModel, "buttonText":"Upload model & model weights"},
     "Generic":{"function":None, "buttonText":"Generic select"}}
 
 # function to run when Xing out of either setup window

@@ -33,10 +33,17 @@ from functools import partial
 from numpy import load
 
 import sys
-# temp variable representing the filepath from config file
-filepath = "C:\\Users\\sasha\\Desktop\\AML research\\gui\\models\\net.py"
+import json
+
+with open('config.json') as f:
+   config = json.load(f)
+
+if(config['TSNE']['enabled'] == False):
+    print("TSNE is currently disabled. Please enable it in the setup utility first!")
+    quit()
+
 # split file into name and path
-head,tail = os.path.split(filepath)
+head,tail = os.path.split(config['TSNE']['modelDir'])
 # temporarily add directory where python file is present to path
 sys.path.append(head)
 # format import with specific module name and execute the import
@@ -65,7 +72,7 @@ device = torch.device("cuda:0" if (
     use_cuda and torch.cuda.is_available()) else "cpu")
 
 # Use a pretrained model
-pretrained_model = "lenet_mnist_model.pth"
+pretrained_model = config['TSNE']['weightDir']
 
 # Initialize the network
 model = Net()
