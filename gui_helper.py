@@ -41,6 +41,16 @@ limit = 10000
 
 images_orig = np.load(os.path.join(npys, examples, 'advdata.npy')
                       ).astype(np.float64)[:limit]
+                      
+#For custom datasets:
+
+# npys = './npys'
+# eps = 'e1'
+# examples = 'examples'
+# limit = 10000
+
+# images_orig = np.load(os.path.join(npys, 'traindata.npy')
+#                       ).astype(np.float64)[:limit]
 
 # images_orig = np.load('./npys/advdata.npy').astype(np.float64)
 images = []

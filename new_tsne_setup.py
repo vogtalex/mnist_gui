@@ -38,6 +38,10 @@ from numpy import load
 
 from build_dataset import customDataset
 
+#Constants to receive from csv
+train_set_size = 12
+test_set_size = 9000
+
 
 # mtpltlib bug:
 matplotlib.use('TkAgg')
@@ -54,7 +58,7 @@ dataset = customDataset(csv_file = 'dataset.csv',
                         transform = transforms.Compose([transforms.ToTensor(),transforms.Grayscale()])
 )
 
-train_set, test_set = torch.utils.data.random_split(dataset, [12, 9000])
+train_set, test_set = torch.utils.data.random_split(dataset, [train_set_size, test_set_size])
 train_loader = DataLoader(dataset=train_set, batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(dataset=test_set, batch_size=batch_size, shuffle=False)
 
