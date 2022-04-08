@@ -158,34 +158,16 @@ def pgd_l2(model, X, y, epsilon, alpha, num_iter):
 
     for t in range(num_iter):
         #_x_adv = x_adv.clone().detach().requires_grad_(True)
-        #loss = nn.CrossEntropyLoss()(model(X+delta), y)
-        loss = torch.nn.functional.nll_loss(model(X+delta), y)
+        #loss = torch.nn.functional.nll_loss(model(X+delta), y)
+        loss = nn.CrossEntropyLoss()(model(X+delta), y)
 
-        #print(loss)
-        #print(model(X+delta).shape)
-        #print("loss")
-        #print(loss)
         loss.backward()
-        #print(delta.data)
-        #print("delta data1")
-        #print("Info")
-        #print(alpha*delta.grad.detach())
-        #print(norms(delta.grad.detach()))
-        #exit(0)
         delta.data += alpha*delta.grad.detach() / norms(delta.grad.detach())
-        #print(delta.data)
-        #print("delta data2")
         delta.data = torch.min(torch.max(delta.detach(), -X), 1-X) # clip X+delta to [0,1]
-        #print(delta.data)
-        #print("delta data3")
         delta.data *= epsilon / norms(delta.detach()).clamp(min=epsilon)
-        #print(delta.data)
-        #print("delta data4")
         delta.grad.zero_()
-        #print(delta.data)
 
     return delta.detach()
-    #return x_adv.detach()
 
 
 
