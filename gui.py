@@ -59,7 +59,7 @@ def myClick():
 
     # clear current matplots and embed new new ones
     plt.clf()
-    if (config['images']['enabled'] == True):
+    if (config['Images']['enabled'] == True):
         embedMatplot(generateUnlabeledImage(totalCount),0, 0)
     if (config['TSNE']['enabled'] == True):
         embedMatplot(generateTSNEPlots(totalCount, 0),1, 0)

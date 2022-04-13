@@ -47,8 +47,10 @@ def loadModel(config):
 
 
 # options setup by program creator. Unfortunately functions to be added have to be defined beforehand
-options = {"images":{"function":loadImg, "buttonText":"Upload images"},
+options = {"Images":{"function":loadImg, "buttonText":"Upload images"},
     "TSNE":{"function":loadModel, "buttonText":"Upload model & model weights"},
+    "Histrogram":{"function":loadModel, "buttonText":"Upload model & model weights"},
+    "BoxPlot":{"function":loadModel, "buttonText":"Upload model & model weights"},
     "Generic":{"function":None, "buttonText":"Generic select"}}
 
 # function to run when Xing out of either setup window
@@ -117,8 +119,8 @@ class setupOptions(tk.Tk):
         for option, config in options.items():
             # only create button/label if that option is enabled
             if(config["enabled"]):
-                label = Label(self, text = config["buttonText"])
-                label.grid(row = curr_row, column=0)
+                label = Label(self, text = option+": "+config["buttonText"])
+                label.grid(row = curr_row, column=0, sticky=W)
 
                 # call function from options dict
                 button = Button(self, text="upload", command = partial(self.runFunction, config))
