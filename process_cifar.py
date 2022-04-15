@@ -99,7 +99,7 @@ def gen_adv_features_train():
     out_output = np.array([])
     out_adv_output = []
     for data, target in train_loader:
-        #data,target = data.to(device), target.to(device)
+        data,target = data.to(device), target.to(device)
         cnt += 1
         print("processing: %d/%d" % (cnt, len(train_loader.dataset)))
 
@@ -124,7 +124,7 @@ def gen_adv_features_train():
 
 
         data = torch.flatten(data,2,3)
-        data = torch.flatten(data,0,1)
+        data = torch.flatten(data,1,2)
         out_data = np.vstack([out_data,data.cpu().numpy()]) if out_data.size else data.cpu().numpy()
         #adv_data = torch.flatten(adv_data,2,3)
         #adv_data = torch.flatten(adv_data,0)
@@ -153,7 +153,7 @@ def gen_adv_features_test():
     for data, target in test_loader:
         data, target = data.to(device), target.to(device)
         cnt += 1
-        print("processing: %d/%d" % (cnt, len(test_loader.dataset)))
+        print("processing: %d/%d" % (cnt, len(test_loader.dataset)/batch_size))
         if cnt > 9:
             break;
 
@@ -181,7 +181,7 @@ def gen_adv_features_test():
         #out_adv_output.append(adv_output_np)
 
         data = torch.flatten(data,2,3)
-        data = torch.flatten(data,0,1)
+        data = torch.flatten(data,1,2)
         out_data = np.vstack([out_data,data.cpu().numpy()]) if out_data.size else data.cpu().numpy()
         #adv_data = torch.flatten(adv_data,2,3)
         #adv_data = torch.flatten(adv_data,0)
@@ -209,9 +209,9 @@ def gen_adv_features_examples():
     out_output = np.array([])
     out_adv_output = []
     for data, target in test_loader:
-        #data,target = data.to(device), target.to(device)
+        data,target = data.to(device), target.to(device)
         cnt += 1
-        print("processing: %d/%d" % (cnt, len(train_loader.dataset)))
+        print("processing: %d/%d" % (cnt, len(test_loader.dataset)/batch_size))
         if cnt <= 9:
             continue;
 
@@ -240,7 +240,7 @@ def gen_adv_features_examples():
 
 
         data = torch.flatten(data,2,3)
-        data = torch.flatten(data,0,1)
+        data = torch.flatten(data,1,2)
         out_data = np.vstack([out_data,data.cpu().numpy()]) if out_data.size else data.cpu().numpy()
         #adv_data = torch.flatten(adv_data,2,3)
         #adv_data = torch.flatten(adv_data,0)
@@ -254,8 +254,8 @@ def gen_adv_features_examples():
     np.save(os.path.join(loc,'examples',eps,'advoutput.npy'), out_output, allow_pickle=False)
     np.save(os.path.join(loc,'examples',eps,'advdata.npy'), out_data, allow_pickle=False)
 
-#gen_adv_features_train()
-gen_adv_features_test()
+gen_adv_features_train()
+#gen_adv_features_test()
 #gen_adv_features_examples()
 exit(0)
 

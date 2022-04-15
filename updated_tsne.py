@@ -2,7 +2,7 @@
 import numpy as np
 import os
 import gzip, pickle
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from sklearn import datasets
 from sklearn.manifold import TSNE
 from functions import *
@@ -10,26 +10,28 @@ import torch
 def generateTSNEPlots(idx, plotID):
     limit = 10000
 
-    npys = './npys'
+    npys = './cifar_npys'
     eps = 'e1'
     exeps = 'e1'
     examples = 'examples'
+    tests = 'test'
+    trains = 'train'
 
     def get_data(npys,eps,examples):
         #train data
-        trainlabels = np.load(os.path.join(npys,'trainlabels.npy')).astype(np.float64)[:limit]
-        trainoutput = np.load(os.path.join(npys,'trainoutput.npy')).astype(np.float64)[:limit]
-        traindata = np.load(os.path.join(npys,'traindata.npy')).astype(np.float64)[:limit]
-        
+        trainlabels = np.load(os.path.join(npys,trains,'trainlabels.npy')).astype(np.float64)[:limit]
+        trainoutput = np.load(os.path.join(npys,trains,'trainoutput.npy')).astype(np.float64)[:limit]
+        traindata = np.load(os.path.join(npys,trains,'traindata.npy')).astype(np.float64)[:limit]
+
         #adversarial data
-        testlabels = np.load(os.path.join(npys,eps,'testlabels.npy')).astype(np.float64)[:limit]
-        advoutput = np.load(os.path.join(npys,eps,'advoutput.npy')).astype(np.float64)[:limit]
-        advdata = np.load(os.path.join(npys,eps,'advdata.npy')).astype(np.float64)[:limit]
-        
+        testlabels = np.load(os.path.join(npys,tests,eps,'testlabels.npy')).astype(np.float64)[:limit]
+        advoutput = np.load(os.path.join(npys,tests,eps,'advoutput.npy')).astype(np.float64)[:limit]
+        advdata = np.load(os.path.join(npys,tests,eps,'advdata.npy')).astype(np.float64)[:limit]
+
         #example data
-        exlabels = np.load(os.path.join(npys,examples,'testlabels.npy')).astype(np.float64)[:limit]
-        exoutput = np.load(os.path.join(npys,examples,'advoutput.npy')).astype(np.float64)[:limit]
-        exdata = np.load(os.path.join(npys,examples,'advdata.npy')).astype(np.float64)[:limit]
+        exlabels = np.load(os.path.join(npys,examples,exeps,'testlabels.npy')).astype(np.float64)[:limit]
+        exoutput = np.load(os.path.join(npys,examples,exeps,'advoutput.npy')).astype(np.float64)[:limit]
+        exdata = np.load(os.path.join(npys,examples,exeps,'advdata.npy')).astype(np.float64)[:limit]
         return trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata
 
     trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,eps,examples)
@@ -63,9 +65,9 @@ def generateTSNEPlots(idx, plotID):
     norms,idxs,prediction,truelabel = findNearest()
     # print(norms)
 
-    # print('data shape: ', traindata.shape)
-    # print('labels shape: ', trainlabels.shape)
-    # print('output shape: ', trainoutput.shape)
+    print('data shape: ', traindata.shape)
+    print('labels shape: ', trainlabels.shape)
+    print('output shape: ', trainoutput.shape)
 
 
 
@@ -73,16 +75,19 @@ def generateTSNEPlots(idx, plotID):
     #data = np.append(data, advdata, axis=0)
 
     X_2d = []
-    if exists(os.path.join(npys,eps,'embedding.npy')):
-        X_2d = np.load(os.path.join(npys,eps,'embedding.npy')).astype(np.float64)
+    if exists(os.path.join(npys,tests,eps,'embedding.npy')):
+        X_2d = np.load(os.path.join(npys,tests,eps,'embedding.npy')).astype(np.float64)
     else:
-        tsne = TSNE(n_components=2, random_state=3,perplexity=100)
+        tsne = TSNE(n_components=2, random_state=3,perplexity=100,verbose=1)
         X_2d = tsne.fit_transform(traindata)
         np.save('./embedding.npy', X_2d, allow_pickle=False)
 
-    img = exdata[idx].reshape((28,28))
+    #img = exdata[idx].reshape((28,28))
 
     ###HISTOGRAMS###################
+generateTSNEPlots(10,0)
+
+'''
     if plotID == 1:
         """EPSILON 0.1"""
 
@@ -130,11 +135,11 @@ def generateTSNEPlots(idx, plotID):
         return fig1
 
     if plotID == 0:
-    
+
         labels = list(range(0, 10))
         target_ids = range(10)
         colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'aquamarine', 'orange', 'purple'
-        
+
         fig, (ax1,ax2) = plt.subplots(1,2)
 
         #plot embedding for class coloration
@@ -167,6 +172,7 @@ def generateTSNEPlots(idx, plotID):
 
         plt.colorbar(cb,label="norm")
         cb.set_clim(5,15)
-        
+
         ax1.legend()
         return fig
+        '''
