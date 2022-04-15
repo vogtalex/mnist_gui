@@ -90,8 +90,8 @@ def pgd_linf(model, X, y, epsilon, alpha, num_iter):
     """ Construct FGSM adversarial examples on the examples X"""
     delta = torch.zeros_like(X, requires_grad=True)
     for t in range(num_iter):
-        loss = torch.nn.functional.nll_loss(model(X+delta), y)
-        #loss = nn.CrossEntropyLoss()(model(X + delta), y)
+        #loss = torch.nn.functional.nll_loss(model(X+delta), y)
+        loss = nn.CrossEntropyLoss()(model(X + delta), y)
         #print("loss")
         #print(loss)
         loss.backward()
@@ -100,6 +100,27 @@ def pgd_linf(model, X, y, epsilon, alpha, num_iter):
         delta.grad.zero_()
     return delta.detach()
 
+
+def pgd_linf_rand(model, X, y, epsilon, alpha, num_iter, restarts):
+    """ Construct PGD adversarial examples on the samples X, with random restarts"""
+    max_loss = torch.zeros(y.shape[0]).to(y.device)
+    max_delta = torch.zeros_like(X)
+
+    for i in range(restarts):
+        delta = torch.rand_like(X, requires_grad=True)
+        delta.data = delta.data * 2 * epsilon - epsilon
+
+        for t in range(num_iter):
+            loss = nn.CrossEntropyLoss()(model(X + delta), y)
+            loss.backward()
+            delta.data = (delta + alpha*delta.grad.detach().sign()).clamp(-epsilon,epsilon)
+            delta.grad.zero_()
+
+        all_loss = nn.CrossEntropyLoss(reduction='none')(model(X+delta),y)
+        max_delta[all_loss >= max_loss] = delta.detach()[all_loss >= max_loss]
+        max_loss = torch.max(max_loss, all_loss)
+
+    return max_delta
 
 # In[15]:
 
@@ -155,6 +176,20 @@ def norms(Z):
 
 def pgd_l2(model, X, y, epsilon, alpha, num_iter):
     delta = torch.zeros_like(X, requires_grad=True)
+    for t in range(num_iter):
+        loss = nn.CrossEntropyLoss()(model(X + delta), y)
+        loss.backward()
+        delta.data += alpha*delta.grad.detach() / norms(delta.grad.detach())
+        delta.data = torch.min(torch.max(delta.detach(), -X), 1-X) # clip X+delta to [0,1]
+        delta.data *= epsilon / norms(delta.detach()).clamp(min=epsilon)
+        delta.grad.zero_()
+
+    return delta.detach()
+
+
+'''
+def pgd_l2(model, X, y, epsilon, alpha, num_iter):
+    delta = torch.zeros_like(X, requires_grad=True)
 
     for t in range(num_iter):
         #_x_adv = x_adv.clone().detach().requires_grad_(True)
@@ -186,6 +221,7 @@ def pgd_l2(model, X, y, epsilon, alpha, num_iter):
 
     return delta.detach()
     #return x_adv.detach()
+'''
 
 
 
