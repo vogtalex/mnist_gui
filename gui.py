@@ -34,7 +34,7 @@ def exitProgram():
     window.destroy()
 
 global totalCount
-totalCount = 0
+totalCount = 150
 
 def countIterator():
     global totalCount
@@ -63,9 +63,11 @@ def myClick():
     if (config['images']['enabled'] == True):
         embedMatplot(generateUnlabeledImage(totalCount),0, 0)
     if (config['TSNE']['enabled'] == True):
-        embedMatplot(generateTSNEPlots(totalCount, 0),1, 0)
+        embedMatplot(generateTSNEPlots(totalCount, 1),1, 0)
     if (config['TSNE']['enabled'] == True):
         embedMatplot(generateTSNEPlots(totalCount, 1),0, 1)
+    if (config['TSNE']['enabled'] == True):
+        embedMatplot(generateTSNEPlots(totalCount, 2),1, 1)
 
 window = Tk()
 
@@ -74,7 +76,7 @@ window.configure(bg = "#FFFFFF")
 frame = Frame(window)
 frame.grid(row=0,column=0, sticky="n")
 
-myClick()
+# old myclcik
 
 canvas = Canvas(
     window,
@@ -197,6 +199,7 @@ for x in scale:
     canvas.create_window(20, height, anchor=W, window=r2)
     height += 30
 
+myClick()
 
 window.protocol("WM_DELETE_WINDOW", exitProgram)
 window.resizable(False, False)

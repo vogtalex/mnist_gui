@@ -1,6 +1,6 @@
 from ast import Global
 from pyexpat import model
-from models.net import *
+from models.distilled import *
 from csv_gui import *
 from updated_tsne import *
 import torch
@@ -34,12 +34,12 @@ import json
 
 from numpy import load
 
-npys = './npys'
-eps = 'e3'
+npys = './mnistl2'
+eps = 'e0'
 examples = 'examples'
 limit = 10000
 
-images_orig = np.load(os.path.join(npys, examples, 'advdata.npy')
+images_orig = np.load(os.path.join(npys, examples, eps, 'advdata.npy')
                       ).astype(np.float64)[:limit]
 
 # images_orig = np.load('./npys/advdata.npy').astype(np.float64)
