@@ -8,17 +8,46 @@ from sklearn import datasets
 from sklearn.manifold import TSNE
 from functions import *
 import torch
+import json
+
+with open('config.json') as f:
+   config = json.load(f)
+
+npys = config['TSNE']['weightDir']
+eps = config['Histogram']['weightDir']
+examples = 'examples'
+
+limit = 9000
+
+images_orig = np.load(os.path.join(npys, examples, eps, 'advdata.npy')
+                      ).astype(np.float64)[:limit]
+
+images = []
+for i in range(len(images_orig)):
+    images.append(images_orig[i].reshape(28, 28))
+
+# Generates an unlabeled image
+def generateUnlabeledImage(count):
+    imageTitle = "What is this number?"
+    image = images[count]
+    plt.title(imageTitle)
+    plt.figure(figsize=(4,3))
+    plt.imshow(image, cmap="gray")
+    return plt.gcf()
 
 def generateTSNEPlots(idx, plotID):
     limit = 9000
     #idx 41
     #idx 48
 
-    npys = './mnistl2'
+    with open('config.json') as f:
+        config = json.load(f)
+
+    npys = config['TSNE']['weightDir']
     #what epsilon for embedding
-    eps = 'e0'
+    eps = config['Histogram']['weightDir']
     #what attack level of example point
-    exeps ='e0'
+    exeps = config['Histogram']['weightDir']
     test = 'test'
     examples = 'examples'
     eps_dict = {'e0':'Epsilon 0.0', 'e1':'Epsilon 2', 'e2': 'Epsilon 4', 'e3':'Epsilon 6', 'e4':'Epsilon 10'}

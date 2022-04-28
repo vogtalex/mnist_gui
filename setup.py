@@ -2,6 +2,7 @@ import torch
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter.filedialog import askopenfilenames, askdirectory
+from tkinter import simpledialog
 from tkinter import *
 import tkinter as tk
 from PIL import Image, ImageTk
@@ -48,23 +49,23 @@ def loadModel(config):
 def loadTSNE(config):
     config.pop("outputDir",None)
     Tk().withdraw()
-    weights = askopenfilenames(title="Select test image file",filetypes = [("Test Image File","*.npy")])
+    weights = simpledialog.askstring(title = "Select Epsilon", prompt = "Enter epsilon (Example: e0)")
     # paths are saved as tuples. Converts first element of tuple into the needed path and then converts to string for saving to json
-    config["weightDir"]=str(Path(weights[0]))
+    config["weightDir"]=str(Path(weights))
 
 def loadTSNEIMG(config):
     config.pop("outputDir",None)
     Tk().withdraw()
-    weights = askopenfilenames(title="Select image file",filetypes = [("Image File","*.npy")])
+    weights = askdirectory(title="Select image file directory")
     # paths are saved as tuples. Converts first element of tuple into the needed path and then converts to string for saving to json
-    config["weightDir"]=str(Path(weights[0]))
+    config["weightDir"]=str(Path(weights))
 
 
 
 # options setup by program creator. Unfortunately functions to be added have to be defined beforehand
 options = {"Images":{"function":loadImg, "buttonText":"Upload images manually"},
-    "TSNE":{"function":loadTSNEIMG, "buttonText":"Upload image file"},
-    "Histrogram":{"function":loadTSNE, "buttonText":"Upload test image file"},
+    "TSNE":{"function":loadTSNEIMG, "buttonText":"Upload image file directory"},
+    "Histogram":{"function":loadTSNE, "buttonText":"Upload test image file directory"},
     "BoxPlot":{"function":None, "buttonText":"Generate boxplot data"},
     "Generic":{"function":None, "buttonText":"Generic select"}}
 

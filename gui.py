@@ -1,6 +1,6 @@
 from pathlib import Path
 from csv_gui import initializeCSV, writeToCSV
-from gui_helper import generateUnlabeledImage, generateTSNEPlots
+from updated_tsne import generateUnlabeledImage, generateTSNEPlots
 
 # from tkinter import *
 # Explicit imports to satisfy Flake8
@@ -60,7 +60,7 @@ def myClick():
 
     # clear current matplots and embed new new ones
     plt.clf()
-    if (config['images']['enabled'] == True):
+    if (config['Images']['enabled'] == True):
         embedMatplot(generateUnlabeledImage(totalCount),0, 0)
     if (config['TSNE']['enabled'] == True):
         embedMatplot(generateTSNEPlots(totalCount, 1),1, 0)
