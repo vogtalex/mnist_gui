@@ -1,0 +1,14 @@
+{
+    "images": {
+        "enabled": true,
+        "outputDir": null
+    },
+    "TSNE": {
+        "enabled": true,
+        "outputDir": null
+    },
+    "Generic": {
+        "enabled": false,
+        "outputDir": null
+    }
+}
