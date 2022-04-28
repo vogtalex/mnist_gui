@@ -6,3 +6,5 @@ __pycache__
 !npys/embedding.npy
 !npys/e*/embedding.npy
 *.npy
+response.csv
+config.json

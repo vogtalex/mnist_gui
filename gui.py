@@ -76,8 +76,6 @@ window.configure(bg = "#FFFFFF")
 frame = Frame(window)
 frame.grid(row=0,column=0, sticky="n")
 
-# old myclcik
-
 canvas = Canvas(
     window,
     bg = "#FFFFFF",
