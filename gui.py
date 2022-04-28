@@ -63,7 +63,7 @@ def myClick():
     if (config['Images']['enabled'] == True):
         embedMatplot(generateUnlabeledImage(totalCount),0, 0)
     if (config['TSNE']['enabled'] == True):
-        embedMatplot(generateTSNEPlots(totalCount, 1),1, 0)
+        embedMatplot(generateTSNEPlots(totalCount, 4),1, 0)
     if (config['TSNE']['enabled'] == True):
         embedMatplot(generateTSNEPlots(totalCount, 1),0, 1)
     if (config['TSNE']['enabled'] == True):

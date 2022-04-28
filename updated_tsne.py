@@ -198,8 +198,12 @@ def generateTSNEPlots(idx, plotID):
     norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels)
 
     for i in range(10):
-        axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='unattacked', histtype="step")
+        if i == 0:
+            axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='unattacked', histtype="step")
+        else:
+            axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
         axs[i].text(13,.25,str(i),ha='center')
+        axs[i].set_ylim([0, 1])
         
     norm_list.append(norms)
     #axs2.boxplot(norms, patch_artist = True,notch ='True', vert = 0)
@@ -214,8 +218,11 @@ def generateTSNEPlots(idx, plotID):
     #norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels)
 
     for i in range(10):
-        axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 2', histtype="step")
-        axs3[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 2', histtype="step")
+        if i == 0:
+            axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 2', histtype="step")
+        else:
+            axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
+        axs[i].set_ylim([0, 1])
     norm_list.append(norms)
 
 
@@ -228,8 +235,11 @@ def generateTSNEPlots(idx, plotID):
     norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels)
 
     for i in range(10):
-        axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 4', histtype="step")
-
+        if i == 0:
+            axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 4', histtype="step")
+        else:
+            axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
+        axs[i].set_ylim([0, 1])
     norm_list.append(norms)
 
 
@@ -242,7 +252,13 @@ def generateTSNEPlots(idx, plotID):
     norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels)
 
     for i in range(10):
-        axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 6', histtype="step")
+        axs3[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 6', histtype="step")
+        axs3[i].set_ylim([0, 1])
+        if i == 0:
+            axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon6', histtype="step")
+        else:
+            axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
+        axs[i].set_ylim([0, 1])
     norm_list.append(norms)
 
     # ############EPSILON 4#################
@@ -284,6 +300,9 @@ def generateTSNEPlots(idx, plotID):
     axs2.boxplot(norm_list, patch_artist = True,notch ='True', vert = 1,labels=['unattacked','Epsilon 2', 'Epsilon 4', 'Epsilon 6'], showmeans=True)
     plt.suptitle(title)
     plt.legend(loc='upper left')
+    fig4.suptitle("Epsilon 6")
+    fig.suptitle("All Epsilons")
+    fig.legend(loc='upper left')
     if plotID == 1:
         return(fig)
     if plotID == 2:
