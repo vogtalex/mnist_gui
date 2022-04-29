@@ -1,4 +1,5 @@
 from pathlib import Path
+from winreg import HKEY_LOCAL_MACHINE
 from csv_gui import initializeCSV, writeToCSV
 from updated_tsne import generateUnlabeledImage, generateTSNEPlots
 
@@ -68,6 +69,18 @@ def myClick():
         embedMatplot(generateTSNEPlots(totalCount, 1),0, 1)
     if (config['TSNE']['enabled'] == True):
         embedMatplot(generateTSNEPlots(totalCount, 2),1, 1)
+
+def enlarge_plots():
+    fig = generateTSNEPlots(totalCount, 1)
+    fig.show()
+
+    fig = generateTSNEPlots(totalCount, 2)
+    fig.show()
+
+    fig = generateTSNEPlots(totalCount, 4)
+    fig.show()
+    
+    print("Enlarged plot")
 
 window = Tk()
 
@@ -150,7 +163,17 @@ button_1 = Button(
     height=115.14483642578125
 )
 
+
 canvas.create_window(150, 750, window=button_1)
+
+button_2 = Button(
+    command=(enlarge_plots),
+    width= 40,
+    height = 3,
+    text= "Enlarge Visualizations"
+)
+
+canvas.create_window(150, 660, window=button_2)
 
 #Radio Button 1
 selected_visual = StringVar()
@@ -196,6 +219,7 @@ for x in scale:
     )
     canvas.create_window(20, height, anchor=W, window=r2)
     height += 30
+
 
 myClick()
 
