@@ -26,10 +26,26 @@ images = []
 for i in range(len(images_orig)):
     images.append(images_orig[i].reshape(28, 28))
 
+images_orig_unattacked = np.load(os.path.join(npys, examples, 'e0', 'advdata.npy')
+                      ).astype(np.float64)[:limit]
+
+images_unattacked = []
+for i in range(len(images_orig)):
+    images_unattacked.append(images_orig_unattacked[i].reshape(28, 28))
+
 # Generates an unlabeled image
 def generateUnlabeledImage(count):
     imageTitle = "What is this number?"
     image = images[count]
+    plt.title(imageTitle)
+    plt.figure(figsize=(4,3))
+    plt.imshow(image, cmap="gray")
+    return plt.gcf()
+
+# Generates an unlabeled image
+def generateUnattackedImage(count):
+    imageTitle = "What is this number?"
+    image = images_unattacked[count]
     plt.title(imageTitle)
     plt.figure(figsize=(4,3))
     plt.imshow(image, cmap="gray")

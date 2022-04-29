@@ -1,6 +1,7 @@
 from pathlib import Path
 from winreg import HKEY_LOCAL_MACHINE
 from csv_gui import initializeCSV, writeToCSV
+from updated_tsne import generateUnattackedImage
 from updated_tsne import generateUnlabeledImage, generateTSNEPlots
 
 # from tkinter import *
@@ -79,8 +80,12 @@ def enlarge_plots():
 
     fig = generateTSNEPlots(totalCount, 4)
     fig.show()
-    
+
     print("Enlarged plot")
+
+def orig_image():
+    fig = generateUnattackedImage(totalCount)
+    fig.show()
 
 window = Tk()
 
@@ -174,6 +179,15 @@ button_2 = Button(
 )
 
 canvas.create_window(150, 660, window=button_2)
+
+button_3 = Button(
+    command=(orig_image),
+    width= 40,
+    height = 3,
+    text= "Original Image"
+)
+
+canvas.create_window(150, 600, window=button_3)
 
 #Radio Button 1
 selected_visual = StringVar()
