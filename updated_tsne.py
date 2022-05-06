@@ -338,5 +338,7 @@ def generateBoxPlot(idx):
     norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
     norm_list.append(norms)
 
+    title = "Model Prediction: %d" % (prediction)
+    plt.suptitle(title)
     axs.boxplot(norm_list, patch_artist = True,notch ='True', vert = 1,labels=['unattacked','Epsilon 2', 'Epsilon 4', 'Epsilon 6', 'Epsilon 8'], showmeans=True)
     return fig

@@ -23,6 +23,7 @@ with open('config.json') as f:
    config = json.load(f)
 
 eps = config['Histogram']['weightDir']
+# histogramEpsilon = int(eps[1])
 outputArray = []
 
 OUTPUT_PATH = Path(__file__).parent
