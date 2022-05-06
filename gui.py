@@ -1,8 +1,7 @@
 from pathlib import Path
 from winreg import HKEY_LOCAL_MACHINE
 from csv_gui import initializeCSV, writeToCSV
-from updated_tsne import generateUnattackedImage
-from updated_tsne import generateUnlabeledImage, generateTSNEPlots
+from updated_tsne import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, generateUnattackedImage
 
 # from tkinter import *
 # Explicit imports to satisfy Flake8
@@ -14,9 +13,16 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from PIL import Image, ImageTk
 import json
 
+global totalCount
+totalCount = 211
+
+histogramEpsilon = 2
+
+
 with open('config.json') as f:
    config = json.load(f)
 
+eps = config['Histogram']['weightDir']
 outputArray = []
 
 OUTPUT_PATH = Path(__file__).parent
@@ -34,9 +40,6 @@ def exitProgram():
     writeToCSV(outputArray)
     exit()
     window.destroy()
-
-global totalCount
-totalCount = 150
 
 def countIterator():
     global totalCount
@@ -65,20 +68,20 @@ def myClick():
     if (config['Images']['enabled'] == True):
         embedMatplot(generateUnlabeledImage(totalCount),0, 0)
     if (config['TSNE']['enabled'] == True):
-        embedMatplot(generateTSNEPlots(totalCount, 4),1, 0)
+        embedMatplot(generateHistograms(totalCount, histogramEpsilon),1, 0)
     if (config['TSNE']['enabled'] == True):
-        embedMatplot(generateTSNEPlots(totalCount, 1),0, 1)
+        embedMatplot(generateHistograms(totalCount, 10),0, 1)
     if (config['TSNE']['enabled'] == True):
-        embedMatplot(generateTSNEPlots(totalCount, 2),1, 1)
+        embedMatplot(generateBoxPlot(totalCount),1, 1)
 
 def enlarge_plots():
-    fig = generateTSNEPlots(totalCount, 1)
+    fig = generateHistograms(totalCount, 10)
     fig.show()
 
-    fig = generateTSNEPlots(totalCount, 2)
+    fig = generateBoxPlot(totalCount)
     fig.show()
 
-    fig = generateTSNEPlots(totalCount, 4)
+    fig = generateHistograms(totalCount, histogramEpsilon)
     fig.show()
 
     print("Enlarged plot")
