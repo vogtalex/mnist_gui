@@ -1,5 +1,7 @@
 from pathlib import Path
 from winreg import HKEY_LOCAL_MACHINE
+
+from torch import histogram
 from csv_gui import initializeCSV, writeToCSV
 from updated_tsne import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, generateUnattackedImage
 
@@ -14,7 +16,7 @@ from PIL import Image, ImageTk
 import json
 
 global totalCount
-totalCount = 211
+totalCount = 552
 
 histogramEpsilon = 2
 
@@ -23,7 +25,8 @@ with open('config.json') as f:
    config = json.load(f)
 
 eps = config['Histogram']['weightDir']
-# histogramEpsilon = int(eps[1])
+histogramEpsilon = int(eps[1])
+histogramEpsilon *= 2
 outputArray = []
 
 OUTPUT_PATH = Path(__file__).parent
@@ -69,20 +72,36 @@ def myClick():
     if (config['Images']['enabled'] == True):
         embedMatplot(generateUnlabeledImage(totalCount),0, 0)
     if (config['TSNE']['enabled'] == True):
-        embedMatplot(generateHistograms(totalCount, histogramEpsilon),1, 0)
+        temp, _ = generateHistograms(totalCount, histogramEpsilon)
+        embedMatplot(temp,1, 0)
     if (config['TSNE']['enabled'] == True):
         embedMatplot(generateHistograms(totalCount, 10),0, 1)
     if (config['TSNE']['enabled'] == True):
         embedMatplot(generateBoxPlot(totalCount),1, 1)
 
 def enlarge_plots():
-    fig = generateHistograms(totalCount, 10)
-    fig.show()
+    # fig = generateHistograms(totalCount, 10)
+    # fig.show()
 
-    fig = generateBoxPlot(totalCount)
-    fig.show()
+    # fig = generateBoxPlot(totalCount)
+    # fig.show()
 
-    fig = generateHistograms(totalCount, histogramEpsilon)
+    fig, maxHeight = generateHistograms(totalCount, histogramEpsilon)
+    maxY = 0
+    for ax in fig.axes:
+        ax.set_xlim(0, 8)
+        ax.set_ylim(0, maxHeight)
+
+    # for ax in newAxs:
+    #     x, y = get_hist(ax)
+    #     print(x)
+    #     currY = y.max()
+    #     if (maxY < currY):
+    #         maxY = currY
+    
+    # for ax in fig.axes:
+    #     ax.set_ylim(0, maxY)
+    
     fig.show()
 
     print("Enlarged plot")
@@ -90,6 +109,7 @@ def enlarge_plots():
 def orig_image():
     fig = generateUnattackedImage(totalCount)
     fig.show()
+
 
 window = Tk()
 

@@ -195,6 +195,8 @@ def generateHistograms(idx, plotID):
     r=(5,16)
     b=200
 
+    maxHeight = 0
+
     fig, axs = plt.subplots(10)
     figE0, axsE0 = plt.subplots(10)
     figE2, axsE2 = plt.subplots(10)
@@ -208,7 +210,7 @@ def generateHistograms(idx, plotID):
         norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
 
         for i in range(10):
-            axsE0[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 0', histtype="step")
+            y, _, _ = axsE0[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 0', histtype="step")
             axsE0[i].set_ylim([0, 1])
             if i == 0:
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='unattacked', histtype="step")
@@ -216,6 +218,9 @@ def generateHistograms(idx, plotID):
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
             axs[i].text(13,.25,str(i),ha='center')
             axs[i].set_ylim([0, 1])
+            currMax = y.max()
+            if (maxHeight < currMax):
+                maxHeight = currMax
             
 
 
@@ -226,13 +231,18 @@ def generateHistograms(idx, plotID):
         norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
 
         for i in range(10):
-            axsE2[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 2', histtype="step")
+            y, _, _ = axsE2[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 2', histtype="step")
             axsE2[i].set_ylim([0, 1])
             if i == 0:
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 2', histtype="step")
             else:
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
             axs[i].set_ylim([0, 1])
+
+            currMax = y.max()
+            if (maxHeight < currMax):
+                maxHeight = currMax
+        
 
 
     ##################
@@ -243,13 +253,17 @@ def generateHistograms(idx, plotID):
         norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
 
         for i in range(10):
-            axsE4[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 4', histtype="step")
+            y, _, _ = axsE4[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 4', histtype="step")
             axsE4[i].set_ylim([0, 1])
             if i == 0:
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 4', histtype="step")
             else:
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
             axs[i].set_ylim([0, 1])
+
+            currMax = y.max()
+            if (maxHeight < currMax):
+                maxHeight = currMax
 
 
     ###########
@@ -260,13 +274,16 @@ def generateHistograms(idx, plotID):
         norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
 
         for i in range(10):
-            axsE6[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 6', histtype="step")
+            y, _, _ = axsE6[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 6', histtype="step")
             axsE6[i].set_ylim([0, 1])
             if i == 0:
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon6', histtype="step")
             else:
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
             axs[i].set_ylim([0, 1])
+            currMax = y.max()
+            if (maxHeight < currMax):
+                maxHeight = currMax
 
 
     """EPSILON 8"""
@@ -275,13 +292,16 @@ def generateHistograms(idx, plotID):
         norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
 
         for i in range(10):
-            axsE8[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 8', histtype="step")
+            y, _, _ = axsE8[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 8', histtype="step")
             axsE8[i].set_ylim([0, 1])
             if i == 0:
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon8', histtype="step")
             else:
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
             axs[i].set_ylim([0, 1])
+            currMax = y.max()
+            if (maxHeight < currMax):
+                maxHeight = currMax
 
 
     title = "Model Prediction: %d" % (prediction)
@@ -295,19 +315,19 @@ def generateHistograms(idx, plotID):
         return(fig)
     if plotID == 0:
         figE0.suptitle("Epsilon 0")
-        return(figE0)
+        return(figE0, maxHeight)
     if plotID == 2:
         figE2.suptitle("Epsilon 2")
-        return(figE2)
+        return(figE2, maxHeight)
     if plotID == 4:
         figE4.suptitle("Epsilon 4")
-        return(figE4)
+        return(figE4, maxHeight)
     if plotID == 6:
         figE6.suptitle("Epsilon 6")
-        return(figE6)
+        return(figE6, maxHeight)
     if plotID == 8:
         figE8.suptitle("Epsilon 8")
-        return(figE8)
+        return(figE8, maxHeight)
 
 def generateBoxPlot(idx):
     b=None
