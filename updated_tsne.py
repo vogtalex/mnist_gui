@@ -99,6 +99,22 @@ def findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx):
         # print([(norms[idx]) for idx in top[1:k]])
         return norms, top[1:k],label,int(exlabels[idx])
 
+
+def labelAxes(axs, plt):
+    count = 0
+    label = str(count)
+    for ax in axs:
+        ax.set_title(label, fontstyle='italic', x = 0.8, y = 0.3)
+        ax.get_xaxis().set_visible(False)
+        count += 1
+        label = str(count)
+    plt.subplots_adjust(left=0.1,
+                    bottom=0.1, 
+                    right=0.9, 
+                    top=0.9, 
+                    wspace=0.4, 
+                    hspace=0.4)
+
 def generateTSNEPlots(idx):
 
 
@@ -315,18 +331,23 @@ def generateHistograms(idx, plotID):
         return(fig)
     if plotID == 0:
         figE0.suptitle("Epsilon 0")
+        labelAxes(axsE0, figE0)
         return(figE0, maxHeight)
     if plotID == 2:
         figE2.suptitle("Epsilon 2")
+        labelAxes(axsE2, figE2)
         return(figE2, maxHeight)
     if plotID == 4:
         figE4.suptitle("Epsilon 4")
+        labelAxes(axsE4, figE4)
         return(figE4, maxHeight)
     if plotID == 6:
         figE6.suptitle("Epsilon 6")
+        labelAxes(axsE6, figE6)
         return(figE6, maxHeight)
     if plotID == 8:
         figE8.suptitle("Epsilon 8")
+        labelAxes(axsE8, figE8)
         return(figE8, maxHeight)
 
 def generateBoxPlot(idx):
