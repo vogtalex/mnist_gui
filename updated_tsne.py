@@ -320,9 +320,9 @@ def generateHistograms(idx, plotID):
                 maxHeight = currMax
 
 
-    title = "Model Prediction: %d" % (prediction)
+    # title = "Model Prediction: %d" % (prediction)
 
-    plt.suptitle(title)
+    # plt.suptitle(title)
     plt.legend(loc='upper left')
 
     if plotID == 10:
