@@ -1,43 +1,13 @@
 #Import the required libraries
 from tkinter import *
 from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
-from tkinter import *
+import tkinter as tk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from updated_tsne import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, generateUnattackedImage
 
-def embedMatplot(fig, col, r):
-    fig.set_size_inches(15, 7)
-    canvas = FigureCanvasTkAgg(fig, master=root)
-    canvas.draw()
-    canvas.get_tk_widget().grid(row=r, column=col, padx=2, pady=2, columnspan=4)
 
-def nextPlot():
-    global currPlot
-    currPlot += 1
-    findPlot()
-
-def lastPlot():
-    global currPlot
-    currPlot -= 1
-    findPlot()
-
-def findPlot():
-    global currPlot
-    global totalCount
-    global figureList
-
-    if currPlot >= 7:
-        currPlot = 0
-        findPlot()
-    if currPlot < 0:
-        currPlot = 6
-        findPlot()
-    
-    embedMatplot(figureList[currPlot],0,0)
-
-
-def loadFigures(epsilonList):
+def loadFigures(epsilonList, totalCount):
     figureList = []
     for eps in epsilonList:
         temp, _ = generateHistograms(totalCount, eps)
@@ -46,78 +16,103 @@ def loadFigures(epsilonList):
     figureList.append(generateHistograms(totalCount, 10))
     return figureList
 
-def updateXAxis(scaleValue):
-    global currPlot
-    global totalCount
-    global figureList
-    global period_slider
-    x = period_slider2.get()
-    y = period_slider.get()
+
+
+class enlargeVisuals():
+  def __init__(self, idx, master, figureList):
+    self.root = master
+    self.index = idx
+    self.exit_flag = False
+    self.currPlot = 0
+    self.epsilonList = [0,2,4,6,8]
+    self.figureList = figureList
+
+    temp, _ = generateHistograms(self.index, 0)
+    self.embedPlot(temp,0, 0)
+
+    button_1 = Button(
+        master = self.root,
+        command=(self.lastPlot),
+        width= 40,
+        height = 3,
+        text= "Back"
+    )
+
+    button_1.grid(row=1,column=0)
+
+    button_2 = Button(
+        master = self.root,
+        command=(self.nextPlot),
+        width= 40,
+        height = 3,
+        text= "Next"
+    )
+
+    button_2.grid(row=1,column=3)
+
+    self.period_slider = Scale(  master = self.root,
+                            from_=0, to_=16, 
+                            resolution=0.10,
+                            orient='horizontal', 
+                            length= 500, 
+                            width = 30, 
+                            label = "X-Axis Lower Bound",
+                            command=self.updateXAxis)
+    self.period_slider.set(0)
+    self.period_slider.grid(row=1, column = 1)
+
+    self.period_slider2 = Scale(  master = self.root,
+                            from_=0, to_=16, 
+                            resolution=0.10,
+                            orient='horizontal', 
+                            length= 500, 
+                            width = 30, 
+                            label = "X-Axis Upper Bound",
+                            command=self.updateXAxis)
+    self.period_slider2.set(16)
+    self.period_slider2.grid(row=1, column = 2)
+
+  def exitProgram(self):
+    print("Exiting Program")
+    self.exit_flag = True
+    self.root.destroy()
+    # exit()
+
+  def updateXAxis(self, temp):
+    x = self.period_slider.get()
+    y = self.period_slider2.get()
     
-    for fig in figureList:
+    for fig in self.figureList:
         for ax in fig.axes:
             ax.set_xlim(x, y)
-    findPlot()
-    
+    self.genPlots()
 
-def exitProgram():
-    global exitFlag
-    print("Exiting Program")
-    exitFlag = True
-    exit()
+  def genPlots(self):
+    if self.currPlot >= 7:
+        self.currPlot = 0
+        self.genPlots()
+    if self.currPlot < 0:
+        self.currPlot = 6
+        self.genPlots()
+    self.embedPlot(self.figureList[self.currPlot],0,0)
 
-root = Tk()   
+  def nextPlot(self):
+    self.currPlot += 1
+    self.genPlots()
 
-totalCount = 0
-exitFlag = False
-currPlot = 0
-epsilonList = [0,2,4,6,8]
-figureList = loadFigures(epsilonList)
+  def lastPlot(self): 
+    self.currPlot -= 1
+    self.genPlots()
 
-temp, _ = generateHistograms(totalCount, 0)
-embedMatplot(temp,0, 0)
+  def embedPlot(self, fig, col, r):
+    fig.set_size_inches(15, 7)
+    canvas = FigureCanvasTkAgg(fig, master = self.root)
+    canvas.draw()
+    canvas.get_tk_widget().grid(row=r, column=col, padx=2, pady=2, columnspan=4)
 
-button_1 = Button(
-    command=(lastPlot),
-    width= 40,
-    height = 3,
-    text= "Back"
-)
 
-button_1.grid(row=1,column=0)
-
-button_2 = Button(
-    command=(nextPlot),
-    width= 40,
-    height = 3,
-    text= "Next"
-)
-
-button_2.grid(row=1,column=3)
-
-period_slider = Scale(  master = root,
-                        from_=0, to_=16, 
-                        resolution=0.10,
-                        orient='horizontal', 
-                        length= 500, 
-                        width = 30, 
-                        label = "X-Axis Lower Bound",
-                        command=updateXAxis)
-period_slider.set(8)
-period_slider.grid(row=1, column = 1)
-
-period_slider2 = Scale(  master = root,
-                        from_=0, to_=16, 
-                        resolution=0.10,
-                        orient='horizontal', 
-                        length= 500, 
-                        width = 30, 
-                        label = "X-Axis Upper Bound",
-                        command=updateXAxis)
-period_slider2.set(8)
-period_slider2.grid(row=1, column = 2)
-
-root.protocol("WM_DELETE_WINDOW", exitProgram)
-if (exitFlag == False):
-    root.mainloop()   
-
+# root = Tk()
+# p1 = enlargeVisuals(0, root)
+# root.protocol("WM_DELETE_WINDOW", p1.exitProgram)
+# if (p1.exit_flag == False):
+#     root.mainloop()  

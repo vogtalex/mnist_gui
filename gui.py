@@ -4,6 +4,7 @@ from winreg import HKEY_LOCAL_MACHINE
 from torch import histogram
 from csv_gui import initializeCSV, writeToCSV
 from updated_tsne import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, generateUnattackedImage
+from enlarge_visuals_helper import enlargeVisuals, loadFigures
 
 # from tkinter import *
 # Explicit imports to satisfy Flake8
@@ -28,6 +29,8 @@ eps = config['Histogram']['weightDir']
 histogramEpsilon = int(eps[1])
 histogramEpsilon *= 2
 outputArray = []
+
+epsilonList = [0,2,4,6,8]
 
 OUTPUT_PATH = Path(__file__).parent
 ASSETS_PATH = OUTPUT_PATH / Path("assets")
@@ -58,6 +61,7 @@ def embedMatplot(fig, col, r):
 
 def myClick():
     global totalCount
+    global figureList
     totalCount = countIterator()
     if totalCount != 1:
         userData = []
@@ -69,28 +73,37 @@ def myClick():
 
     # clear current matplots and embed new new ones
     plt.clf()
+    figureList = loadFigures(epsilonList, totalCount)
     if (config['Images']['enabled'] == True):
         embedMatplot(generateUnlabeledImage(totalCount),0, 0)
     if (config['TSNE']['enabled'] == True):
-        temp, _ = generateHistograms(totalCount, histogramEpsilon)
+        newEps = int(histogramEpsilon / 2)
+        temp = figureList[newEps]
         embedMatplot(temp,1, 0)
     if (config['TSNE']['enabled'] == True):
-        embedMatplot(generateHistograms(totalCount, 10),0, 1)
+        embedMatplot(figureList[6],0, 1)
     if (config['TSNE']['enabled'] == True):
-        embedMatplot(generateBoxPlot(totalCount),1, 1)
+        embedMatplot(figureList[5],1, 1)
 
 def enlarge_plots():
+    global figureList
     # fig = generateHistograms(totalCount, 10)
     # fig.show()
 
     # fig = generateBoxPlot(totalCount)
     # fig.show()
 
-    fig, maxHeight = generateHistograms(totalCount, histogramEpsilon)
-    maxY = 0
-    for ax in fig.axes:
-        ax.set_xlim(0, 8)
-        ax.set_ylim(0, maxHeight)
+    root = Tk()
+    p1 = enlargeVisuals(0, root, figureList)
+    root.protocol("WM_DELETE_WINDOW", p1.exitProgram)
+    if (p1.exit_flag == False):
+        root.mainloop()  
+
+    # fig, maxHeight = generateHistograms(totalCount, histogramEpsilon)
+    # maxY = 0
+    # for ax in fig.axes:
+    #     ax.set_xlim(0, 8)
+    #     ax.set_ylim(0, maxHeight)
 
     # for ax in newAxs:
     #     x, y = get_hist(ax)
@@ -102,7 +115,7 @@ def enlarge_plots():
     # for ax in fig.axes:
     #     ax.set_ylim(0, maxY)
     
-    fig.show()
+    # fig.show()
 
     print("Enlarged plot")
 
