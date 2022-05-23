@@ -9,28 +9,57 @@ from sklearn.manifold import TSNE
 from functions import *
 import torch
 limit = 9000
-idx = 3
+#cifar
+#idx = 14
+idx = 964
+exeps ='e4'
+#11 bird
+#10 ship
+#700 plane
+#idx = 700
+
+
+#mnist
 #idx 41
 #idx 48
 
-npys = './madrys2'
+
+'''
+data = np.load('./l2loss_2.npy').astype(np.float64)
+fig, ax = plt.subplots()
+#ax.plot(data)
+ax.semilogy(max(data) - data)
+#print(data)
+#print(max(data))
+#print(max(data) - data)
+ax.set_title('Loss over Iterations. Madry e2 defended, e2 attack, ss: 0.1')
+ax.set_xlabel('Iteration')
+ax.set_ylabel('Cross Entropy Loss')
+plt.show()
+
+exit()
+'''
+
+#npys = './mnistl2'
+npys = './cifar_npys'
 #what epsilon for embedding
-eps = 'e3'
+eps = 'e1'
 #what attack level of example point
-exeps ='e3'
 examples = 'examples'
-eps_dict = {'e0':'Epsilon 0.0', 'e1':'Epsilon 2', 'e2': 'Epsilon 4', 'e3':'Epsilon 6', 'e4':'Epsilon 10'}
+#eps_dict = {'e0':'Epsilon 0.0', 'e1':'Epsilon 2', 'e2': 'Epsilon 4', 'e3':'Epsilon 6', 'e4':'Epsilon 10'}
+eps_dict = {'e0':'Epsilon 0.0', 'e1':'Epsilon 20', 'e2': 'Epsilon 40', 'e3':'Epsilon 60', 'e4':'Epsilon 80'}
+cifar_dict = {0:'airplane',1:'automobile', 2: 'bird', 3: 'cat', 4: 'deer', 5: 'dog', 6: 'frog', 7: 'horse', 8: 'ship', 9: 'truck'}
 
 def get_data(npys,eps,examples,exeps):
     #train data
-    trainlabels = np.load(os.path.join(npys,'trainlabels.npy')).astype(np.float64)[:limit]
-    trainoutput = np.load(os.path.join(npys,'trainoutput.npy')).astype(np.float64)[:limit]
-    traindata = np.load(os.path.join(npys,'traindata.npy')).astype(np.float64)[:limit]
+    trainlabels = np.load(os.path.join(npys,'train','trainlabels.npy')).astype(np.float64)[:limit]
+    trainoutput = np.load(os.path.join(npys,'train','trainoutput.npy')).astype(np.float64)[:limit]
+    traindata = np.load(os.path.join(npys,'train','traindata.npy')).astype(np.float64)[:limit]
     
     #adversarial data
-    testlabels = np.load(os.path.join(npys,eps,'testlabels.npy')).astype(np.float64)[:limit]
-    advoutput = np.load(os.path.join(npys,eps,'advoutput.npy')).astype(np.float64)[:limit]
-    advdata = np.load(os.path.join(npys,eps,'advdata.npy')).astype(np.float64)[:limit]
+    testlabels = np.load(os.path.join(npys,'test',eps,'testlabels.npy')).astype(np.float64)[:limit]
+    advoutput = np.load(os.path.join(npys,'test',eps,'advoutput.npy')).astype(np.float64)[:limit]
+    advdata = np.load(os.path.join(npys,'test',eps,'advdata.npy')).astype(np.float64)[:limit]
     
     #example data
     exlabels = np.load(os.path.join(npys,examples,exeps,'testlabels.npy')).astype(np.float64)[:limit]
@@ -39,6 +68,43 @@ def get_data(npys,eps,examples,exeps):
     return trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata
 
 trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,eps,examples,exeps)
+
+
+
+
+
+exdata1 = np.load(os.path.join(npys,examples,'e0','advdata.npy')).astype(np.float64)[:limit]
+exdata2 = np.load(os.path.join(npys,examples,exeps,'advdata.npy')).astype(np.float64)[:limit]
+
+for i in list(range(0,10)):
+    diff = np.linalg.norm(exdata1[i] - exdata2[i])
+    print(i, diff)
+
+    #if(diff >= 5):
+        #print(i, diff)
+
+
+
+img = exdata1[idx].reshape((3,32,32))
+#advdata1 = np.load(os.path.join(npys,'test','e0','advdata.npy')).astype(np.float64)[:limit]
+#img = advdata1[idx].reshape((3,32,32))
+img = img.swapaxes(0,1)
+img = img.swapaxes(1,2)
+plt.imshow(img)
+plt.show()
+
+img = exdata2[idx].reshape((3,32,32))
+
+#advdata2 = np.load(os.path.join(npys,'test',exeps,'advdata.npy')).astype(np.float64)[:limit]
+#img = advdata2[idx].reshape((3,32,32))
+img = img.swapaxes(0,1)
+img = img.swapaxes(1,2)
+plt.imshow(img)
+plt.show()
+
+print(np.linalg.norm(exdata1[idx] - exdata2[idx]))
+
+#exit()
 
 #print("advdata ",advdata.shape)
 #print("exdata ",exdata.shape)
@@ -50,7 +116,7 @@ def findNearest(exdata,exoutput,exlabels,advdata,testlabels):
     print("Index: ",idx)
     example = exdata[idx]
     label = np.argmax(exoutput[idx])
-    print("Model prediction: ", label)
+    print("Model prediction: ", cifar_dict[label])
 
     l = advdata - example
 
@@ -60,7 +126,7 @@ def findNearest(exdata,exoutput,exlabels,advdata,testlabels):
 
     top = np.argpartition(norms,k-1)
 
-    print("True label: ", int(exlabels[idx]))
+    print("True label: ", cifar_dict[int(exlabels[idx])])
     #print("Nearest 10 labels: ")
     #print(top[:k])
     print([(int(testlabels[i])) for i in top[:k]])
@@ -71,6 +137,7 @@ def findNearest(exdata,exoutput,exlabels,advdata,testlabels):
 #norms,idxs,prediction,truelabel = findNearest()
 norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels)
 
+'''
 exdata1 = np.load(os.path.join(npys,examples,'e0','advdata.npy')).astype(np.float64)[:limit]
 img = exdata1[idx].reshape((28,28))
 plt.imshow(img, cmap='gray')
@@ -82,6 +149,9 @@ plt.imshow(img, cmap='gray')
 plt.show()
 
 print(np.linalg.norm(exdata1[idx] - exdata2[idx]))
+exit()
+
+'''
 
 print('max distance', max(norms))
 print('min distance', min(norms))
@@ -95,28 +165,30 @@ print('avg distance', sum(norms)/len(norms))
 #for combining data/advdata
 #data = np.append(data, advdata, axis=0)
 
-'''
+#'''
 X_2d = []
-if exists(os.path.join(npys,eps,'embedding.npy')):
-    X_2d = np.load(os.path.join(npys,eps,'embedding.npy')).astype(np.float64)
+if exists(os.path.join('./embedding.npy')):
+    X_2d = np.load(os.path.join('./embedding.npy')).astype(np.float64)
 else:
-    tsne = TSNE(n_components=2, random_state=4,perplexity=100)
+    tsne = TSNE(n_components=2, random_state=4,perplexity=50,verbose=1)
     X_2d = tsne.fit_transform(advdata)
     np.save('./embedding.npy', X_2d, allow_pickle=False)
-'''
+#'''
 
 
 
 def plot_embedding(labels,target_ids,colors,X_2d,testlabels,norms,idxs):
     fig, (ax1,ax2) = plt.subplots(1,2)
+    #fig, ax1 = plt.subplots(1,1)
     normalized = mpl.colors.Normalize(5,17)
+    #normalized = mpl.colors.Normalize(5,30)
 
     #plot embedding for class coloration
     for i, c, label in zip(target_ids, colors, labels):
         ax1.scatter(X_2d[(testlabels[...] == i), 0],
                    X_2d[(testlabels[...] == i), 1],
                    c=c,
-                   label=label,
+                   label=cifar_dict[label],
                    s=3,
                    picker=True)
 
@@ -136,20 +208,24 @@ def plot_embedding(labels,target_ids,colors,X_2d,testlabels,norms,idxs):
                s=10,
                picker=True)
 
-    title = "Model Prediction: %d\nActual Label: %d\nAverage Distance: %f" % (prediction,truelabel,float(sum(norms))/len(norms))
+    title = "Model Prediction: %s\nActual Label: %s\nAverage Distance: %f" % (cifar_dict[prediction],cifar_dict[truelabel],float(sum(norms))/len(norms))
     ax2.set_title(title)
 
     plt.colorbar(cb,label="norm")
     cb.set_clim(5,17)
     
     ax1.legend()
+
     plt.show()
 
 
 labels = list(range(0, 10))
 target_ids = range(10)
 colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'aquamarine', 'orange', 'purple'
-#plot_embedding(labels,target_ids,colors,X_2d,testlabels,norms,idxs)
+print(trainlabels.shape)
+print(traindata.shape)
+plot_embedding(labels,target_ids,colors,X_2d,testlabels,norms,idxs)
+#exit()
 
 
 ###HISTOGRAMS###################
@@ -157,11 +233,11 @@ colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'aquamarine', 'orange', 'purple'
 b=None
 r=None
 #r=(0.99,1.01)
-r=(5,16)
+r=(5,35)
 b=200
 
 fig, axs = plt.subplots(10)
-fig2, axs2 = plt.subplots()
+#fig2, axs2 = plt.subplots()
 norm_list = []
 
 trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e0',examples,exeps)
@@ -169,7 +245,7 @@ norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,t
 
 for i in range(10):
     axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='unattacked', histtype="step")
-    axs[i].text(13,.25,str(i),ha='center')
+    axs[i].text(30,.1,str(cifar_dict[i]),ha='center')
     
 norm_list.append(norms)
 #axs2.boxplot(norms, patch_artist = True,notch ='True', vert = 0)
@@ -184,7 +260,7 @@ norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,t
 #norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels)
 
 for i in range(10):
-    axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 2', histtype="step")
+    axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 0.5', histtype="step")
 norm_list.append(norms)
 
 
@@ -197,7 +273,7 @@ trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, e
 norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels)
 
 for i in range(10):
-    axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 4', histtype="step")
+    axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 1', histtype="step")
 
 norm_list.append(norms)
 
@@ -211,7 +287,7 @@ trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, e
 norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels)
 
 for i in range(10):
-    axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 6', histtype="step")
+    axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 1.5', histtype="step")
 norm_list.append(norms)
 
 ############EPSILON 4#################
@@ -220,39 +296,49 @@ trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, e
 norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels)
 
 for i in range(10):
-    axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 10', histtype="step")
-
+    axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 2', histtype="step")
 norm_list.append(norms)
+
+for i in norm_list:
+    print(len(i))
+##############333
+#'''
 '''
 fig, ax = plt.subplots()
 num = 6
 
-trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e0',examples)
-norms,idxs,prediction,truelabel = findNearest()
-ax.hist(norms[(testlabels[...] == num)], alpha=0.5, bins=b,range=r,density=True, label='eps 0.0')
+trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e0',examples,exeps)
+#norms,idxs,prediction,truelabel = findNearest()
+norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels)
+ax.hist(norms[(testlabels[...] == num)], alpha=0.5, bins=b,range=r,density=True, label='eps 0')
 
-trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e1',examples)
-norms,idxs,prediction,truelabel = findNearest()
-ax.hist(norms[(testlabels[...] == num)], alpha=0.5, bins=b,range=r,density=True, label='eps 0.1')
+trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e1',examples,exeps)
+norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels)
+ax.hist(norms[(testlabels[...] == num)], alpha=0.5, bins=b,range=r,density=True, label='eps 2')
 
-trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e2',examples)
-norms,idxs,prediction,truelabel = findNearest()
-ax.hist(norms[(testlabels[...] == num)], alpha=0.5, bins=b,range=r,density=True, label='eps 0.2')
+trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e2',examples,exeps)
+norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels)
+ax.hist(norms[(testlabels[...] == num)], alpha=0.5, bins=b,range=r,density=True, label='eps 4')
 
-trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e3',examples)
-norms,idxs,prediction,truelabel = findNearest()
-ax.hist(norms[(testlabels[...] == num)], alpha=0.5, bins=b,range=r,density=True, label='eps 0.3')
+trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e3',examples,exeps)
+norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels)
+ax.hist(norms[(testlabels[...] == num)], alpha=0.5, bins=b,range=r,density=True, label='eps 6')
 '''
 
+#'''
+
+plt.legend(loc='upper right')
+plt.show()
 
 
+fig, axs = plt.subplots()
 
 ##############
 #title = "%s\nModel Prediction: %d\nActual Label: %d" % (eps_dict[exeps],prediction,truelabel)
-title = "Model Prediction: %d" % (prediction)
-axs2.boxplot(norm_list, patch_artist = True,notch ='True', vert = 1,labels=['unattacked','Epsilon 2', 'Epsilon 4', 'Epsilon 6', 'Epsilon 10'], showmeans=True)
+title = "Model Prediction: %s" % (cifar_dict[prediction])
+#axs2.boxplot(norm_list, patch_artist = True,notch ='True', vert = 1,labels=['unattacked','Epsilon 2', 'Epsilon 4', 'Epsilon 6', 'Epsilon 8'], showmeans=True)
+axs.boxplot(norm_list, patch_artist = True,notch ='True', vert = 1,labels=['unattacked','Epsilon 0.5', 'Epsilon 1', 'Epsilon 1.5', 'Epsilon 2'], showmeans=True,whis=1)
 plt.suptitle(title)
-plt.legend(loc='upper left')
 plt.show()
 
 

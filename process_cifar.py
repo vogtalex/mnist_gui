@@ -3,7 +3,8 @@ import os
 os.environ['OPENBLAS_NUM_THREADS']='5'
 import torch
 from functions import *
-from models.distilled import *
+from resnet_cifar10.resnet import *
+#from madrynet.madrynet import *
 import numpy as np
 #import matplotlib.pyplot as plt
 
@@ -27,40 +28,41 @@ from torch.autograd import Variable
 #from PIL import Image, ImageTk
 
 from functools import partial
-
-#mtpltlib bug:
-#matplotlib.use('TkAgg')
-#from matplotlib import pyplot as plt
-#from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 
-test_loader = torch.utils.data.DataLoader(
-    datasets.MNIST('../data', train=False, download=True, transform=transforms.Compose([
-        transforms.ToTensor(),
-    ])),
-    batch_size=1000, shuffle=False)
+batch_size=100
 
-train_loader = torch.utils.data.DataLoader(
-    datasets.MNIST('../data', train=True, download=True, transform=transforms.Compose([
-        transforms.ToTensor(),
-    ])),
-    batch_size=1000, shuffle=True)
+
+transform = transforms.Compose(
+    [transforms.ToTensor(),
+    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+
+trainset = datasets.CIFAR10(root='./datacifar',train=True, download=True, transform=transform)
+testset = datasets.CIFAR10(root='./datacifar',train=False, download=True, transform=transform)
+
+train_loader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True)
+
+test_loader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False)
+
 # Starter code if using cuda
 use_cuda = True
-#device = torch.device("cuda:0" if (
-    #use_cuda and torch.cuda.is_available()) else "cpu")
+#device = torch.device("cuda:0" if (use_cuda and torch.cuda.is_available()) else "cpu")
+
 device = torch.device("cuda:0")
 
 # Use a pretrained model
-pretrained_model = "model_weights.pth"
+pretrained_model = "./resnet_cifar10/resnet18_cifar10_l2_1.6.pth"
 
 # Initialize the network
-model = Net()
+#model = ResNet()
+#model = ResNet18().to(device)
+model = ResNet(BasicBlock, [2, 2, 2, 2]).to(device)
 model.load_state_dict(torch.load(pretrained_model,map_location=device))
 
 # Creates a random seed
 random_seed = 1
-torch.backends.cudnn.enabled = False
+torch.backends.cudnn.enabled = True
 torch.manual_seed(random_seed)
 
 # Creates loss function and optimizer
@@ -79,7 +81,7 @@ def fgsm_attack(image, epsilon, data_grad):
     return perturbed_image
 
 
-def gen_adv_features_train():
+def gen_adv_features_train(eps,loc,attstrength,iters,stpsz):
     model.eval()
     cnt = 0
 
@@ -118,27 +120,75 @@ def gen_adv_features_train():
 
 
         data = torch.flatten(data,2,3)
-        data = torch.flatten(data,0,1)
+        data = torch.flatten(data,1,2)
         out_data = np.vstack([out_data,data.cpu().numpy()]) if out_data.size else data.cpu().numpy()
         #adv_data = torch.flatten(adv_data,2,3)
         #adv_data = torch.flatten(adv_data,0)
         #out_adv_data.append(adv_data.numpy())
 
+    np.save(os.path.join(loc,'train','trainoutput.npy'), out_output, allow_pickle=False)
+    np.save(os.path.join(loc,'train','trainlabels.npy'), labels, allow_pickle=False)
+    np.save(os.path.join(loc,'train','traindata.npy'), out_data, allow_pickle=False)
 
-    #output_array = np.concatenate(out_output, axis=0)
-    #adv_output_array = np.concatenate(out_adv_output, axis=0)
-    #target_array = np.concatenate(out_target, axis=0)
 
-    np.save('./npys/trainoutput.npy', out_output, allow_pickle=False)
-    np.save('./npys/trainlabels.npy', labels, allow_pickle=False)
-    #np.save('./npys/advoutput.npy', adv_output_array, allow_pickle=False)
-    #np.save('./npys/traintarget.npy', target_array, allow_pickle=False)
-    np.save('./npys/traindata.npy',out_data,allow_pickle=False)
-    #np.save('./npys/advdata.npy',out_adv_data,allow_pickle=False)
-    #torch.save(out_data,'./npys/data.npy')
-    #torch.save(out_adv_data,'./npys/advdata.npy')
+def gen_adv_features_test(eps,loc,attstrength,iters,stpsz):
+    model.eval()
+    cnt = 0
 
-def gen_adv_features_test():
+    labels = []
+
+    out_data = np.array([])
+    out_adv_data= []
+
+    out_target = []
+
+    out_output = np.array([])
+    out_adv_output = []
+    for data, target in test_loader:
+        data, target = data.to(device), target.to(device)
+        cnt += 1
+        print("processing: %d/%d" % (cnt, len(test_loader.dataset)/batch_size))
+        if cnt > 90:
+            break
+
+        #delta = fgsm(model,data,target,0.2)
+        #delta = pgd_linf(model,data,target,0.3,1e-2,100)
+        #delta = pgd_linf_rand(model,data,target,0.3,1e-2,100,2)
+        delta,loss_arr = pgd_l2(model, data, target, epsilon=attstrength, alpha=stpsz, num_iter=iters)
+        data = data + delta
+        data = torch.clamp(data,0,1)
+
+        output = model(data)
+        #adv_output = model(data + delta)
+        output_np = output.data.cpu().numpy()
+        out_output = np.vstack([out_output,output_np]) if out_output.size else output_np
+        #adv_output_np = adv_output.data.cpu().numpy()
+        #print(np.argmax(output_np),np.argmax(adv_output_np))
+
+
+        #print(labels)
+        labels = np.append(labels,target.cpu().numpy())
+
+        #adv_data = data+delta
+        ######################
+
+        #out_adv_output.append(adv_output_np)
+        data = torch.flatten(data,2,3)
+        data = torch.flatten(data,1,2)
+        out_data = np.vstack([out_data,data.cpu().numpy()]) if out_data.size else data.cpu().numpy()
+        #adv_data = torch.flatten(adv_data,2,3)
+        #adv_data = torch.flatten(adv_data,0)
+        #out_adv_data.append(adv_data.numpy())
+
+    np.save(os.path.join(loc,'test',eps,'testlabels.npy'), labels, allow_pickle=False)
+    np.save(os.path.join(loc,'test',eps,'advoutput.npy'), out_output, allow_pickle=False)
+    np.save(os.path.join(loc,'test',eps,'advdata.npy'), out_data, allow_pickle=False)
+
+    #np.save('./madrys2/e0/testlabels.npy', labels, allow_pickle=False)
+    #np.save('./madrys2/e0/advoutput.npy', out_output, allow_pickle=False)
+    #np.save('./madrys2/e0/advdata.npy',out_data,allow_pickle=False)
+
+def gen_adv_features_examples(eps,loc,attstrength,iters,stpsz):
     model.eval()
     cnt = 0
 
@@ -154,13 +204,16 @@ def gen_adv_features_test():
     for data, target in test_loader:
         data,target = data.to(device), target.to(device)
         cnt += 1
-        print("processing: %d/%d" % (cnt, len(train_loader.dataset)))
-        if cnt > 9:
-            break;
+        print("processing: %d/%d" % (cnt, len(test_loader.dataset)/batch_size))
+        if cnt <= 90:
+            continue;
 
         #delta = fgsm(model,data,target,0.2)
-        #delta = pgd_linf(model,data,target,0.2,1e-2,40)
-        #data = data+delta
+        #delta = pgd_linf(model,data,target,0.1,1e-2,100)
+        #delta = pgd_linf_rand(model,data,target,0.3,1e-2,100,2)
+        delta,loss_arr = pgd_l2(model, data, target, epsilon=attstrength, alpha=stpsz, num_iter=iters)
+        data = data+delta
+        data = torch.clamp(data,0,1)
 
         output = model(data)
         #adv_output = model(data + delta)
@@ -178,76 +231,50 @@ def gen_adv_features_test():
 
         #out_adv_output.append(adv_output_np)
 
+
         data = torch.flatten(data,2,3)
-        data = torch.flatten(data,0,1)
+        data = torch.flatten(data,1,2)
         out_data = np.vstack([out_data,data.cpu().numpy()]) if out_data.size else data.cpu().numpy()
         #adv_data = torch.flatten(adv_data,2,3)
         #adv_data = torch.flatten(adv_data,0)
         #out_adv_data.append(adv_data.numpy())
 
 
-    np.save('./npys/e0/testlabels.npy', labels, allow_pickle=False)
+    #np.save('./madrys2/examples/e0/testlabels.npy', labels, allow_pickle=False)
+    #np.save('./madrys2/examples/e0/advoutput.npy', out_output, allow_pickle=False)
+    #np.save('./madrys2/examples/e0/advdata.npy',out_data,allow_pickle=False)
+    np.save(os.path.join(loc,'examples',eps,'testlabels.npy'), labels, allow_pickle=False)
+    np.save(os.path.join(loc,'examples',eps,'advoutput.npy'), out_output, allow_pickle=False)
+    np.save(os.path.join(loc,'examples',eps,'advdata.npy'), out_data, allow_pickle=False)
 
-    np.save('./npys/e0/advoutput.npy', out_output, allow_pickle=False)
-    np.save('./npys/e0/advdata.npy',out_data,allow_pickle=False)
+#'''
+epslist = ['e1','e2','e3','e4']
+attstrengthlist = [1,3,5,7]
+loc = './cifar_npys'
 
-def gen_adv_features_examples():
-    model.eval()
-    cnt = 0
+for i in range(4):
+    eps = epslist[i]
+    attstrength = attstrengthlist[i]
+    stpsz = 2.5*attstrength/100
+    #stpsz = 5*attstrength/100
 
-    labels = []
+    iters = 200
+    print(eps,loc,attstrength,iters,stpsz)
 
-    out_data = np.array([])
-    out_adv_data= []
+    print("test")
+    gen_adv_features_test(eps,loc,attstrength,iters,stpsz)
+    print("examples")
+    gen_adv_features_examples(eps,loc,attstrength,iters,stpsz)
 
-    out_target = []
-
-    out_output = np.array([])
-    out_adv_output = []
-    for data, target in test_loader:
-        data,target = data.to(device), target.to(device)
-        cnt += 1
-        print("processing: %d/%d" % (cnt, len(train_loader.dataset)))
-        if cnt <= 9:
-            continue;
-
-        #delta = fgsm(model,data,target,0.2)
-        #delta = pgd_linf(model,data,target,0.3,1e-2,100)
-
-        output = model(data+delta)
-        #adv_output = model(data + delta)
-        output_np = output.data.cpu().numpy()
-        out_output = np.vstack([out_output,output_np]) if out_output.size else output_np
-        #adv_output_np = adv_output.data.cpu().numpy()
-        #print(np.argmax(output_np),np.argmax(adv_output_np))
-
-
-        #print(labels)
-        labels = np.append(labels,target.cpu().numpy())
-
-        #adv_data = data+delta
-        ######################
-
-        #out_adv_output.append(adv_output_np)
-
-
-        data=data+delta
-        data = torch.flatten(data,2,3)
-        data = torch.flatten(data,0,1)
-        out_data = np.vstack([out_data,data.cpu().numpy()]) if out_data.size else data.cpu().numpy()
-        #adv_data = torch.flatten(adv_data,2,3)
-        #adv_data = torch.flatten(adv_data,0)
-        #out_adv_data.append(adv_data.numpy())
-
-
-    np.save('./npys/examples/e1/testlabels.npy', labels, allow_pickle=False)
-
-    np.save('./npys/examples/e1/advoutput.npy', out_output, allow_pickle=False)
-    np.save('./npys/examples/e1/advdata.npy',out_data,allow_pickle=False)
-
-#gen_adv_features_examples()
-gen_adv_features_test()
-#gen_adv_features_train()
+#'''
+#eps = 'e0'
+#loc = './cifar_npys'
+#attstrength = 20
+#iters = 100
+#stpsz = 2.5*attstrength/iters
+##gen_adv_features_train(eps,loc,attstrength,iters,stpsz)
+#gen_adv_features_test(eps,loc,attstrength,iters,stpsz)
+#gen_adv_features_examples(eps,loc,attstrength,iters,stpsz)
 exit(0)
 
 
