@@ -1,9 +1,17 @@
 {
-    "images": {
+    "Images": {
         "enabled": true,
         "outputDir": null
     },
     "TSNE": {
+        "enabled": true,
+        "weightDir": "C:\\Users\\babyv\\Desktop\\Work\\mnist_gui\\Data\\madrys2"
+    },
+    "Histogram": {
+        "enabled": true,
+        "weightDir": "e2"
+    },
+    "BoxPlot": {
         "enabled": true,
         "outputDir": null
     },

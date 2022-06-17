@@ -64,9 +64,9 @@ def get_data(npys,eps,examples,exeps):
         # traindata = np.load(os.path.join(npys,'traindata.npy')).astype(np.float64)[:limit]
         
         #adversarial data
-        testlabels = np.load(os.path.join(npys,test, eps,'testlabels.npy')).astype(np.float64)[:limit]
-        advoutput = np.load(os.path.join(npys,test,eps,'advoutput.npy')).astype(np.float64)[:limit]
-        advdata = np.load(os.path.join(npys,test,eps,'advdata.npy')).astype(np.float64)[:limit]
+        testlabels = np.load(os.path.join(npys, eps,'testlabels.npy')).astype(np.float64)[:limit]
+        advoutput = np.load(os.path.join(npys,eps,'advoutput.npy')).astype(np.float64)[:limit]
+        advdata = np.load(os.path.join(npys,eps,'advdata.npy')).astype(np.float64)[:limit]
         
         #example data
         exlabels = np.load(os.path.join(npys,examples,exeps,'testlabels.npy')).astype(np.float64)[:limit]
@@ -117,8 +117,9 @@ def labelAxes(axs, plt):
 
 def generateTSNEPlots(idx):
 
-
+    plt.clf()
     # trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,eps,examples,exeps)
+    testlabels, advoutput, origdata, exlabels, exoutput, exdata = get_data(npys,'e0',examples,exeps)
     testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,eps,examples,exeps)
 
     #print("advdata ",advdata.shape)
@@ -151,11 +152,11 @@ def generateTSNEPlots(idx):
     #data = np.append(data, advdata, axis=0)
 
     X_2d = []
-    if exists(os.path.join(npys,eps,'embedding.npy')):
-        X_2d = np.load(os.path.join(npys,eps,'embedding.npy')).astype(np.float64)
+    if exists("embedding.npy"):
+        X_2d = np.load('embedding.npy').astype(np.float64)
     else:
         tsne = TSNE(n_components=2, random_state=4,perplexity=100)
-        X_2d = tsne.fit_transform(advdata)
+        X_2d = tsne.fit_transform(origdata)
         np.save('./embedding.npy', X_2d, allow_pickle=False)
 
 
@@ -185,7 +186,7 @@ def generateTSNEPlots(idx):
 
     #plot 10 nearest points
     cb = ax2.scatter(X_2d[idxs,0],X_2d[idxs,1],
-            c='black',
+            c='red',
             label="nearest",
             s=10,
             picker=True)
@@ -197,6 +198,7 @@ def generateTSNEPlots(idx):
     cb.set_clim(5,15)
     
     ax1.legend()
+    # plt.show()
     return fig
 
 
@@ -293,7 +295,7 @@ def generateHistograms(idx, plotID):
             y, _, _ = axsE6[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 6', histtype="step")
             axsE6[i].set_ylim([0, 1])
             if i == 0:
-                axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon6', histtype="step")
+                axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 6', histtype="step")
             else:
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
             axs[i].set_ylim([0, 1])
@@ -311,7 +313,7 @@ def generateHistograms(idx, plotID):
             y, _, _ = axsE8[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 8', histtype="step")
             axsE8[i].set_ylim([0, 1])
             if i == 0:
-                axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon8', histtype="step")
+                axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 8', histtype="step")
             else:
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
             axs[i].set_ylim([0, 1])
