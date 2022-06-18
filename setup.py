@@ -1,7 +1,8 @@
 import torch
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from tkinter.filedialog import askopenfilenames
+from tkinter.filedialog import askopenfilenames, askdirectory
+from tkinter import simpledialog
 from tkinter import *
 import tkinter as tk
 from PIL import Image, ImageTk
@@ -36,9 +37,36 @@ def loadImg(config):
     save("data.npy", images)
     config["outputDir"] = os.path.join(os.getcwd(), "data.npy")
 
+def loadModel(config):
+    config.pop("outputDir",None)
+    Tk().withdraw()
+    model = askopenfilenames(title="Select model",filetypes = [("Python file","*.py")])
+    weights = askopenfilenames(title="Select model weights",filetypes = [("Pytorch model weight file","*.pth")])
+    # paths are saved as tuples. Converts first element of tuple into the needed path and then converts to string for saving to json
+    config["modelDir"]=str(Path(model[0]))
+    config["weightDir"]=str(Path(weights[0]))
+
+def loadTSNE(config):
+    config.pop("outputDir",None)
+    Tk().withdraw()
+    weights = simpledialog.askstring(title = "Select Epsilon", prompt = "Enter epsilon (Example: e0)")
+    # paths are saved as tuples. Converts first element of tuple into the needed path and then converts to string for saving to json
+    config["weightDir"]=str(Path(weights))
+
+def loadTSNEIMG(config):
+    config.pop("outputDir",None)
+    Tk().withdraw()
+    weights = askdirectory(title="Select image file directory")
+    # paths are saved as tuples. Converts first element of tuple into the needed path and then converts to string for saving to json
+    config["weightDir"]=str(Path(weights))
+
+
+
 # options setup by program creator. Unfortunately functions to be added have to be defined beforehand
-options = {"images":{"function":loadImg, "buttonText":"Upload images"},
-    "TSNE":{"function":None, "buttonText":"Upload something"},
+options = {"Images":{"function":loadImg, "buttonText":"Upload images manually"},
+    "TSNE":{"function":loadTSNEIMG, "buttonText":"Upload image file directory"},
+    "Histogram":{"function":loadTSNE, "buttonText":"Upload test image file directory"},
+    "BoxPlot":{"function":None, "buttonText":"Generate boxplot data"},
     "Generic":{"function":None, "buttonText":"Generic select"}}
 
 # function to run when Xing out of either setup window
@@ -107,8 +135,8 @@ class setupOptions(tk.Tk):
         for option, config in options.items():
             # only create button/label if that option is enabled
             if(config["enabled"]):
-                label = Label(self, text = config["buttonText"])
-                label.grid(row = curr_row, column=0)
+                label = Label(self, text = option+": "+config["buttonText"])
+                label.grid(row = curr_row, column=0, sticky=W)
 
                 # call function from options dict
                 button = Button(self, text="upload", command = partial(self.runFunction, config))

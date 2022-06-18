@@ -1,6 +1,10 @@
 from pathlib import Path
+from winreg import HKEY_LOCAL_MACHINE
+
+from torch import histogram
 from csv_gui import initializeCSV, writeToCSV
-from gui_helper import generateUnlabeledImage, generateTSNEPlots
+from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, generateUnattackedImage
+from enlarge_visuals_helper import enlargeVisuals, loadFigures
 
 # from tkinter import *
 # Explicit imports to satisfy Flake8
@@ -12,10 +16,21 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from PIL import Image, ImageTk
 import json
 
+global totalCount
+totalCount = 552
+
+histogramEpsilon = 2
+
+
 with open('config.json') as f:
    config = json.load(f)
 
+eps = config['Histogram']['weightDir']
+histogramEpsilon = int(eps[1])
+histogramEpsilon *= 2
 outputArray = []
+
+epsilonList = [0,2,4,6,8]
 
 OUTPUT_PATH = Path(__file__).parent
 ASSETS_PATH = OUTPUT_PATH / Path("assets")
@@ -33,9 +48,6 @@ def exitProgram():
     exit()
     window.destroy()
 
-global totalCount
-totalCount = 0
-
 def countIterator():
     global totalCount
     totalCount = totalCount + 1
@@ -49,6 +61,7 @@ def embedMatplot(fig, col, r):
 
 def myClick():
     global totalCount
+    global figureList
     totalCount = countIterator()
     if totalCount != 1:
         userData = []
@@ -60,12 +73,56 @@ def myClick():
 
     # clear current matplots and embed new new ones
     plt.clf()
-    if (config['images']['enabled'] == True):
+    figureList = loadFigures(epsilonList, totalCount)
+    if (config['Images']['enabled'] == True):
         embedMatplot(generateUnlabeledImage(totalCount),0, 0)
-    if (config['TSNE']['enabled'] == True):
-        embedMatplot(generateTSNEPlots(totalCount, 0),1, 0)
-    if (config['TSNE']['enabled'] == True):
-        embedMatplot(generateTSNEPlots(totalCount, 1),0, 1)
+    if (config['MNIST']['enabled'] == True):
+        newEps = int(histogramEpsilon / 2)
+        temp = figureList[newEps]
+        embedMatplot(temp,1, 0)
+    if (config['MNIST']['enabled'] == True):
+        embedMatplot(figureList[6],0, 1)
+    if (config['MNIST']['enabled'] == True):
+        embedMatplot(figureList[5],1, 1)
+
+def enlarge_plots():
+    global figureList
+    # fig = generateHistograms(totalCount, 10)
+    # fig.show()
+
+    # fig = generateBoxPlot(totalCount)
+    # fig.show()
+
+    root = Tk()
+    p1 = enlargeVisuals(0, root, figureList)
+    root.protocol("WM_DELETE_WINDOW", p1.exitProgram)
+    if (p1.exit_flag == False):
+        root.mainloop()  
+
+    # fig, maxHeight = generateHistograms(totalCount, histogramEpsilon)
+    # maxY = 0
+    # for ax in fig.axes:
+    #     ax.set_xlim(0, 8)
+    #     ax.set_ylim(0, maxHeight)
+
+    # for ax in newAxs:
+    #     x, y = get_hist(ax)
+    #     print(x)
+    #     currY = y.max()
+    #     if (maxY < currY):
+    #         maxY = currY
+    
+    # for ax in fig.axes:
+    #     ax.set_ylim(0, maxY)
+    
+    # fig.show()
+
+    print("Enlarged plot")
+
+def orig_image():
+    fig = generateUnattackedImage(totalCount)
+    fig.show()
+
 
 window = Tk()
 
@@ -73,8 +130,6 @@ window.configure(bg = "#FFFFFF")
 
 frame = Frame(window)
 frame.grid(row=0,column=0, sticky="n")
-
-myClick()
 
 canvas = Canvas(
     window,
@@ -150,7 +205,26 @@ button_1 = Button(
     height=115.14483642578125
 )
 
+
 canvas.create_window(150, 750, window=button_1)
+
+button_2 = Button(
+    command=(enlarge_plots),
+    width= 40,
+    height = 3,
+    text= "Enlarge Visualizations"
+)
+
+canvas.create_window(150, 660, window=button_2)
+
+button_3 = Button(
+    command=(orig_image),
+    width= 40,
+    height = 3,
+    text= "Original Image"
+)
+
+canvas.create_window(150, 600, window=button_3)
 
 #Radio Button 1
 selected_visual = StringVar()
@@ -197,6 +271,8 @@ for x in scale:
     canvas.create_window(20, height, anchor=W, window=r2)
     height += 30
 
+
+myClick()
 
 window.protocol("WM_DELETE_WINDOW", exitProgram)
 window.resizable(False, False)

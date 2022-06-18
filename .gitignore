@@ -1,7 +1,10 @@
 *.pth
-__pycache__/
-config.json
+*.png
+__pycache__
 *.pyc
 *traindata.npy
 !npys/embedding.npy
 !npys/e*/embedding.npy
+*.npy
+response.csv
+config.json
