@@ -4,7 +4,10 @@ from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
 import tkinter as tk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from updated_tsne import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, generateUnattackedImage
+from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, generateUnattackedImage
+from visuals_generator_cifar import generateHistograms as cifar_hist
+from visuals_generator_cifar import generateBoxPlot as cifar_box
+
 
 
 def loadFigures(epsilonList, totalCount):
@@ -14,6 +17,15 @@ def loadFigures(epsilonList, totalCount):
         figureList.append(temp)
     figureList.append(generateBoxPlot(totalCount))
     figureList.append(generateHistograms(totalCount, 10))
+    return figureList
+
+def loadFiguresCifar(epsilonList, totalCount):
+    figureList = []
+    for eps in epsilonList:
+        temp, _ = cifar_hist(totalCount, eps)
+        figureList.append(temp)
+    figureList.append(cifar_box(totalCount))
+    figureList.append(cifar_hist(totalCount, 10))
     return figureList
 
 

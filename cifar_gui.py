@@ -3,8 +3,8 @@ from winreg import HKEY_LOCAL_MACHINE
 
 from torch import histogram
 from csv_gui import initializeCSV, writeToCSV
-from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, generateUnattackedImage
-from enlarge_visuals_helper import enlargeVisuals, loadFigures
+from visuals_generator_cifar import generateUnlabeledImage, generateHistograms, generateBoxPlot, generateUnattackedImage
+from enlarge_visuals_helper import enlargeVisuals, loadFigures, loadFiguresCifar
 
 # from tkinter import *
 # Explicit imports to satisfy Flake8
@@ -17,9 +17,9 @@ from PIL import Image, ImageTk
 import json
 
 global totalCount
-totalCount = 552
+totalCount = 400
 
-histogramEpsilon = 2
+histogramEpsilon = 4
 
 
 with open('config.json') as f:
@@ -35,6 +35,7 @@ epsilonList = [0,2,4,6,8]
 OUTPUT_PATH = Path(__file__).parent
 ASSETS_PATH = OUTPUT_PATH / Path("assets")
 exitFlag = False
+ChangeFigsFlag = False
 
 def relative_to_assets(path: str) -> Path:
     return ASSETS_PATH / Path(path)
@@ -53,6 +54,18 @@ def countIterator():
     totalCount = totalCount + 1
     return totalCount
 
+def getFigureList():
+    global figureList
+    return figureList
+
+def getChangeFigsFlag():
+    global ChangeFigsFlag
+    return ChangeFigsFlag
+
+def setChangeFigsFlag():
+    global ChangeFigsFlag
+    ChangeFigsFlag = False
+
 def embedMatplot(fig, col, r):
     fig.set_size_inches(6, 4)
     canvas = FigureCanvasTkAgg(fig, master=frame)
@@ -62,6 +75,8 @@ def embedMatplot(fig, col, r):
 def myClick():
     global totalCount
     global figureList
+    global p1
+    global ChangeFigsFlag
     totalCount = countIterator()
     if totalCount != 1:
         userData = []
@@ -73,49 +88,33 @@ def myClick():
 
     # clear current matplots and embed new new ones
     plt.clf()
-    figureList = loadFigures(epsilonList, totalCount)
+    figureList = loadFiguresCifar(epsilonList, totalCount)
     if (config['Images']['enabled'] == True):
         embedMatplot(generateUnlabeledImage(totalCount),0, 0)
-    if (config['MNIST']['enabled'] == True):
+    if (config['Cifar']['enabled'] == True):
         newEps = int(histogramEpsilon / 2)
         temp = figureList[newEps]
         embedMatplot(temp,1, 0)
-    if (config['MNIST']['enabled'] == True):
+    if (config['Cifar']['enabled'] == True):
         embedMatplot(figureList[6],0, 1)
-    if (config['MNIST']['enabled'] == True):
+    if (config['Cifar']['enabled'] == True):
         embedMatplot(figureList[5],1, 1)
+    ChangeFigsFlag = True
 
 def enlarge_plots():
     global figureList
-    # fig = generateHistograms(totalCount, 10)
-    # fig.show()
-
-    # fig = generateBoxPlot(totalCount)
-    # fig.show()
+    # global ChangeFigsFlag
 
     root = Tk()
     p1 = enlargeVisuals(0, root, figureList)
     root.protocol("WM_DELETE_WINDOW", p1.exitProgram)
+    # if (p1.ChangeFigsFlag == True):
+    #     currFigs = getFigureList()
+    #     p1.updateFigs(currFigs)
+    #     setChangeFigsFlag()
+    #     print("Updating the Figs")
     if (p1.exit_flag == False):
         root.mainloop()  
-
-    # fig, maxHeight = generateHistograms(totalCount, histogramEpsilon)
-    # maxY = 0
-    # for ax in fig.axes:
-    #     ax.set_xlim(0, 8)
-    #     ax.set_ylim(0, maxHeight)
-
-    # for ax in newAxs:
-    #     x, y = get_hist(ax)
-    #     print(x)
-    #     currY = y.max()
-    #     if (maxY < currY):
-    #         maxY = currY
-    
-    # for ax in fig.axes:
-    #     ax.set_ylim(0, maxY)
-    
-    # fig.show()
 
     print("Enlarged plot")
 
