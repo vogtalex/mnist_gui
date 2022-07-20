@@ -1,12 +1,10 @@
 from pathlib import Path
-from winreg import HKEY_LOCAL_MACHINE
 
 from torch import histogram
 from csv_gui import initializeCSV, writeToCSV
 from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, generateUnattackedImage
 from enlarge_visuals_helper import enlargeVisuals, loadFigures
 
-# from tkinter import *
 # Explicit imports to satisfy Flake8
 from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
 from tkinter import *
@@ -34,15 +32,12 @@ epsilonList = [0,2,4,6,8]
 
 OUTPUT_PATH = Path(__file__).parent
 ASSETS_PATH = OUTPUT_PATH / Path("assets")
-exitFlag = False
 
 def relative_to_assets(path: str) -> Path:
     return ASSETS_PATH / Path(path)
 
 def exitProgram():
-    global exitFlag
     print("Exiting Program")
-    exitFlag = True
     initializeCSV()
     writeToCSV(outputArray)
     exit()
@@ -87,42 +82,14 @@ def myClick():
 
 def enlarge_plots():
     global figureList
-    # fig = generateHistograms(totalCount, 10)
-    # fig.show()
-
-    # fig = generateBoxPlot(totalCount)
-    # fig.show()
-
     root = Tk()
     p1 = enlargeVisuals(0, root, figureList)
-    root.protocol("WM_DELETE_WINDOW", p1.exitProgram)
-    if (p1.exit_flag == False):
-        root.mainloop()  
-
-    # fig, maxHeight = generateHistograms(totalCount, histogramEpsilon)
-    # maxY = 0
-    # for ax in fig.axes:
-    #     ax.set_xlim(0, 8)
-    #     ax.set_ylim(0, maxHeight)
-
-    # for ax in newAxs:
-    #     x, y = get_hist(ax)
-    #     print(x)
-    #     currY = y.max()
-    #     if (maxY < currY):
-    #         maxY = currY
-    
-    # for ax in fig.axes:
-    #     ax.set_ylim(0, maxY)
-    
-    # fig.show()
-
-    print("Enlarged plot")
+    root.protocol("WM_DELETE_WINDOW", p1.destroy())
+    root.mainloop()
 
 def orig_image():
     fig = generateUnattackedImage(totalCount)
     fig.show()
-
 
 window = Tk()
 
@@ -188,7 +155,8 @@ entry_bg_1 = canvas.create_image(
 entry_1 = Entry(
     bd=0,
     bg="#FFFFFF",
-    highlightthickness=0
+    highlightthickness=0,
+    width=18
 )
 
 canvas.create_window(200, 120.5, window=entry_1)
@@ -271,10 +239,8 @@ for x in scale:
     canvas.create_window(20, height, anchor=W, window=r2)
     height += 30
 
-
 myClick()
 
 window.protocol("WM_DELETE_WINDOW", exitProgram)
 window.resizable(False, False)
-if (exitFlag == False):
-    window.mainloop()
+window.mainloop()

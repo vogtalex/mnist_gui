@@ -62,7 +62,7 @@ def loadTSNEIMG(config):
 
 
 
-# options setup by program creator. Unfortunately functions to be added have to be defined beforehand
+# options. Functions to be added have to be defined above
 options = {"Images":{"function":loadImg, "buttonText":"Upload images manually"},
     "TSNE":{"function":loadTSNEIMG, "buttonText":"Upload image file directory"},
     "Histogram":{"function":loadTSNE, "buttonText":"Upload test image file directory"},

@@ -31,7 +31,7 @@ def outputCSV():
         print(outputArray[idx])
 
 def initializeCSV():
-    file = 'response.csv'
+    file = csvName
     if(os.path.exists(file) and os.path.isfile(file)):
         os.remove(file)
 

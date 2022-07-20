@@ -5,11 +5,11 @@
     },
     "MNIST": {
         "enabled": true,
-        "weightDir": "C:\\Users\\babyv\\Desktop\\Work\\mnist_gui\\Data\\madrys2"
+        "weightDir": "C:\\Users\\sasha\\Desktop\\AML research\\gui\\Data\\madrys2"
     },
     "Cifar": {
         "enabled": true,
-        "weightDir": "C:\\Users\\babyv\\Desktop\\Work\\cifar_gui\\Data\\cifar_npys"
+        "weightDir": "C:\\Users\\sasha\\Desktop\\AML research\\gui\\Data\\cifar_npys"
     },
     "Histogram": {
         "enabled": true,

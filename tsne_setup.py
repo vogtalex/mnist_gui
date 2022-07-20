@@ -47,9 +47,7 @@ train_loader = torch.utils.data.DataLoader(
     batch_size=1000, shuffle=True)
 # Starter code if using cuda
 use_cuda = True
-#device = torch.device("cuda:0" if (
-    #use_cuda and torch.cuda.is_available()) else "cpu")
-devide = torch.device("cuda:0")
+device = torch.device("cuda:0" if (use_cuda and torch.cuda.is_available()) else "cpu")
 
 # Use a pretrained model
 pretrained_model = "lenet_mnist_model.pth"
@@ -249,4 +247,3 @@ gen_adv_features_examples()
 gen_adv_features_test()
 gen_adv_features_train()
 exit(0)
-
