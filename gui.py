@@ -1,24 +1,16 @@
 from pathlib import Path
-
-from torch import histogram
 from csv_gui import initializeCSV, writeToCSV
 from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, generateUnattackedImage
 from enlarge_visuals_helper import enlargeVisuals, loadFigures
-
-# Explicit imports to satisfy Flake8
-from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
 from tkinter import *
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
 from PIL import Image, ImageTk
 import json
 
-global totalCount
 totalCount = 552
 
 histogramEpsilon = 2
-
 
 with open('config.json') as f:
    config = json.load(f)
@@ -30,23 +22,7 @@ outputArray = []
 
 epsilonList = [0,2,4,6,8]
 
-OUTPUT_PATH = Path(__file__).parent
-ASSETS_PATH = OUTPUT_PATH / Path("assets")
-
-def relative_to_assets(path: str) -> Path:
-    return ASSETS_PATH / Path(path)
-
-def exitProgram():
-    print("Exiting Program")
-    initializeCSV()
-    writeToCSV(outputArray)
-    exit()
-    window.destroy()
-
-def countIterator():
-    global totalCount
-    totalCount = totalCount + 1
-    return totalCount
+ASSETS_PATH = Path(__file__).parent / Path("assets")
 
 def embedMatplot(fig, col, r):
     fig.set_size_inches(6, 4)
@@ -57,7 +33,6 @@ def embedMatplot(fig, col, r):
 def myClick():
     global totalCount
     global figureList
-    totalCount = countIterator()
     if totalCount != 1:
         userData = []
         userData.append(entry_1.get())
@@ -65,31 +40,31 @@ def myClick():
         userData.append(confidence.get())
         print(userData)
         outputArray.append(userData)
+    # clear entry/radio buttons on submission
+    entry_1.delete(0,END)
+    entry_1.insert(0,"")
+    selected_visual.set(None)
+    confidence.set(None)
+
+    totalCount += 1
 
     # clear current matplots and embed new new ones
     plt.clf()
     figureList = loadFigures(epsilonList, totalCount)
+    # image
     if (config['Images']['enabled'] == True):
         embedMatplot(generateUnlabeledImage(totalCount),0, 0)
+    # specific epsilon histogram
     if (config['MNIST']['enabled'] == True):
         newEps = int(histogramEpsilon / 2)
         temp = figureList[newEps]
         embedMatplot(temp,1, 0)
+    # all epsilon histogram
     if (config['MNIST']['enabled'] == True):
         embedMatplot(figureList[6],0, 1)
+    # boxplot
     if (config['MNIST']['enabled'] == True):
         embedMatplot(figureList[5],1, 1)
-
-def enlarge_plots():
-    global figureList
-    root = Tk()
-    p1 = enlargeVisuals(0, root, figureList)
-    root.protocol("WM_DELETE_WINDOW", p1.destroy())
-    root.mainloop()
-
-def orig_image():
-    fig = generateUnattackedImage(totalCount)
-    fig.show()
 
 window = Tk()
 
@@ -145,8 +120,7 @@ canvas.create_text(
     font=("Roboto", 24 * -1)
 )
 
-entry_image_1 = PhotoImage(
-    file=relative_to_assets("entry_1.png"))
+entry_image_1 = PhotoImage(file = ASSETS_PATH / "entry_1.png")
 entry_bg_1 = canvas.create_image(
     200,
     120.5,
@@ -161,8 +135,7 @@ entry_1 = Entry(
 
 canvas.create_window(200, 120.5, window=entry_1)
 
-button_image_1 = PhotoImage(
-    file=relative_to_assets("button_1.png"))
+button_image_1 = PhotoImage(file = ASSETS_PATH / "button_1.png")
 button_1 = Button(
     image=button_image_1,
     borderwidth=0,
@@ -173,8 +146,14 @@ button_1 = Button(
     height=115.14483642578125
 )
 
-
 canvas.create_window(150, 750, window=button_1)
+
+def enlarge_plots():
+    global figureList
+    root = Tk()
+    p1 = enlargeVisuals(0, root, figureList)
+    root.protocol("WM_DELETE_WINDOW", p1.destroy())
+    root.mainloop()
 
 button_2 = Button(
     command=(enlarge_plots),
@@ -184,6 +163,10 @@ button_2 = Button(
 )
 
 canvas.create_window(150, 660, window=button_2)
+
+def orig_image():
+    fig = generateUnattackedImage(totalCount)
+    fig.show()
 
 button_3 = Button(
     command=(orig_image),
@@ -240,6 +223,13 @@ for x in scale:
     height += 30
 
 myClick()
+
+def exitProgram():
+    print("Exiting Program")
+    initializeCSV()
+    writeToCSV(outputArray)
+    exit()
+    window.destroy()
 
 window.protocol("WM_DELETE_WINDOW", exitProgram)
 window.resizable(False, False)

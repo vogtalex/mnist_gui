@@ -28,18 +28,15 @@ def loadFiguresCifar(epsilonList, totalCount):
     figureList.append(cifar_hist(totalCount, 10))
     return figureList
 
-
-
 class enlargeVisuals():
   def __init__(self, idx, master, figureList):
     self.root = master
-    self.index = idx
     self.currPlot = 0
     self.epsilonList = [0,2,4,6,8]
     self.figureList = figureList
 
-    temp, _ = generateHistograms(self.index, 0)
-    self.embedPlot(temp,0, 0)
+    temp, _ = generateHistograms(idx, 0)
+    self.embedPlot(temp, 0, 0)
 
     button_1 = Button(
         master = self.root,

@@ -22,11 +22,10 @@ else:
 eps = config['Histogram']['weightDir']
 #what attack level of example point
 exeps = config['Histogram']['weightDir']
-#test = 'test'
 examples = 'examples'
 #eps_dict = {'e0':'Epsilon 0.0', 'e1':'Epsilon 2', 'e2': 'Epsilon 4', 'e3':'Epsilon 6', 'e4':'Epsilon 10'}
 
-# only loads this # of images from the image set
+# only use this # of images from the image set
 limit = 9000
 
 images_orig = np.load(os.path.join(npys, examples, eps, 'advdata.npy')).astype(np.float64)[:limit]
@@ -101,7 +100,6 @@ def findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx):
         # print([(norms[idx]) for idx in top[1:k]])
         return norms, top[1:k],label,int(exlabels[idx])
 
-
 def labelAxes(axs, plt):
     count = 0
     label = str(count)
@@ -118,23 +116,14 @@ def labelAxes(axs, plt):
                     hspace=0.4)
 
 def generateTSNEPlots(idx):
-
     plt.clf()
-    # trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,eps,examples,exeps)
     testlabels, advoutput, origdata, exlabels, exoutput, exdata = get_data(npys,'e0',examples,exeps)
     testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,eps,examples,exeps)
 
-    #print("advdata ",advdata.shape)
-    #print("exdata ",exdata.shape)
-    #print("testlabels ",testlabels.shape)
-    #print("advoutput ",advoutput.shape)
-
-    #norms,idxs,prediction,truelabel = findNearest()
     norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
 
     exdata1 = np.load(os.path.join(npys,examples,'e0','advdata.npy')).astype(np.float64)[:limit]
     img = exdata1[idx].reshape((28,28))
-
 
     exdata2 = np.load(os.path.join(npys,examples,exeps,'advdata.npy')).astype(np.float64)[:limit]
     img = exdata2[idx].reshape((28,28))
@@ -144,11 +133,6 @@ def generateTSNEPlots(idx):
     print('max distance', max(norms))
     print('min distance', min(norms))
     print('avg distance', sum(norms)/len(norms))
-    #print('data shape: ', traindata.shape)
-    #print('labels shape: ', trainlabels.shape)
-    #print('output shape: ', trainoutput.shape)
-
-
 
     #for combining data/advdata
     #data = np.append(data, advdata, axis=0)
@@ -160,7 +144,6 @@ def generateTSNEPlots(idx):
         tsne = TSNE(n_components=2, random_state=4,perplexity=100)
         X_2d = tsne.fit_transform(origdata)
         np.save('./embedding.npy', X_2d, allow_pickle=False)
-
 
     labels = list(range(0, 10))
     target_ids = range(10)
@@ -200,18 +183,13 @@ def generateTSNEPlots(idx):
     cb.set_clim(5,15)
 
     ax1.legend()
-    # plt.show()
     return fig
 
-
 def generateHistograms(idx, plotID):
-
     ###HISTOGRAMS###################
-    #idx 10 = all epsilon histogram
 
     b=None
     r=None
-    #r=(0.99,1.01)
     r=(5,16)
     b=200
 
@@ -238,13 +216,10 @@ def generateHistograms(idx, plotID):
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
             axs[i].text(13,.25,str(i),ha='center')
             axs[i].set_ylim([0, 1])
-            currMax = y.max()
-            if (maxHeight < currMax):
-                maxHeight = currMax
 
-    ##################
+            maxHeight = max(maxHeight,y.max())
+
     """EPSILON 2"""
-
     if (plotID == 2 or plotID == 10):
         testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e1',examples,exeps)
         norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
@@ -258,13 +233,9 @@ def generateHistograms(idx, plotID):
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
             axs[i].set_ylim([0, 1])
 
-            currMax = y.max()
-            if (maxHeight < currMax):
-                maxHeight = currMax
+            maxHeight = max(maxHeight,y.max())
 
-    ##################
     """EPSILON 4"""
-
     if (plotID == 4 or plotID == 10):
         testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e2',examples,exeps)
         norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
@@ -278,14 +249,9 @@ def generateHistograms(idx, plotID):
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
             axs[i].set_ylim([0, 1])
 
-            currMax = y.max()
-            if (maxHeight < currMax):
-                maxHeight = currMax
+            maxHeight = max(maxHeight,y.max())
 
-
-    ###########
     """EPSILON 6"""
-
     if (plotID == 6 or plotID == 10):
         testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e3',examples,exeps)
         norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
@@ -298,10 +264,8 @@ def generateHistograms(idx, plotID):
             else:
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
             axs[i].set_ylim([0, 1])
-            currMax = y.max()
-            if (maxHeight < currMax):
-                maxHeight = currMax
 
+            maxHeight = max(maxHeight,y.max())
 
     """EPSILON 8"""
     if (plotID == 8 or plotID == 10):
@@ -316,33 +280,30 @@ def generateHistograms(idx, plotID):
             else:
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
             axs[i].set_ylim([0, 1])
-            currMax = y.max()
-            if (maxHeight < currMax):
-                maxHeight = currMax
 
-    #plt.legend(loc='upper left')
+            maxHeight = max(maxHeight,y.max())
 
     if plotID == 10:
         fig.suptitle("All Epsilons")
         fig.legend(loc='upper left')
         return(fig)
-    if plotID == 0:
+    elif plotID == 0:
         figE0.suptitle("Epsilon 0")
         labelAxes(axsE0, figE0)
         return(figE0, maxHeight)
-    if plotID == 2:
+    elif plotID == 2:
         figE2.suptitle("Epsilon 2")
         labelAxes(axsE2, figE2)
         return(figE2, maxHeight)
-    if plotID == 4:
+    elif plotID == 4:
         figE4.suptitle("Epsilon 4")
         labelAxes(axsE4, figE4)
         return(figE4, maxHeight)
-    if plotID == 6:
+    elif plotID == 6:
         figE6.suptitle("Epsilon 6")
         labelAxes(axsE6, figE6)
         return(figE6, maxHeight)
-    if plotID == 8:
+    elif plotID == 8:
         figE8.suptitle("Epsilon 8")
         labelAxes(axsE8, figE8)
         return(figE8, maxHeight)
@@ -350,7 +311,6 @@ def generateHistograms(idx, plotID):
 def generateBoxPlot(idx):
     b=None
     r=None
-    #r=(0.99,1.01)
     r=(5,16)
     b=200
     fig, axs = plt.subplots()
