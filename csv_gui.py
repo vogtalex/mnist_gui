@@ -16,8 +16,7 @@ def readFromCSV(array):
             array.append(row)
 
 def writeDataCSV(userPrediction, trueValue):
-    array = [userPrediction, trueValue]
-    writeToCSV(array)
+    writeToCSV([userPrediction, trueValue])
 
 def writeToCSV_QA(array):
     with open(QAName, 'a', newline='') as csvfile:
@@ -31,9 +30,8 @@ def outputCSV():
         print(outputArray[idx])
 
 def initializeCSV():
-    file = csvName
-    if(os.path.exists(file) and os.path.isfile(file)):
-        os.remove(file)
+    if(os.path.exists(csvName) and os.path.isfile(csvName)):
+        os.remove(csvName)
 
 def formatCSV(userInput):
     header = ['UserInput']

@@ -5,7 +5,6 @@ from enlarge_visuals_helper import enlargeVisuals, loadFigures
 from tkinter import *
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from PIL import Image, ImageTk
 import json
 
 totalCount = 552
@@ -57,8 +56,7 @@ def myClick():
     # specific epsilon histogram
     if (config['MNIST']['enabled'] == True):
         newEps = int(histogramEpsilon / 2)
-        temp = figureList[newEps]
-        embedMatplot(temp,1, 0)
+        embedMatplot(figureList[newEps],1, 0)
     # all epsilon histogram
     if (config['MNIST']['enabled'] == True):
         embedMatplot(figureList[6],0, 1)
@@ -152,7 +150,7 @@ def enlarge_plots():
     global figureList
     root = Tk()
     p1 = enlargeVisuals(0, root, figureList)
-    root.protocol("WM_DELETE_WINDOW", p1.destroy())
+    root.protocol("WM_DELETE_WINDOW", root.destroy)
     root.mainloop()
 
 button_2 = Button(

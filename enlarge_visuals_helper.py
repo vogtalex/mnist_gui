@@ -8,8 +8,6 @@ from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generat
 from visuals_generator_cifar import generateHistograms as cifar_hist
 from visuals_generator_cifar import generateBoxPlot as cifar_box
 
-
-
 def loadFigures(epsilonList, totalCount):
     figureList = []
     for eps in epsilonList:
@@ -34,67 +32,41 @@ class enlargeVisuals():
     self.currPlot = 0
     self.epsilonList = [0,2,4,6,8]
     self.figureList = figureList
+    self.currentEmbed = None
 
-    temp, _ = generateHistograms(idx, 0)
-    self.embedPlot(temp, 0, 0)
+    # generate initial plot
+    self.genPlots()
 
-    button_1 = Button(
-        master = self.root,
-        command=(self.lastPlot),
-        width= 40,
-        height = 3,
-        text= "Back"
-    )
-
+    # create back/next buttons
+    button_1 = Button(master = self.root, command=self.lastPlot, width= 40, height = 3, text= "Back")
     button_1.grid(row=1,column=0)
-
-    button_2 = Button(
-        master = self.root,
-        command=(self.nextPlot),
-        width= 40,
-        height = 3,
-        text= "Next"
-    )
-
+    
+    button_2 = Button(master = self.root, command=self.nextPlot, width= 40, height = 3, text= "Next")
     button_2.grid(row=1,column=3)
 
-    self.period_slider = Scale(  master = self.root,
-                            from_=0, to_=16,
-                            resolution=0.10,
-                            orient='horizontal',
-                            length= 500,
-                            width = 30,
-                            label = "X-Axis Lower Bound",
-                            command=self.updateXAxis)
+    # create x limit sliders
+    self.period_slider = Scale(master = self.root, from_=0, to_=16, resolution=0.50, orient='horizontal', length= 500, width = 30, label = "X-Axis Lower Bound", command=self.updateXAxis)
     self.period_slider.set(0)
     self.period_slider.grid(row=1, column = 1)
 
-    self.period_slider2 = Scale(  master = self.root,
-                            from_=0, to_=16,
-                            resolution=0.10,
-                            orient='horizontal',
-                            length= 500,
-                            width = 30,
-                            label = "X-Axis Upper Bound",
-                            command=self.updateXAxis)
+    self.period_slider2 = Scale(master = self.root, from_=0, to_=16, resolution=0.50, orient='horizontal', length= 500, width = 30, label = "X-Axis Upper Bound", command=self.updateXAxis)
     self.period_slider2.set(16)
     self.period_slider2.grid(row=1, column = 2)
 
   def updateXAxis(self, temp):
-    x = self.period_slider.get()
-    y = self.period_slider2.get()
-
     for fig in self.figureList:
         for ax in fig.axes:
-            ax.set_xlim(x, y)
+            # get x limits from sliders and update limits for all subplots
+            ax.set_xlim(self.period_slider.get(), self.period_slider2.get())
     self.genPlots()
 
   def genPlots(self):
-    if self.currPlot >= 7:
+    # loop around plot if above max # or below 0
+    if self.currPlot > 6:
         self.currPlot = 0
     elif self.currPlot < 0:
         self.currPlot = 6
-    self.embedPlot(self.figureList[self.currPlot],0,0)
+    self.embedPlot(self.figureList[self.currPlot])
 
   def nextPlot(self):
     self.currPlot += 1
@@ -104,8 +76,11 @@ class enlargeVisuals():
     self.currPlot -= 1
     self.genPlots()
 
-  def embedPlot(self, fig, col, r):
+  def embedPlot(self, fig):
     fig.set_size_inches(15, 7)
-    canvas = FigureCanvasTkAgg(fig, master = self.root)
-    canvas.draw()
-    canvas.get_tk_widget().grid(row=r, column=col, padx=2, pady=2, columnspan=4)
+    # clear current canvas so window doesn't take a long time to close (may not be working)
+    if self.currentEmbed:
+        self.currentEmbed.get_tk_widget().delete("all")
+    self.currentEmbed = FigureCanvasTkAgg(fig, master = self.root)
+    self.currentEmbed.draw()
+    self.currentEmbed.get_tk_widget().grid(row=0, column=0, padx=2, pady=2, columnspan=4)

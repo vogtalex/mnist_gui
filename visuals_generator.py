@@ -58,24 +58,28 @@ def generateUnattackedImage(count):
     plt.imshow(image, cmap="gray")
     return plt.gcf()
 
-def get_data(npys,eps,examples,exeps):
-        #train data
-        # trainlabels = np.load(os.path.join(npys,'trainlabels.npy')).astype(np.float64)[:limit]
-        # trainoutput = np.load(os.path.join(npys,'trainoutput.npy')).astype(np.float64)[:limit]
-        # traindata = np.load(os.path.join(npys,'traindata.npy')).astype(np.float64)[:limit]
+def cached_get_data():
+    cache = {}
 
-        #adversarial data
-        testlabels = np.load(os.path.join(npys, eps,'testlabels.npy')).astype(np.float64)[:limit]
-        advoutput = np.load(os.path.join(npys,eps,'advoutput.npy')).astype(np.float64)[:limit]
-        advdata = np.load(os.path.join(npys,eps,'advdata.npy')).astype(np.float64)[:limit]
+    def __get_data(npys,eps,examples,exeps):
+        if eps not in cache:
+            #adversarial data
+            testlabels = np.load(os.path.join(npys, eps,'testlabels.npy')).astype(np.float64)[:limit]
+            advoutput = np.load(os.path.join(npys,eps,'advoutput.npy')).astype(np.float64)[:limit]
+            advdata = np.load(os.path.join(npys,eps,'advdata.npy')).astype(np.float64)[:limit]
 
-        #example data
-        exlabels = np.load(os.path.join(npys,examples,exeps,'testlabels.npy')).astype(np.float64)[:limit]
-        exoutput = np.load(os.path.join(npys,examples,exeps,'advoutput.npy')).astype(np.float64)[:limit]
-        exdata = np.load(os.path.join(npys,examples,exeps,'advdata.npy')).astype(np.float64)[:limit]
+            #example data
+            exlabels = np.load(os.path.join(npys,examples,exeps,'testlabels.npy')).astype(np.float64)[:limit]
+            exoutput = np.load(os.path.join(npys,examples,exeps,'advoutput.npy')).astype(np.float64)[:limit]
+            exdata = np.load(os.path.join(npys,examples,exeps,'advdata.npy')).astype(np.float64)[:limit]
+
+            cache[eps] = [testlabels,advoutput,advdata,exlabels,exoutput,exdata]
         # return trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata
-        return testlabels, advoutput, advdata, exlabels, exoutput, exdata
+        return tuple(cache[eps])
 
+    return __get_data
+
+get_data = cached_get_data()
 
 def findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx):
         k=10
@@ -104,10 +108,12 @@ def labelAxes(axs, plt):
     count = 0
     label = str(count)
     for ax in axs:
-        ax.set_title(label, fontstyle='italic', x = 0.8, y = 0.3)
+        ax.set_title(label, fontstyle='italic', x = 0.8, y = 0.0)
         ax.get_xaxis().set_visible(False)
         count += 1
         label = str(count)
+        # axs[i].text(13,.25,str(i),ha='center')
+    axs[len(axs)-1].get_xaxis().set_visible(True)
     plt.subplots_adjust(left=0.1,
                     bottom=0.1,
                     right=0.9,
@@ -195,7 +201,7 @@ def generateHistograms(idx, plotID):
 
     maxHeight = 0
 
-    fig, axs = plt.subplots(10)
+    fig,   axs   = plt.subplots(10)
     figE0, axsE0 = plt.subplots(10)
     figE2, axsE2 = plt.subplots(10)
     figE4, axsE4 = plt.subplots(10)
@@ -214,7 +220,6 @@ def generateHistograms(idx, plotID):
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='unattacked', histtype="step")
             else:
                 axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
-            axs[i].text(13,.25,str(i),ha='center')
             axs[i].set_ylim([0, 1])
 
             maxHeight = max(maxHeight,y.max())
@@ -286,6 +291,7 @@ def generateHistograms(idx, plotID):
     if plotID == 10:
         fig.suptitle("All Epsilons")
         fig.legend(loc='upper left')
+        labelAxes(axs, fig)
         return(fig)
     elif plotID == 0:
         figE0.suptitle("Epsilon 0")
@@ -316,25 +322,10 @@ def generateBoxPlot(idx):
     fig, axs = plt.subplots()
     norm_list = []
 
-    testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e0',examples,exeps)
-    norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
-    norm_list.append(norms)
-
-    testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e1',examples,exeps)
-    norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
-    norm_list.append(norms)
-
-    testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e2',examples,exeps)
-    norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
-    norm_list.append(norms)
-
-    testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e3',examples,exeps)
-    norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
-    norm_list.append(norms)
-
-    testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e4',examples,exeps)
-    norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
-    norm_list.append(norms)
+    for epsilon in ['e0','e1','e2','e3','e4']:
+        testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys, epsilon, examples, exeps)
+        norms,idxs,prediction,truelabel = findNearest(exdata, exoutput, exlabels, advdata, testlabels, idx)
+        norm_list.append(norms)
 
     title = "Model Prediction: %d" % (prediction)
     plt.suptitle(title)
