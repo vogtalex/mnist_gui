@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import json
 
-totalCount = 552
+imgIdx = 552
+initialLoad = True
 
 histogramEpsilon = 2
 
@@ -15,13 +16,13 @@ with open('config.json') as f:
    config = json.load(f)
 
 eps = config['Histogram']['weightDir']
-histogramEpsilon = int(eps[1])
-histogramEpsilon *= 2
+histogramEpsilon = 2 * int(eps[1])
 outputArray = []
 
-epsilonList = [0,2,4,6,8]
-
 ASSETS_PATH = Path(__file__).parent / Path("assets")
+
+#epsilonList = [0,2,4,6,8]
+epsilonList = list(range(5))
 
 def embedMatplot(fig, col, r):
     fig.set_size_inches(6, 4)
@@ -30,29 +31,33 @@ def embedMatplot(fig, col, r):
     canvas.get_tk_widget().grid(row=r, column=col, padx=2, pady=2)
 
 def myClick():
-    global totalCount
+    global imgIdx
     global figureList
-    if totalCount != 1:
+    global initialLoad
+
+    if not initialLoad:
         userData = []
         userData.append(entry_1.get())
         userData.append(selected_visual.get())
         userData.append(confidence.get())
         print(userData)
         outputArray.append(userData)
-    # clear entry/radio buttons on submission
-    entry_1.delete(0,END)
-    entry_1.insert(0,"")
-    selected_visual.set(None)
-    confidence.set(None)
+        # clear entry/radio buttons on submission
+        entry_1.delete(0,END)
+        entry_1.insert(0,"")
+        selected_visual.set(None)
+        confidence.set(None)
+    else:
+        initialLoad = False
 
-    totalCount += 1
+    imgIdx += 1
 
     # clear current matplots and embed new new ones
     plt.clf()
-    figureList = loadFigures(epsilonList, totalCount)
+    figureList = loadFigures(epsilonList, imgIdx)
     # image
     if (config['Images']['enabled'] == True):
-        embedMatplot(generateUnlabeledImage(totalCount),0, 0)
+        embedMatplot(generateUnlabeledImage(imgIdx),0, 0)
     # specific epsilon histogram
     if (config['MNIST']['enabled'] == True):
         newEps = int(histogramEpsilon / 2)
@@ -163,7 +168,7 @@ button_2 = Button(
 canvas.create_window(150, 660, window=button_2)
 
 def orig_image():
-    fig = generateUnattackedImage(totalCount)
+    fig = generateUnattackedImage(imgIdx)
     fig.show()
 
 button_3 = Button(

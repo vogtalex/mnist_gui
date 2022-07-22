@@ -8,22 +8,21 @@ from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generat
 from visuals_generator_cifar import generateHistograms as cifar_hist
 from visuals_generator_cifar import generateBoxPlot as cifar_box
 
-def loadFigures(epsilonList, totalCount):
+def loadFigures(epsilonList, imgIdx):
     figureList = []
     for eps in epsilonList:
-        temp, _ = generateHistograms(totalCount, eps)
-        figureList.append(temp)
-    figureList.append(generateBoxPlot(totalCount))
-    figureList.append(generateHistograms(totalCount, 10))
+        figureList.append(generateHistograms(imgIdx, eps)[0])
+    figureList.append(generateBoxPlot(imgIdx))
+    figureList.append(generateHistograms(imgIdx, max(epsilonList)+1)[0])
     return figureList
 
-def loadFiguresCifar(epsilonList, totalCount):
+def loadFiguresCifar(epsilonList, imgIdx):
     figureList = []
     for eps in epsilonList:
-        temp, _ = cifar_hist(totalCount, eps)
+        temp, _ = cifar_hist(imgIdx, eps)
         figureList.append(temp)
-    figureList.append(cifar_box(totalCount))
-    figureList.append(cifar_hist(totalCount, 10))
+    figureList.append(cifar_box(imgIdx))
+    figureList.append(cifar_hist(imgIdx, 10))
     return figureList
 
 class enlargeVisuals():
@@ -40,7 +39,7 @@ class enlargeVisuals():
     # create back/next buttons
     button_1 = Button(master = self.root, command=self.lastPlot, width= 40, height = 3, text= "Back")
     button_1.grid(row=1,column=0)
-    
+
     button_2 = Button(master = self.root, command=self.nextPlot, width= 40, height = 3, text= "Next")
     button_2.grid(row=1,column=3)
 

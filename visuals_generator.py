@@ -23,7 +23,7 @@ eps = config['Histogram']['weightDir']
 #what attack level of example point
 exeps = config['Histogram']['weightDir']
 examples = 'examples'
-#eps_dict = {'e0':'Epsilon 0.0', 'e1':'Epsilon 2', 'e2': 'Epsilon 4', 'e3':'Epsilon 6', 'e4':'Epsilon 10'}
+eps_dict = {'e0':'Epsilon 0', 'e1':'Epsilon 2', 'e2': 'Epsilon 4', 'e3':'Epsilon 6', 'e4':'Epsilon 10'}
 
 # only use this # of images from the image set
 limit = 9000
@@ -60,7 +60,6 @@ def generateUnattackedImage(count):
 
 def cached_get_data():
     cache = {}
-
     def __get_data(npys,eps,examples,exeps):
         if eps not in cache:
             #adversarial data
@@ -74,35 +73,21 @@ def cached_get_data():
             exdata = np.load(os.path.join(npys,examples,exeps,'advdata.npy')).astype(np.float64)[:limit]
 
             cache[eps] = [testlabels,advoutput,advdata,exlabels,exoutput,exdata]
-        # return trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata
+            # return trainlabels, trainoutput, traindata, testlabels, advoutput, advdata, exlabels, exoutput, exdata
         return tuple(cache[eps])
 
     return __get_data
-
 get_data = cached_get_data()
 
-def findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx):
-        k=10
-        # print("Index: ",idx)
-        example = exdata[idx]
-        label = np.argmax(exoutput[idx])
-        # print("Model prediction: ", label)
+def findNearest(exdata,exoutput,exlabels,advdata,testlabels,idx):
+    k=10
+    example = exdata[idx]
+    label = np.argmax(exoutput[idx])
 
-        l = advdata - example
+    norms = np.linalg.norm(advdata - example, axis=1)
 
-        norms = np.linalg.norm(l, axis=1)
-        #norms = np.linalg.norm(l,ord=np.inf, axis=1)
-
-
-        top = np.argpartition(norms,k-1)
-
-        # print("True label: ", int(exlabels[idx]))
-        #print("Nearest 10 labels: ")
-        #print(top[:k])
-        # print([(int(testlabels[i])) for i in top[:k]])
-        #print("Distance to nearest 10 points: ")
-        # print([(norms[idx]) for idx in top[1:k]])
-        return norms, top[1:k],label,int(exlabels[idx])
+    top = np.argpartition(norms, k-1)
+    return norms, top[1:k], label, int(exlabels[idx])
 
 def labelAxes(axs, plt):
     count = 0
@@ -112,14 +97,8 @@ def labelAxes(axs, plt):
         ax.get_xaxis().set_visible(False)
         count += 1
         label = str(count)
-        # axs[i].text(13,.25,str(i),ha='center')
     axs[len(axs)-1].get_xaxis().set_visible(True)
-    plt.subplots_adjust(left=0.1,
-                    bottom=0.1,
-                    right=0.9,
-                    top=0.9,
-                    wspace=0.4,
-                    hspace=0.4)
+    plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9, wspace=0.4, hspace=0.4)
 
 def generateTSNEPlots(idx):
     plt.clf()
@@ -147,7 +126,7 @@ def generateTSNEPlots(idx):
     if exists("embedding.npy"):
         X_2d = np.load('embedding.npy').astype(np.float64)
     else:
-        tsne = TSNE(n_components=2, random_state=4,perplexity=100)
+        tsne = TSNE(n_components=2, random_state=4, perplexity=100)
         X_2d = tsne.fit_transform(origdata)
         np.save('./embedding.npy', X_2d, allow_pickle=False)
 
@@ -159,30 +138,17 @@ def generateTSNEPlots(idx):
 
     #plot embedding for class coloration
     for i, c, label in zip(target_ids, colors, labels):
-        ax1.scatter(X_2d[(testlabels[...] == i), 0],
-                X_2d[(testlabels[...] == i), 1],
-                c=c,
-                label=label,
-                s=3,
-                picker=True)
+        ax1.scatter(X_2d[(testlabels[...] == i), 0], X_2d[(testlabels[...] == i), 1], c=c, label=label, s=3, picker=True)
 
     ax1.set_title("Test Data")
 
     #plot embedding for norm coloration
-    ax2.scatter(X_2d[..., 0],
-            X_2d[..., 1],
-            c=norms[...],
-            s=3,
-            cmap='viridis')
+    ax2.scatter(X_2d[..., 0], X_2d[..., 1], c=norms[...], s=3, cmap='viridis')
 
     #plot 10 nearest points
-    cb = ax2.scatter(X_2d[idxs,0],X_2d[idxs,1],
-            c='red',
-            label="nearest",
-            s=10,
-            picker=True)
+    cb = ax2.scatter(X_2d[idxs,0],X_2d[idxs,1], c='red', label="nearest", s=10, picker=True)
 
-    title = "Model Prediction: %d\nActual Label: %d\nAverage Distance: %f" % (prediction,truelabel,float(sum(norms))/len(norms))
+    title = f"Model Prediction: {prediction}\nActual Label: {truelabel}\nAverage Distance: {float(sum(norms))/len(norms)}"
     ax2.set_title(title)
 
     plt.colorbar(cb,label="norm")
@@ -191,128 +157,42 @@ def generateTSNEPlots(idx):
     ax1.legend()
     return fig
 
+epsilonLabel = ["Epsilon 0","Epsilon 2","Epsilon 4","Epsilon 6","Epsilon 8","All Epsilons"]
+epsilonNames = ['e0','e1','e2','e3','e4']
+numEpsilons = 5
 def generateHistograms(idx, plotID):
     ###HISTOGRAMS###################
-
-    b=None
-    r=None
     r=(5,16)
     b=200
 
     maxHeight = 0
+    fig, axs = plt.subplots(10)
 
-    fig,   axs   = plt.subplots(10)
-    figE0, axsE0 = plt.subplots(10)
-    figE2, axsE2 = plt.subplots(10)
-    figE4, axsE4 = plt.subplots(10)
-    figE6, axsE6 = plt.subplots(10)
-    figE8, axsE8 = plt.subplots(10)
+    if plotID == numEpsilons:
+        for epsilon in range(numEpsilons):
+            testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,epsilonNames[epsilon],examples,exeps)
+            norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
 
-    """EPSILON 0"""
-    if (plotID == 0 or plotID == 10):
-        testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e0',examples,exeps)
-        norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
-
-        for i in range(10):
-            y, _, _ = axsE0[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 0', histtype="step")
-            axsE0[i].set_ylim([0, 1])
-            if i == 0:
-                axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='unattacked', histtype="step")
-            else:
-                axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
-            axs[i].set_ylim([0, 1])
-
-            maxHeight = max(maxHeight,y.max())
-
-    """EPSILON 2"""
-    if (plotID == 2 or plotID == 10):
-        testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e1',examples,exeps)
-        norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
-
-        for i in range(10):
-            y, _, _ = axsE2[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 2', histtype="step")
-            axsE2[i].set_ylim([0, 1])
-            if i == 0:
-                axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 2', histtype="step")
-            else:
-                axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
-            axs[i].set_ylim([0, 1])
-
-            maxHeight = max(maxHeight,y.max())
-
-    """EPSILON 4"""
-    if (plotID == 4 or plotID == 10):
-        testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e2',examples,exeps)
-        norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
-
-        for i in range(10):
-            y, _, _ = axsE4[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 4', histtype="step")
-            axsE4[i].set_ylim([0, 1])
-            if i == 0:
-                axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 4', histtype="step")
-            else:
-                axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
-            axs[i].set_ylim([0, 1])
-
-            maxHeight = max(maxHeight,y.max())
-
-    """EPSILON 6"""
-    if (plotID == 6 or plotID == 10):
-        testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e3',examples,exeps)
-        norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
-
-        for i in range(10):
-            y, _, _ = axsE6[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 6', histtype="step")
-            axsE6[i].set_ylim([0, 1])
-            if i == 0:
-                axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 6', histtype="step")
-            else:
-                axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
-            axs[i].set_ylim([0, 1])
-
-            maxHeight = max(maxHeight,y.max())
-
-    """EPSILON 8"""
-    if (plotID == 8 or plotID == 10):
-        testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,'e4',examples,exeps)
-        norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
-
-        for i in range(10):
-            y, _, _ = axsE8[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 8', histtype="step")
-            axsE8[i].set_ylim([0, 1])
-            if i == 0:
-                axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label='Epsilon 8', histtype="step")
-            else:
-                axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
-            axs[i].set_ylim([0, 1])
-
-            maxHeight = max(maxHeight,y.max())
-
-    if plotID == 10:
-        fig.suptitle("All Epsilons")
+            for i in range(10):
+                if i == 0:
+                    y, _, _ = axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label=epsilonLabel[epsilon], histtype="step")
+                else:
+                    y, _, _ = axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
+                axs[i].set_ylim([0, 1])
+                maxHeight = max(maxHeight,y.max())
         fig.legend(loc='upper left')
-        labelAxes(axs, fig)
-        return(fig)
-    elif plotID == 0:
-        figE0.suptitle("Epsilon 0")
-        labelAxes(axsE0, figE0)
-        return(figE0, maxHeight)
-    elif plotID == 2:
-        figE2.suptitle("Epsilon 2")
-        labelAxes(axsE2, figE2)
-        return(figE2, maxHeight)
-    elif plotID == 4:
-        figE4.suptitle("Epsilon 4")
-        labelAxes(axsE4, figE4)
-        return(figE4, maxHeight)
-    elif plotID == 6:
-        figE6.suptitle("Epsilon 6")
-        labelAxes(axsE6, figE6)
-        return(figE6, maxHeight)
-    elif plotID == 8:
-        figE8.suptitle("Epsilon 8")
-        labelAxes(axsE8, figE8)
-        return(figE8, maxHeight)
+    else:
+        testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,epsilonNames[plotID],examples,exeps)
+        norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels,idx)
+
+        for i in range(10):
+            y, _, _ = axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label=epsilonLabel[plotID], histtype="step")
+            axs[i].set_ylim([0, 1])
+            maxHeight = max(maxHeight,y.max())
+
+    fig.suptitle(epsilonLabel[plotID])
+    labelAxes(axs, fig)
+    return(fig, maxHeight)
 
 def generateBoxPlot(idx):
     b=None
@@ -329,5 +209,5 @@ def generateBoxPlot(idx):
 
     title = "Model Prediction: %d" % (prediction)
     plt.suptitle(title)
-    axs.boxplot(norm_list, patch_artist = True,notch ='True', vert = 1,labels=['unattacked','Epsilon 2', 'Epsilon 4', 'Epsilon 6', 'Epsilon 8'], showmeans=True)
+    axs.boxplot(norm_list, patch_artist = True,notch ='True', vert = 1,labels=['Epsilon 0','Epsilon 2', 'Epsilon 4', 'Epsilon 6', 'Epsilon 8'], showmeans=True)
     return fig
