@@ -12,8 +12,8 @@ def loadFigures(epsilonList, imgIdx):
     figureList = []
     for eps in epsilonList:
         figureList.append(generateHistograms(imgIdx, eps)[0])
+    figureList.append(generateHistograms(imgIdx, max(epsilonList)+1)[0]) # all epsilons histogram
     figureList.append(generateBoxPlot(imgIdx))
-    figureList.append(generateHistograms(imgIdx, max(epsilonList)+1)[0])
     return figureList
 
 def loadFiguresCifar(epsilonList, imgIdx):
@@ -26,21 +26,21 @@ def loadFiguresCifar(epsilonList, imgIdx):
     return figureList
 
 class enlargeVisuals():
-  def __init__(self, idx, master, figureList):
+  def __init__(self, master, figureList):
     self.root = master
     self.currPlot = 0
-    self.epsilonList = [0,2,4,6,8]
     self.figureList = figureList
     self.currentEmbed = None
+    self.maxPlots = 6 +1
 
     # generate initial plot
-    self.genPlots()
+    self.embedPlot(self.figureList[self.currPlot])
 
-    # create back/next buttons
-    button_1 = Button(master = self.root, command=self.lastPlot, width= 40, height = 3, text= "Back")
+    # back button
+    button_1 = Button(master = self.root, command=lambda:self.nextPlot(-1), width= 40, height = 3, text= "Back")
     button_1.grid(row=1,column=0)
-
-    button_2 = Button(master = self.root, command=self.nextPlot, width= 40, height = 3, text= "Next")
+    # next button
+    button_2 = Button(master = self.root, command=lambda:self.nextPlot(1), width= 40, height = 3, text= "Next")
     button_2.grid(row=1,column=3)
 
     # create x limit sliders
@@ -57,29 +57,26 @@ class enlargeVisuals():
         for ax in fig.axes:
             # get x limits from sliders and update limits for all subplots
             ax.set_xlim(self.period_slider.get(), self.period_slider2.get())
-    self.genPlots()
-
-  def genPlots(self):
-    # loop around plot if above max # or below 0
-    if self.currPlot > 6:
-        self.currPlot = 0
-    elif self.currPlot < 0:
-        self.currPlot = 6
     self.embedPlot(self.figureList[self.currPlot])
 
-  def nextPlot(self):
-    self.currPlot += 1
-    self.genPlots()
-
-  def lastPlot(self):
-    self.currPlot -= 1
-    self.genPlots()
+  def nextPlot(self, dir):
+    # go to next plot based on which button was pressed, wrapping around if it goes below 0 or above max
+    self.currPlot = (self.currPlot + dir) % self.maxPlots
+    self.embedPlot(self.figureList[self.currPlot])
 
   def embedPlot(self, fig):
-    fig.set_size_inches(15, 7)
-    # clear current canvas so window doesn't take a long time to close (may not be working)
+    # delete canvas each time, as creating new FigureCanvasTkAgg's can cause big slowdown when closing window
+    temp = None
     if self.currentEmbed:
-        self.currentEmbed.get_tk_widget().delete("all")
-    self.currentEmbed = FigureCanvasTkAgg(fig, master = self.root)
-    self.currentEmbed.draw()
-    self.currentEmbed.get_tk_widget().grid(row=0, column=0, padx=2, pady=2, columnspan=4)
+        temp = self.currentEmbed
+
+    # set max width/height based on screensize and dpi
+    fig.set_size_inches(self.root.winfo_screenwidth()/self.root.winfo_fpixels('1i'), self.root.winfo_screenheight()/self.root.winfo_fpixels('1i')-1)
+    self.currentEmbed = Frame(self.root)
+    canvas = FigureCanvasTkAgg(fig, master = self.currentEmbed)
+    canvas.draw()
+    canvas.get_tk_widget().pack()
+    self.currentEmbed.grid(row=0, column=0, padx=2, pady=2, columnspan=4)
+
+    if temp:
+        temp.destroy()

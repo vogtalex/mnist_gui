@@ -10,7 +10,6 @@ from os.path import exists
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def SoftCrossEntropyLoss(input, target):
-
   logprobs = torch.nn.functional.log_softmax(input, dim = 1)
   print("1")
   print(logprobs)
@@ -19,8 +18,6 @@ def SoftCrossEntropyLoss(input, target):
   print("2")
   print(val)
   return val / input.shape[0]
-
-
 
 def plot_images(X,y,yp,M,N,name):
     print(X.shape())
@@ -66,10 +63,6 @@ def fgsm(model, X, y, epsilon):
     plt.show()"""
     return epsilon * delta.grad.detach().sign()
 
-
-# In[121]:
-
-
 def pgd(model, X, y, epsilon, alpha, num_iter):
     """ Construct FGSM adversarial examples on the examples X"""
     delta = torch.zeros_like(X, requires_grad=True)
@@ -81,10 +74,6 @@ def pgd(model, X, y, epsilon, alpha, num_iter):
         delta.data = (delta + X.shape[0]*alpha*delta.grad.data).clamp(-epsilon,epsilon)
         delta.grad.zero_()
     return delta.detach()
-
-
-# In[14]:
-
 
 def pgd_linf(model, X, y, epsilon, alpha, num_iter):
     """ Construct FGSM adversarial examples on the examples X"""
@@ -99,10 +88,6 @@ def pgd_linf(model, X, y, epsilon, alpha, num_iter):
         delta.data = (delta + alpha*delta.grad.detach().sign()).clamp(-epsilon,epsilon)
         delta.grad.zero_()
     return delta.detach()
-
-
-# In[15]:
-
 
 def pgd_linf_targ(model, X, y, epsilon, alpha, num_iter, y_targ):
     """ Construct targeted adversarial examples on the examples X"""
@@ -119,10 +104,6 @@ def pgd_linf_targ(model, X, y, epsilon, alpha, num_iter, y_targ):
         #print(delta.data)
         delta.grad.zero_()
     return delta.detach()
-
-
-# In[82]:
-
 
 def epoch_adversarial(model, loader, attack, *args):
     total_loss, total_err = 0.,0.
@@ -147,11 +128,9 @@ def accuracyfinder(model, loader):
         total_loss += loss.item() * X.shape[0]
     return total_err / len(loader.dataset), total_loss / len(loader.dataset)
 
-
 def norms(Z):
     """Compute norms over all but the first dimension"""
     return Z.view(Z.shape[0], -1).norm(dim=1)[:,None,None,None]
-
 
 def pgd_l2(model, X, y, epsilon, alpha, num_iter):
     delta = torch.zeros_like(X, requires_grad=True)
@@ -168,8 +147,6 @@ def pgd_l2(model, X, y, epsilon, alpha, num_iter):
         delta.grad.zero_()
 
     return delta.detach()
-
-
 
 def create_graphs(epsilons, student, baseline, test_loader, title, pdf, attack, *args):
     print(f'running {title}')

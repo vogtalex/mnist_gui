@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from sklearn import datasets
 from sklearn.manifold import TSNE
-from functions import *
+# from functions import *
 import torch
 import json
 
@@ -159,7 +159,8 @@ def generateTSNEPlots(idx):
 
 epsilonLabel = ["Epsilon 0","Epsilon 2","Epsilon 4","Epsilon 6","Epsilon 8","All Epsilons"]
 epsilonNames = ['e0','e1','e2','e3','e4']
-numEpsilons = 5
+maxEpsilons = 5
+# epsilons = [x * stepSize for x in range(0,ceil(maxEpsilons*(1/stepSize)))]
 def generateHistograms(idx, plotID):
     ###HISTOGRAMS###################
     r=(5,16)
@@ -168,16 +169,16 @@ def generateHistograms(idx, plotID):
     maxHeight = 0
     fig, axs = plt.subplots(10)
 
-    if plotID == numEpsilons:
-        for epsilon in range(numEpsilons):
+    if plotID == maxEpsilons:
+        for epsilon in range(maxEpsilons):
             testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,epsilonNames[epsilon],examples,exeps)
             norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
 
             for i in range(10):
-                if i == 0:
-                    y, _, _ = axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label=epsilonLabel[epsilon], histtype="step")
-                else:
+                if i:
                     y, _, _ = axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
+                else:
+                    y, _, _ = axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label=epsilonLabel[epsilon], histtype="step")
                 axs[i].set_ylim([0, 1])
                 maxHeight = max(maxHeight,y.max())
         fig.legend(loc='upper left')
@@ -195,10 +196,6 @@ def generateHistograms(idx, plotID):
     return(fig, maxHeight)
 
 def generateBoxPlot(idx):
-    b=None
-    r=None
-    r=(5,16)
-    b=200
     fig, axs = plt.subplots()
     norm_list = []
 
@@ -207,7 +204,6 @@ def generateBoxPlot(idx):
         norms,idxs,prediction,truelabel = findNearest(exdata, exoutput, exlabels, advdata, testlabels, idx)
         norm_list.append(norms)
 
-    title = "Model Prediction: %d" % (prediction)
-    plt.suptitle(title)
+    plt.suptitle(f"Model Prediction: {prediction}")
     axs.boxplot(norm_list, patch_artist = True,notch ='True', vert = 1,labels=['Epsilon 0','Epsilon 2', 'Epsilon 4', 'Epsilon 6', 'Epsilon 8'], showmeans=True)
     return fig

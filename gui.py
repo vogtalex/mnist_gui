@@ -154,7 +154,7 @@ canvas.create_window(150, 750, window=button_1)
 def enlarge_plots():
     global figureList
     root = Tk()
-    p1 = enlargeVisuals(0, root, figureList)
+    p1 = enlargeVisuals(root, figureList)
     root.protocol("WM_DELETE_WINDOW", root.destroy)
     root.mainloop()
 

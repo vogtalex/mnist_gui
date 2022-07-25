@@ -23,12 +23,12 @@ eps = config['Histogram']['weightDir']
 exeps = config['Histogram']['weightDir']
 test = 'test'
 examples = 'examples'
-eps_dict = {'e0':'Epsilon 0.0', 'e1':'Epsilon 2', 'e2': 'Epsilon 4', 'e3':'Epsilon 6', 'e4':'Epsilon 10'}
+eps_dict = {'e0':'Epsilon 0', 'e1':'Epsilon 2', 'e2': 'Epsilon 4', 'e3':'Epsilon 6', 'e4':'Epsilon 10'}
 
 cifar_dict =    {0 : "airplane",
-                1: "automobile", 
-                2: "bird", 
-                3: "cat", 
+                1: "automobile",
+                2: "bird",
+                3: "cat",
                 4: "deer",
                 5: "dog",
                 6: "frog",
@@ -83,12 +83,12 @@ def get_data(npys,eps,examples,exeps):
         # trainlabels = np.load(os.path.join(npys,'trainlabels.npy')).astype(np.float64)[:limit]
         # trainoutput = np.load(os.path.join(npys,'trainoutput.npy')).astype(np.float64)[:limit]
         # traindata = np.load(os.path.join(npys,'traindata.npy')).astype(np.float64)[:limit]
-        
+
         #adversarial data
         testlabels = np.load(os.path.join(npys,test, eps,'testlabels.npy'))[:limit]
         advoutput = np.load(os.path.join(npys,test,eps,'advoutput.npy')).astype(np.float64)[:limit]
         advdata = np.load(os.path.join(npys,test,eps,'advdata.npy')).astype(np.float64)[:limit]
-        
+
         #example data
         exlabels = np.load(os.path.join(npys,examples,exeps,'testlabels.npy'))[:limit]
         exoutput = np.load(os.path.join(npys,examples,exeps,'advoutput.npy')).astype(np.float64)[:limit]
@@ -125,9 +125,9 @@ def labelAxes(axs, plt):
     count = 0
     label = str(count)
     labels =    ["airplane",
-                "automobile", 
-                "bird", 
-                "cat", 
+                "automobile",
+                "bird",
+                "cat",
                 "deer",
                 "dog",
                 "frog",
@@ -145,10 +145,10 @@ def labelAxes(axs, plt):
         label = str(count)
         ax.set_ylim([0, 0.25])
     plt.subplots_adjust(left=0.1,
-                    bottom=0.1, 
-                    right=0.9, 
-                    top=0.9, 
-                    wspace=0.4, 
+                    bottom=0.1,
+                    right=0.9,
+                    top=0.9,
+                    wspace=0.4,
                     hspace=0.4)
 
 
@@ -189,7 +189,7 @@ def generateHistograms(idx, plotID):
             currMax = y.max()
             if (maxHeight < currMax):
                 maxHeight = currMax
-            
+
 
 
     """EPSILON 2"""
@@ -210,7 +210,7 @@ def generateHistograms(idx, plotID):
             currMax = y.max()
             if (maxHeight < currMax):
                 maxHeight = currMax
-        
+
 
 
     ##################
