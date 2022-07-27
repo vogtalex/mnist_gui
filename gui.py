@@ -6,23 +6,21 @@ from tkinter import *
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import json
+import math
 
 imgIdx = 552
-initialLoad = True
-
-histogramEpsilon = 2
 
 with open('config.json') as f:
    config = json.load(f)
 
-eps = config['Histogram']['weightDir']
-histogramEpsilon = 2 * int(eps[1])
 outputArray = []
+initialLoad = True
 
 ASSETS_PATH = Path(__file__).parent / Path("assets")
 
-#epsilonList = [0,2,4,6,8]
-epsilonList = list(range(5))
+maxEpsilon = config["General"]["maxEpsilon"]
+epsilonStepSize = config["General"]["epsilonStepSize"]
+epsilonList = [x * epsilonStepSize for x in range(0, math.ceil(maxEpsilon*(1/epsilonStepSize)))]
 
 def embedMatplot(fig, col, r):
     fig.set_size_inches(6, 4)
@@ -30,6 +28,8 @@ def embedMatplot(fig, col, r):
     canvas.draw()
     canvas.get_tk_widget().grid(row=r, column=col, padx=2, pady=2)
 
+numRows = 2
+numCols = 2
 def myClick():
     global imgIdx
     global figureList
@@ -54,20 +54,17 @@ def myClick():
 
     # clear current matplots and embed new new ones
     plt.clf()
-    figureList = loadFigures(epsilonList, imgIdx)
-    # image
-    if (config['Images']['enabled'] == True):
-        embedMatplot(generateUnlabeledImage(imgIdx),0, 0)
-    # specific epsilon histogram
-    if (config['MNIST']['enabled'] == True):
-        newEps = int(histogramEpsilon / 2)
-        embedMatplot(figureList[newEps],1, 0)
-    # all epsilon histogram
-    if (config['MNIST']['enabled'] == True):
-        embedMatplot(figureList[6],0, 1)
-    # boxplot
-    if (config['MNIST']['enabled'] == True):
-        embedMatplot(figureList[5],1, 1)
+    figureList = loadFigures(epsilonList, imgIdx, maxEpsilon, config)
+
+    # embed all available figures that will fit in specified layout size
+    maxFigs = min(numRows*numCols,len(figureList))
+    for i in range(numCols):
+        if i*numRows>maxFigs:
+            break
+        for j in range(numRows):
+            if i*numCols+j<maxFigs:
+                embedMatplot(figureList[i*numRows+j],i,j)
+            else: break
 
 window = Tk()
 
@@ -76,79 +73,21 @@ window.configure(bg = "#FFFFFF")
 frame = Frame(window)
 frame.grid(row=0,column=0, sticky="n")
 
-canvas = Canvas(
-    window,
-    bg = "#FFFFFF",
-    height = 800,
-    width = 300,
-    bd = 0,
-    highlightthickness = 0,
-    relief = "ridge"
-)
-
+canvas = Canvas(window, bg = "#FFFFFF", height = 800, width = 300, bd = 0, highlightthickness = 0, relief = "ridge")
 canvas.grid(row = 0, column = 1)
 
-canvas.create_rectangle(
-    0,
-    0,
-    300,
-    800,
-    fill="#D2D2D2",
-    outline="")
-
-canvas.create_text(
-    12,
-    185.0,
-    anchor="nw",
-    text="Which visualization\nassisted you in making \nthis decision?",
-    fill="#000000",
-    font=("Roboto", 24 * -1)
-)
-
-canvas.create_text(
-    12,
-    419.0,
-    anchor="nw",
-    text="Prediction Confidence:",
-    fill="#000000",
-    font=("Roboto", 24 * -1)
-)
-
-canvas.create_text(
-    12,
-    104.0,
-    anchor="nw",
-    text="Prediction:",
-    fill="#000000",
-    font=("Roboto", 24 * -1)
-)
+canvas.create_rectangle(0, 0, 300, 800, fill="#D2D2D2", outline="")
+canvas.create_text(12, 185.0, anchor="nw", text="Which visualization\nassisted you in making \nthis decision?", fill="#000000", font=("Roboto", -24))
+canvas.create_text(12, 419.0, anchor="nw", text="Prediction Confidence:", fill="#000000", font=("Roboto", -24))
+canvas.create_text(12, 104.0, anchor="nw", text="Prediction:", fill="#000000", font=("Roboto", -24))
 
 entry_image_1 = PhotoImage(file = ASSETS_PATH / "entry_1.png")
-entry_bg_1 = canvas.create_image(
-    200,
-    120.5,
-    image=entry_image_1
-)
-entry_1 = Entry(
-    bd=0,
-    bg="#FFFFFF",
-    highlightthickness=0,
-    width=18
-)
-
+entry_bg_1 = canvas.create_image(200, 120.5, image=entry_image_1)
+entry_1 = Entry(bd=0, bg="#FFFFFF", highlightthickness=0, width=18)
 canvas.create_window(200, 120.5, window=entry_1)
 
 button_image_1 = PhotoImage(file = ASSETS_PATH / "button_1.png")
-button_1 = Button(
-    image=button_image_1,
-    borderwidth=0,
-    highlightthickness=0,
-    command=(myClick),
-    relief="flat",
-    width=298.1923828125,
-    height=115.14483642578125
-)
-
+button_1 = Button(image=button_image_1, borderwidth=0, highlightthickness=0, command=(myClick), relief="flat", width=298.19, height=115.15)
 canvas.create_window(150, 750, window=button_1)
 
 def enlarge_plots():
@@ -157,27 +96,13 @@ def enlarge_plots():
     p1 = enlargeVisuals(root, figureList)
     root.protocol("WM_DELETE_WINDOW", root.destroy)
     root.mainloop()
-
-button_2 = Button(
-    command=(enlarge_plots),
-    width= 40,
-    height = 3,
-    text= "Enlarge Visualizations"
-)
-
+button_2 = Button(command=(enlarge_plots), width= 40, height = 3, text= "Enlarge Visualizations")
 canvas.create_window(150, 660, window=button_2)
 
 def orig_image():
     fig = generateUnattackedImage(imgIdx)
     fig.show()
-
-button_3 = Button(
-    command=(orig_image),
-    width= 40,
-    height = 3,
-    text= "Original Image"
-)
-
+button_3 = Button(command=(orig_image), width= 40, height = 3, text= "Original Image")
 canvas.create_window(150, 600, window=button_3)
 
 #Radio Button 1
@@ -197,7 +122,7 @@ for visual in selections:
         anchor=W,
         justify = LEFT,
         bg="#D2D2D2",
-        font=("Roboto", 18 * -1)
+        font=("Roboto", -18)
     )
     canvas.create_window(20, height, anchor=W, window=r)
     height += 30
@@ -220,12 +145,10 @@ for x in scale:
         anchor=W,
         justify = LEFT,
         bg="#D2D2D2",
-        font=("Roboto", 18 * -1)
+        font=("Roboto", -18)
     )
     canvas.create_window(20, height, anchor=W, window=r2)
     height += 30
-
-myClick()
 
 def exitProgram():
     print("Exiting Program")
@@ -234,6 +157,7 @@ def exitProgram():
     exit()
     window.destroy()
 
+myClick()
 window.protocol("WM_DELETE_WINDOW", exitProgram)
 window.resizable(False, False)
 window.mainloop()

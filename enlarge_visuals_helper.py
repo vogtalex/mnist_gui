@@ -8,12 +8,16 @@ from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generat
 from visuals_generator_cifar import generateHistograms as cifar_hist
 from visuals_generator_cifar import generateBoxPlot as cifar_box
 
-def loadFigures(epsilonList, imgIdx):
+def loadFigures(epsilonList, imgIdx, maxEpsilon, config):
     figureList = []
-    for eps in epsilonList:
-        figureList.append(generateHistograms(imgIdx, eps)[0])
-    figureList.append(generateHistograms(imgIdx, max(epsilonList)+1)[0]) # all epsilons histogram
-    figureList.append(generateBoxPlot(imgIdx))
+    if config['Images']['enabled']:
+        figureList.append(generateUnlabeledImage(imgIdx))
+    if config["BoxPlot"]["enabled"]:
+        figureList.append(generateBoxPlot(imgIdx))
+    if config["Histogram"]["enabled"]:
+        figureList.append(generateHistograms(imgIdx, maxEpsilon)[0]) # all epsilons histogram
+        for eps in epsilonList:
+            figureList.append(generateHistograms(imgIdx, eps)[0])
     return figureList
 
 def loadFiguresCifar(epsilonList, imgIdx):
@@ -31,7 +35,7 @@ class enlargeVisuals():
     self.currPlot = 0
     self.figureList = figureList
     self.currentEmbed = None
-    self.maxPlots = 6 +1
+    self.maxPlots = len(figureList)
 
     # generate initial plot
     self.embedPlot(self.figureList[self.currPlot])

@@ -6,9 +6,9 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from sklearn import datasets
 from sklearn.manifold import TSNE
-# from functions import *
 import torch
 import json
+import math
 
 with open('config.json') as f:
    config = json.load(f)
@@ -23,19 +23,17 @@ eps = config['Histogram']['weightDir']
 #what attack level of example point
 exeps = config['Histogram']['weightDir']
 examples = 'examples'
-eps_dict = {'e0':'Epsilon 0', 'e1':'Epsilon 2', 'e2': 'Epsilon 4', 'e3':'Epsilon 6', 'e4':'Epsilon 10'}
+# eps_dict = {'e0':'Epsilon 0', 'e1':'Epsilon 2', 'e2': 'Epsilon 4', 'e3':'Epsilon 6', 'e4':'Epsilon 10'}
 
-# only use this # of images from the image set
+# only use this # of images from the image set(s)
 limit = 9000
 
 images_orig = np.load(os.path.join(npys, examples, eps, 'advdata.npy')).astype(np.float64)[:limit]
-
 images = []
 for i in range(len(images_orig)):
     images.append(images_orig[i].reshape(28, 28))
 
 images_orig_unattacked = np.load(os.path.join(npys, examples, 'e0', 'advdata.npy')).astype(np.float64)[:limit]
-
 images_unattacked = []
 for i in range(len(images_orig)):
     images_unattacked.append(images_orig_unattacked[i].reshape(28, 28))
@@ -79,7 +77,7 @@ def cached_get_data():
     return __get_data
 get_data = cached_get_data()
 
-def findNearest(exdata,exoutput,exlabels,advdata,testlabels,idx):
+def findNearest(exdata,exoutput,exlabels,advdata, _,idx):
     k=10
     example = exdata[idx]
     label = np.argmax(exoutput[idx])
@@ -101,26 +99,15 @@ def labelAxes(axs, plt):
     plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9, wspace=0.4, hspace=0.4)
 
 def generateTSNEPlots(idx):
-    plt.clf()
+    # plt.clf()
     testlabels, advoutput, origdata, exlabels, exoutput, exdata = get_data(npys,'e0',examples,exeps)
     testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,eps,examples,exeps)
 
     norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
 
-    exdata1 = np.load(os.path.join(npys,examples,'e0','advdata.npy')).astype(np.float64)[:limit]
-    img = exdata1[idx].reshape((28,28))
-
-    exdata2 = np.load(os.path.join(npys,examples,exeps,'advdata.npy')).astype(np.float64)[:limit]
-    img = exdata2[idx].reshape((28,28))
-
-    print(np.linalg.norm(exdata1[idx] - exdata2[idx]))
-
     print('max distance', max(norms))
     print('min distance', min(norms))
     print('avg distance', sum(norms)/len(norms))
-
-    #for combining data/advdata
-    #data = np.append(data, advdata, axis=0)
 
     X_2d = []
     if exists("embedding.npy"):
@@ -157,41 +144,45 @@ def generateTSNEPlots(idx):
     ax1.legend()
     return fig
 
-epsilonLabel = ["Epsilon 0","Epsilon 2","Epsilon 4","Epsilon 6","Epsilon 8","All Epsilons"]
-epsilonNames = ['e0','e1','e2','e3','e4']
-maxEpsilons = 5
-# epsilons = [x * stepSize for x in range(0,ceil(maxEpsilons*(1/stepSize)))]
+def roundSigFigs(num, sigFigs):
+    return str(num)[:(int(math.log(num,10)) + 2 + sigFigs if num else 1)]
+
+maxEpsilon = config["General"]["maxEpsilon"]
+epsilonStepSize = config["General"]["epsilonStepSize"]
+# finds # of significant figures after the decimal place of the step size
+sigFigs = len(repr(float(epsilonStepSize)).split('.')[1].rstrip('0'))
+epsilonList = [x * epsilonStepSize for x in range(0, math.ceil(maxEpsilon*(1/epsilonStepSize)))]
 def generateHistograms(idx, plotID):
-    ###HISTOGRAMS###################
     r=(5,16)
     b=200
 
     maxHeight = 0
     fig, axs = plt.subplots(10)
 
-    if plotID == maxEpsilons:
-        for epsilon in range(maxEpsilons):
-            testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,epsilonNames[epsilon],examples,exeps)
+    if plotID == maxEpsilon:
+        for epsilon in epsilonList:
+            testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,f'e{roundSigFigs(epsilon,sigFigs)}',examples,exeps)
             norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
 
             for i in range(10):
                 if i:
                     y, _, _ = axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
                 else:
-                    y, _, _ = axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label=epsilonLabel[epsilon], histtype="step")
+                    y, _, _ = axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label=f"Epsilon {epsilon}", histtype="step")
                 axs[i].set_ylim([0, 1])
                 maxHeight = max(maxHeight,y.max())
         fig.legend(loc='upper left')
+        fig.suptitle("All Epsilons")
     else:
-        testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,epsilonNames[plotID],examples,exeps)
+        testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys,f'e{roundSigFigs(plotID,sigFigs)}',examples,exeps)
         norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels,idx)
 
         for i in range(10):
-            y, _, _ = axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label=epsilonLabel[plotID], histtype="step")
+            y, _, _ = axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label=f"Epsilon {plotID}", histtype="step")
             axs[i].set_ylim([0, 1])
             maxHeight = max(maxHeight,y.max())
+        fig.suptitle(f"Epsilon {plotID}")
 
-    fig.suptitle(epsilonLabel[plotID])
     labelAxes(axs, fig)
     return(fig, maxHeight)
 
@@ -199,11 +190,11 @@ def generateBoxPlot(idx):
     fig, axs = plt.subplots()
     norm_list = []
 
-    for epsilon in ['e0','e1','e2','e3','e4']:
-        testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys, epsilon, examples, exeps)
+    for epsilon in epsilonList:
+        testlabels, advoutput, advdata, exlabels, exoutput, exdata = get_data(npys, f'e{roundSigFigs(epsilon,sigFigs)}', examples, exeps)
         norms,idxs,prediction,truelabel = findNearest(exdata, exoutput, exlabels, advdata, testlabels, idx)
         norm_list.append(norms)
 
     plt.suptitle(f"Model Prediction: {prediction}")
-    axs.boxplot(norm_list, patch_artist = True,notch ='True', vert = 1,labels=['Epsilon 0','Epsilon 2', 'Epsilon 4', 'Epsilon 6', 'Epsilon 8'], showmeans=True)
+    axs.boxplot(norm_list, patch_artist=True, notch='True', vert=1, labels=[f"Epsilon {epsilon}" for epsilon in epsilonList], showmeans=True)
     return fig
