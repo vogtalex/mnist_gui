@@ -1,15 +1,9 @@
-
 import os
 os.environ['OPENBLAS_NUM_THREADS']='5'
 import torch
 from functions import *
-from models.distilled import *
 import numpy as np
-#import matplotlib.pyplot as plt
-
 import time
-import tkinter as tk
-
 import torch.onnx as onnx
 import torchvision.models as models
 import torch.nn as nn
@@ -17,22 +11,20 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
-import numpy as np
 import torchvision
 from torch.autograd import Variable
+import json
+import sys
 
-#import tkinter as tk
-#from tkinter import *
-#
-#from PIL import Image, ImageTk
+with open('config.json') as f:
+   config = json.load(f)
 
-from functools import partial
-
-#mtpltlib bug:
-#matplotlib.use('TkAgg')
-#from matplotlib import pyplot as plt
-#from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-
+# split file into name and path
+head,tail = os.path.split(config['Model']['modelDir'])
+# temporarily add directory where python file is present to path
+sys.path.append(head)
+# format import with specific module name and execute the import
+exec(f"from {tail[:-3]} import *")
 
 test_loader = torch.utils.data.DataLoader(
     datasets.MNIST('../data', train=False, download=True, transform=transforms.Compose([
@@ -50,7 +42,7 @@ use_cuda = True
 device = torch.device("cuda:0" if (use_cuda and torch.cuda.is_available()) else "cpu")
 
 # Use a pretrained model
-pretrained_model = "lenet_mnist_model.pth"
+pretrained_model = config["Model"]["weightDir"]
 
 # Initialize the network
 model = Net()

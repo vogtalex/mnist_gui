@@ -60,11 +60,10 @@ def myClick():
     maxFigs = min(numRows*numCols,len(figureList))
     for i in range(numCols):
         if i*numRows>maxFigs:
-            break
+            return
         for j in range(numRows):
-            if i*numCols+j<maxFigs:
-                embedMatplot(figureList[i*numRows+j],i,j)
-            else: break
+            if i*numCols+j>=maxFigs: return
+            embedMatplot(figureList[i*numRows+j][0],i,j)
 
 window = Tk()
 
@@ -96,12 +95,14 @@ def enlarge_plots():
     p1 = enlargeVisuals(root, figureList)
     root.protocol("WM_DELETE_WINDOW", root.destroy)
     root.mainloop()
+
 button_2 = Button(command=(enlarge_plots), width= 40, height = 3, text= "Enlarge Visualizations")
 canvas.create_window(150, 660, window=button_2)
 
 def orig_image():
     fig = generateUnattackedImage(imgIdx)
     fig.show()
+
 button_3 = Button(command=(orig_image), width= 40, height = 3, text= "Original Image")
 canvas.create_window(150, 600, window=button_3)
 
@@ -110,7 +111,8 @@ selected_visual = StringVar()
 selected_visual.set(' ')
 selections = (('Image', 'Image'),
          ('TSNE', 'TSNE'),
-         ('Histogram', 'Histogram'))
+         ('Histogram', 'Histogram'),
+         ('Box Plot', 'Box Plot'))
 
 height = 300
 for visual in selections:

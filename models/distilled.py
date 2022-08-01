@@ -1,17 +1,8 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib
 import torch.nn.functional as F
-from os.path import exists
-
-device = torch.device("cuda:0" if (torch.cuda.is_available()) else "cpu")
 
 # Initialize Neural Network
-
-
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()

@@ -5,28 +5,31 @@ import tkinter as tk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, generateUnattackedImage
-from visuals_generator_cifar import generateHistograms as cifar_hist
-from visuals_generator_cifar import generateBoxPlot as cifar_box
+# from visuals_generator_cifar import generateHistograms as cifar_hist
+# from visuals_generator_cifar import generateBoxPlot as cifar_box
+
+# def loadFiguresCifar(epsilonList, imgIdx):
+#     figureList = []
+#     for eps in epsilonList:
+#         temp, _ = cifar_hist(imgIdx, eps)
+#         figureList.append(temp)
+#     figureList.append(cifar_box(imgIdx))
+#     figureList.append(cifar_hist(imgIdx, 10))
+#     return figureList
 
 def loadFigures(epsilonList, imgIdx, maxEpsilon, config):
     figureList = []
+    # second value in tuple is whether x limits can be modified
     if config['Images']['enabled']:
-        figureList.append(generateUnlabeledImage(imgIdx))
+        figureList.append((generateUnlabeledImage(imgIdx),False))
     if config["BoxPlot"]["enabled"]:
-        figureList.append(generateBoxPlot(imgIdx))
+        figureList.append((generateBoxPlot(imgIdx),False))
+    if config["TSNE"]["enabled"]:
+        figureList.append((generateTSNEPlots(imgIdx),False))
     if config["Histogram"]["enabled"]:
-        figureList.append(generateHistograms(imgIdx, maxEpsilon)[0]) # all epsilons histogram
+        figureList.append((generateHistograms(imgIdx, maxEpsilon)[0],True)) # all epsilons histogram
         for eps in epsilonList:
-            figureList.append(generateHistograms(imgIdx, eps)[0])
-    return figureList
-
-def loadFiguresCifar(epsilonList, imgIdx):
-    figureList = []
-    for eps in epsilonList:
-        temp, _ = cifar_hist(imgIdx, eps)
-        figureList.append(temp)
-    figureList.append(cifar_box(imgIdx))
-    figureList.append(cifar_hist(imgIdx, 10))
+            figureList.append((generateHistograms(imgIdx, eps)[0],True))
     return figureList
 
 class enlargeVisuals():
@@ -38,7 +41,7 @@ class enlargeVisuals():
     self.maxPlots = len(figureList)
 
     # generate initial plot
-    self.embedPlot(self.figureList[self.currPlot])
+    self.embedPlot(self.figureList[self.currPlot][0])
 
     # back button
     button_1 = Button(master = self.root, command=lambda:self.nextPlot(-1), width= 40, height = 3, text= "Back")
@@ -56,23 +59,26 @@ class enlargeVisuals():
     self.period_slider2.set(16)
     self.period_slider2.grid(row=1, column = 2)
 
-  def updateXAxis(self, temp):
-    for fig in self.figureList:
-        for ax in fig.axes:
+  def updateXAxis(self,_):
+    if self.figureList[self.currPlot][1]:
+        xMin = self.period_slider.get()
+        xMax = self.period_slider2.get()
+        for ax in self.figureList[self.currPlot][0].axes:
             # get x limits from sliders and update limits for all subplots
-            ax.set_xlim(self.period_slider.get(), self.period_slider2.get())
-    self.embedPlot(self.figureList[self.currPlot])
+            ax.set_xlim(xMin, xMax)
+        self.embedPlot(self.figureList[self.currPlot][0])
 
   def nextPlot(self, dir):
     # go to next plot based on which button was pressed, wrapping around if it goes below 0 or above max
     self.currPlot = (self.currPlot + dir) % self.maxPlots
-    self.embedPlot(self.figureList[self.currPlot])
+    if self.figureList[self.currPlot][1]:
+        self.updateXAxis(0)
+    else:
+        self.embedPlot(self.figureList[self.currPlot][0])
 
   def embedPlot(self, fig):
     # delete canvas each time, as creating new FigureCanvasTkAgg's can cause big slowdown when closing window
-    temp = None
-    if self.currentEmbed:
-        temp = self.currentEmbed
+    temp = self.currentEmbed if self.currentEmbed else None
 
     # set max width/height based on screensize and dpi
     fig.set_size_inches(self.root.winfo_screenwidth()/self.root.winfo_fpixels('1i'), self.root.winfo_screenheight()/self.root.winfo_fpixels('1i')-1)
