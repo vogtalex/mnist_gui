@@ -50,8 +50,6 @@ def myClick():
     else:
         initialLoad = False
 
-    imgIdx += 1
-
     # clear current matplots and embed new new ones
     plt.clf()
     figureList = loadFigures(epsilonList, imgIdx, maxEpsilon, config)
@@ -65,6 +63,8 @@ def myClick():
             if i*numCols+j>=maxFigs: return
             embedMatplot(figureList[i*numRows+j][0],i,j)
 
+    imgIdx += 1
+
 window = Tk()
 
 window.configure(bg = "#FFFFFF")
@@ -76,7 +76,7 @@ canvas = Canvas(window, bg = "#FFFFFF", height = 800, width = 300, bd = 0, highl
 canvas.grid(row = 0, column = 1)
 
 canvas.create_rectangle(0, 0, 300, 800, fill="#D2D2D2", outline="")
-canvas.create_text(12, 185.0, anchor="nw", text="Which visualization\nassisted you in making \nthis decision?", fill="#000000", font=("Roboto", -24))
+canvas.create_text(12, 185.0, anchor="nw", text="Which visualization\nmost assisted you in\nmaking this decision?", fill="#000000", font=("Roboto", -24))
 canvas.create_text(12, 419.0, anchor="nw", text="Prediction Confidence:", fill="#000000", font=("Roboto", -24))
 canvas.create_text(12, 104.0, anchor="nw", text="Prediction:", fill="#000000", font=("Roboto", -24))
 
@@ -99,20 +99,21 @@ def enlarge_plots():
 button_2 = Button(command=(enlarge_plots), width= 40, height = 3, text= "Enlarge Visualizations")
 canvas.create_window(150, 660, window=button_2)
 
-def orig_image():
-    fig = generateUnattackedImage(imgIdx)
-    fig.show()
+if config["General"]["showOriginal"]:
+    def orig_image():
+        fig = generateUnattackedImage(imgIdx-1)
+        fig.show()
 
-button_3 = Button(command=(orig_image), width= 40, height = 3, text= "Original Image")
-canvas.create_window(150, 600, window=button_3)
+    button_3 = Button(command=(orig_image), width= 40, height = 3, text= "Original Image")
+    canvas.create_window(150, 600, window=button_3)
 
 #Radio Button 1
 selected_visual = StringVar()
 selected_visual.set(' ')
-selections = (('Image', 'Image'),
+selections = [('Image', 'Image'),
          ('TSNE', 'TSNE'),
          ('Histogram', 'Histogram'),
-         ('Box Plot', 'Box Plot'))
+         ('Box Plot', 'Box Plot')]
 
 height = 300
 for visual in selections:
@@ -128,7 +129,6 @@ for visual in selections:
     )
     canvas.create_window(20, height, anchor=W, window=r)
     height += 30
-
 
 #Radio Button 2
 confidence = StringVar()

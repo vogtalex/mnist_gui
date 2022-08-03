@@ -14,7 +14,7 @@ with open('config.json') as f:
    config = json.load(f)
 
 try:
-    npys = config['MNIST']['weightDir']
+    npys = config['Model']['outputDir']
 except:
     exit("Data path not valid")
 
@@ -34,15 +34,15 @@ images = [image.reshape(28, 28) for image in np.load(os.path.join(npys, examples
 images_unattacked = [image.reshape(28, 28) for image in np.load(os.path.join(npys, examples, 'e0', 'advdata.npy')).astype(np.float64)[:limit]]
 
 # Generates an unlabeled image
-def generateUnlabeledImage(count):
-    image = images[count]
+def generateUnlabeledImage(idx):
+    image = images[idx]
     plt.figure(figsize=(4,3))
     plt.imshow(image, cmap="gray")
     return plt.gcf()
 
 # Generates an unattacked image
-def generateUnattackedImage(count):
-    image = images_unattacked[count]
+def generateUnattackedImage(idx):
+    image = images_unattacked[idx]
     plt.figure(figsize=(4,3))
     plt.imshow(image, cmap="gray")
     return plt.gcf()
