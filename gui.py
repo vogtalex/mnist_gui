@@ -110,10 +110,16 @@ if config["General"]["showOriginal"]:
 #Radio Button 1
 selected_visual = StringVar()
 selected_visual.set(' ')
-selections = [('Image', 'Image'),
-         ('TSNE', 'TSNE'),
-         ('Histogram', 'Histogram'),
-         ('Box Plot', 'Box Plot')]
+
+selections = []
+if config['Images']['enabled']:
+    selections.append(('Image', 'Image'))
+if config["BoxPlot"]["enabled"]:
+    selections.append(('Box Plot', 'Box Plot'))
+if config["TSNE"]["enabled"]:
+    selections.append(('TSNE', 'TSNE'))
+if config["Histogram"]["enabled"]:
+    selections.append(('Histogram', 'Histogram'))
 
 height = 300
 for visual in selections:
