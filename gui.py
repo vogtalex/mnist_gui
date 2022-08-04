@@ -58,9 +58,9 @@ def myClick():
     maxFigs = min(numRows*numCols,len(figureList))
     for i in range(numCols):
         if i*numRows>maxFigs:
-            return
+            break
         for j in range(numRows):
-            if i*numCols+j>=maxFigs: return
+            if i*numCols+j>=maxFigs: break
             embedMatplot(figureList[i*numRows+j][0],i,j)
 
     imgIdx += 1

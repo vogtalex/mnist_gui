@@ -28,6 +28,9 @@ exlabels = np.load(os.path.join(npys,examples,displayEpsilon,'testlabels.npy')).
 exoutput = np.load(os.path.join(npys,examples,displayEpsilon,'advoutput.npy')).astype(np.float64)[:limit]
 exdata = np.load(os.path.join(npys,examples,displayEpsilon,'advdata.npy')).astype(np.float64)[:limit]
 
+# this is kinda a makeshift solution, do it better later
+labels = list(set(exlabels))
+
 images = [image.reshape(28, 28) for image in np.load(os.path.join(npys, examples, displayEpsilon, 'advdata.npy')).astype(np.float64)[:limit]]
 images_unattacked = [image.reshape(28, 28) for image in np.load(os.path.join(npys, examples, 'e0', 'advdata.npy')).astype(np.float64)[:limit]]
 
@@ -74,7 +77,7 @@ def findNearest(exdata,exoutput,exlabels,advdata,_,idx):
 def labelAxes(axs, plt):
     count = 0
     for ax in axs:
-        ax.set_title(str(count), fontstyle='italic', x = 0.8, y = 0.0)
+        ax.set_title(labels[count], fontstyle='italic', x = 0.8, y = 0.0)
         ax.get_xaxis().set_visible(False)
         count += 1
     axs[count-1].get_xaxis().set_visible(True)
@@ -98,7 +101,6 @@ def generateTSNEPlots(idx):
         X_2d = tsne.fit_transform(origdata)
         np.save('./embedding.npy', X_2d, allow_pickle=False)
 
-    labels = list(range(10))
     colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'aquamarine', 'orange', 'purple'
 
     fig, (ax1,ax2) = plt.subplots(1,2)
