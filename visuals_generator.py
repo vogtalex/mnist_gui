@@ -1,14 +1,12 @@
 # Load Python Libraries
 import numpy as np
 import os
-import gzip, pickle
+import pickle
 import matplotlib.pyplot as plt
-import matplotlib as mpl
-from sklearn import datasets
 from sklearn.manifold import TSNE
-import torch
 import json
 import math
+from functions import generateEpsilonList
 
 with open('config.json') as f:
    config = json.load(f)
@@ -126,13 +124,13 @@ def generateTSNEPlots(idx):
     return fig
 
 def roundSigFigs(num, sigFigs):
-    return str(num)[:(int(math.log(num,10)) + 2 + sigFigs if num else 1)]
+    return str(num)[:(int(math.log(num,10))*(num>1) + 2 + sigFigs if num else 1)]
 
 maxEpsilon = config["General"]["maxEpsilon"]
 epsilonStepSize = config["General"]["epsilonStepSize"]
 # finds # of significant figures after the decimal place of the step size
 sigFigs = len(repr(float(epsilonStepSize)).split('.')[1].rstrip('0'))
-epsilonList = [x * epsilonStepSize for x in range(0, math.ceil(maxEpsilon*(1/epsilonStepSize)))]
+epsilonList = generateEpsilonList(epsilonStepSize,maxEpsilon)
 def generateHistograms(idx, plotID):
     r=(5,16)
     b=200
@@ -140,7 +138,7 @@ def generateHistograms(idx, plotID):
     maxHeight = 0
     fig, axs = plt.subplots(10)
 
-    if plotID == maxEpsilon:
+    if plotID > maxEpsilon:
         for epsilon in epsilonList:
             testlabels, advdata = get_data(npys,f'e{roundSigFigs(epsilon,sigFigs)}')
             norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)

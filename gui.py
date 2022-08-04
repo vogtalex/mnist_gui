@@ -6,9 +6,9 @@ from tkinter import *
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import json
-import math
+from functions import generateEpsilonList
 
-imgIdx = 552
+imgIdx = 32
 
 with open('config.json') as f:
    config = json.load(f)
@@ -20,7 +20,7 @@ ASSETS_PATH = Path(__file__).parent / Path("assets")
 
 maxEpsilon = config["General"]["maxEpsilon"]
 epsilonStepSize = config["General"]["epsilonStepSize"]
-epsilonList = [x * epsilonStepSize for x in range(0, math.ceil(maxEpsilon*(1/epsilonStepSize)))]
+epsilonList = generateEpsilonList(epsilonStepSize,maxEpsilon)
 
 def embedMatplot(fig, col, r):
     fig.set_size_inches(6, 4)

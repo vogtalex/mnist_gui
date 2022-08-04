@@ -6,8 +6,12 @@ import matplotlib.pyplot as plt
 import matplotlib
 import torch.nn.functional as F
 from os.path import exists
+import math
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+def generateEpsilonList(epsilonStepSize,maxEpsilon):
+    return [x * epsilonStepSize for x in range(0, math.floor(1+maxEpsilon*(1/epsilonStepSize)))]
 
 def SoftCrossEntropyLoss(input, target):
   logprobs = torch.nn.functional.log_softmax(input, dim = 1)
