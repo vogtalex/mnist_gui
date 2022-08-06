@@ -1,6 +1,6 @@
 from pathlib import Path
 from csv_gui import initializeCSV, writeToCSV
-from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, generateUnattackedImage
+from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, generateUnattackedImage, buildTrajectoryCostReg
 from enlarge_visuals_helper import enlargeVisuals, loadFigures
 from tkinter import *
 import matplotlib.pyplot as plt
@@ -49,6 +49,8 @@ def myClick():
         confidence.set(None)
     else:
         initialLoad = False
+        if config["TrajectoryRegression"]["enabled"]:
+            buildTrajectoryCostReg(imgIdx)
 
     # clear current matplots and embed new new ones
     plt.clf()
@@ -57,10 +59,9 @@ def myClick():
     # embed all available figures that will fit in specified layout size
     maxFigs = min(numRows*numCols,len(figureList))
     for i in range(numCols):
-        if i*numRows>maxFigs:
-            break
+        if i*numRows>=maxFigs: break
         for j in range(numRows):
-            if i*numCols+j>=maxFigs: break
+            if i*numRows+j>=maxFigs: break
             embedMatplot(figureList[i*numRows+j][0],i,j)
 
     imgIdx += 1
@@ -120,6 +121,8 @@ if config["TSNE"]["enabled"]:
     selections.append(('TSNE', 'TSNE'))
 if config["Histogram"]["enabled"]:
     selections.append(('Histogram', 'Histogram'))
+if config["TrajectoryRegression"]["enabled"]:
+    selections.append(('Attack Reconstruction', 'Attack Reconstruction'))
 
 height = 300
 for visual in selections:

@@ -4,7 +4,7 @@ from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
 import tkinter as tk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, generateUnattackedImage
+from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, generateUnattackedImage, trajectoryCostReg
 # from visuals_generator_cifar import generateHistograms as cifar_hist
 # from visuals_generator_cifar import generateBoxPlot as cifar_box
 
@@ -31,6 +31,8 @@ def loadFigures(epsilonList, imgIdx, maxEpsilon, config):
         figureList.append((generateHistograms(imgIdx, maxEpsilon+1)[0],True))
         for eps in epsilonList:
             figureList.append((generateHistograms(imgIdx, eps)[0],True))
+    if config["TrajectoryRegression"]["enabled"]:
+        figureList.append((trajectoryCostReg(imgIdx),False))
     return figureList
 
 class enlargeVisuals():

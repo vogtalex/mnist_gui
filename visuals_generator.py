@@ -7,6 +7,13 @@ from sklearn.manifold import TSNE
 import json
 import math
 from functions import generateEpsilonList
+import torch
+import torch.nn as nn
+import torch.optim
+from collections import OrderedDict
+from matplotlib.pyplot import subplot
+from chained_AE import Autoencoder, Chained_AE
+from mnist_cost import MNISTCost
 
 with open('config.json') as f:
    config = json.load(f)
@@ -31,7 +38,8 @@ exdata = np.load(os.path.join(npys,examples,displayEpsilon,'advdata.npy')).astyp
 # this is kinda a makeshift solution, do it better later
 labels = list(set(exlabels))
 
-images = [image.reshape(28, 28) for image in np.load(os.path.join(npys, examples, displayEpsilon, 'advdata.npy')).astype(np.float64)[:limit]]
+imageData = np.load(os.path.join(npys, examples, displayEpsilon, 'advdata.npy')).astype(np.float64)[:limit]
+images = imageData.reshape(imageData.shape[:-1]+(28,28))
 images_unattacked = [image.reshape(28, 28) for image in np.load(os.path.join(npys, examples, 'e0', 'advdata.npy')).astype(np.float64)[:limit]]
 
 # Generates an unlabeled image
@@ -182,3 +190,113 @@ def generateBoxPlot(idx):
     plt.suptitle(f"Model Prediction: {prediction}")
     axs.boxplot(norm_list, patch_artist=True, notch='True', vert=1, labels=[f"Epsilon {epsilon}" for epsilon in epsilonList], showmeans=True)
     return fig
+
+# constants for trajectory regression
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+dist_metric = 'l2'
+attack_type = 'targeted'
+d=50
+max_epsilon = 6
+batch_size = 32 # MUST NOT BE LOWER THAN 10
+
+# function for loading a segment of the autoencoders chain
+def load_part_of_model(model, state_dict, numblocks):
+    block_diff = 6-numblocks
+    if block_diff != 0:
+        new_state_dict = OrderedDict()
+        keyslist = list(state_dict.keys())
+        keys_to_rmv = []
+        for i in range(block_diff):
+            keys_to_rmv.append('ae.{}'.format(i))
+
+        for key in keyslist:
+            isbad = False
+
+            for badkey in keys_to_rmv:
+                if key.startswith(badkey):
+                    isbad = True
+
+            if not isbad:
+                val = state_dict[key]
+                newkey = 'ae.{}'.format(int(key[3])-block_diff) + key[4:]
+                new_state_dict[newkey] = val
+        model.load_state_dict(new_state_dict)
+    else:
+        model.load_state_dict(state_dict)
+    return model
+
+# function for constructing the autoencoders
+def make_models(dist_metric, epsilons, attack_type, d):
+    numblocks = len(epsilons)-1
+    ae = Chained_AE(block=Autoencoder, num_blocks=numblocks, codeword_dim=d, fc2_input_dim=128)
+    pt_state_dict = torch.load('./model/' + attack_type + '/chained_ae_' + dist_metric +
+        '_{}_to_{}_d={}_epc{}.pth'.format(6, 0, d, 500))
+    ae = load_part_of_model(ae, pt_state_dict, numblocks)
+    ae.to(device)
+    ae.eval()
+
+    return ae
+
+def make_trajectory(expected, ae):
+    return ae(expected, True)
+
+# function for rounding predicted cost to the assigned bins, note that this is for l2 only
+def round_cost(pc):
+    rounded_cost = np.clip(pc, 0, max_epsilon)
+    rounded_cost = np.round(rounded_cost)
+    return rounded_cost
+
+def buildTrajectoryCostReg(idx):
+    def __trajectoryCostReg(idx):
+        # load cost regression model
+        cost_reg = MNISTCost()
+        cost_reg.load_state_dict(torch.load('./model/costreg_mnist_l2_ce.pth'))
+        cost_reg.to(device)
+        cost_reg.train()    # train mode is required for some strange reason, cost regression model does not work properly under eval mode
+
+        localIdx = (idx - __trajectoryCostReg.startIdx) % batch_size
+        batchNum = (idx - __trajectoryCostReg.startIdx) // batch_size
+
+        # if new index requires new batch, cut out new batch and generate cost regressions
+        if not localIdx:
+             temp = images[__trajectoryCostReg.startIdx + batchNum*batch_size:__trajectoryCostReg.startIdx + batchNum*batch_size + batch_size]
+             __trajectoryCostReg.batchData = torch.unsqueeze(torch.from_numpy(temp),1).to(torch.float)
+             __trajectoryCostReg.pc = cost_reg(__trajectoryCostReg.batchData).detach().cpu().numpy()
+             __trajectoryCostReg.rounded_pc = round_cost(__trajectoryCostReg.pc)
+
+        exp = torch.unsqueeze(__trajectoryCostReg.batchData[localIdx], 0)
+        cost = __trajectoryCostReg.rounded_pc[localIdx]
+
+        reg_epsilons = range(int(cost)+1)
+        reg_ae = make_models(dist_metric, reg_epsilons, attack_type, d)
+        reg_recons = make_trajectory(exp, reg_ae)
+
+        fig = plt.figure(figsize=(8,4))
+        fig.suptitle('Reconstruction using estimated cost ({:.2f}), '.format(__trajectoryCostReg.pc[localIdx].item()) + f'{dist_metric} {attack_type} AE, d={d}')
+
+        num_bins = len(reg_recons)+1
+        for j in range(num_bins):
+            ax = fig.add_subplot(1,num_bins,j+1,anchor='N')
+            if j == len(reg_recons):
+                ax.imshow(exp[0][0], cmap="gray")
+                for spine in ax.spines.values():
+                    spine.set_edgecolor('red')
+                    spine.set_linewidth(2)
+            else:
+                ax.imshow(reg_recons[num_bins-2-j][0][0].detach().cpu(), cmap="gray")
+            ax.get_xaxis().set_ticks([])
+            ax.get_yaxis().set_ticks([])
+            ax.set_title(f'Epsilon {reg_epsilons[j]}')
+
+        plt.tight_layout()
+
+        return fig
+    __trajectoryCostReg.startIdx = idx
+    __trajectoryCostReg.batchData = None
+    __trajectoryCostReg.pc = 0
+    __trajectoryCostReg.rounded_pc = 0
+    global trajectoryCostRegFunc
+    trajectoryCostRegFunc = __trajectoryCostReg
+
+def trajectoryCostReg(idx):
+    return trajectoryCostRegFunc(idx)
