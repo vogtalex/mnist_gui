@@ -1,15 +1,13 @@
-import torch
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter.filedialog import askopenfilenames, askdirectory
 from tkinter import simpledialog
 from tkinter import *
 import tkinter as tk
-from PIL import Image, ImageTk
+from PIL import Image
 from pathlib import Path
 import numpy as np
 import json
-import webbrowser
 import os
 from functools import partial
 from numpy import save

@@ -1,6 +1,6 @@
 from pathlib import Path
 from csv_gui import initializeCSV, writeToCSV
-from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, generateUnattackedImage, buildTrajectoryCostReg
+from visuals_generator import generateUnattackedImage, buildTrajectoryCostReg
 from enlarge_visuals_helper import enlargeVisuals, loadFigures
 from tkinter import *
 import matplotlib.pyplot as plt

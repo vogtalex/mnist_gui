@@ -1,11 +1,9 @@
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib
 import torch.nn.functional as F
-from os.path import exists
+
 import math
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -14,7 +12,7 @@ def generateEpsilonList(epsilonStepSize,maxEpsilon):
     return [x * epsilonStepSize for x in range(0, math.floor(1+maxEpsilon*(1/epsilonStepSize)))]
 
 def SoftCrossEntropyLoss(input, target):
-  logprobs = torch.nn.functional.log_softmax(input, dim = 1)
+  logprobs = F.log_softmax(input, dim = 1)
   print("1")
   print(logprobs)
 
@@ -45,33 +43,33 @@ def plot_images(X,y,yp,M,N,name):
 def fgsm(model, X, y, epsilon):
     """ Construct FGSM adversarial examples on the examples X"""
     delta = torch.zeros_like(X, requires_grad=True)
-    loss = torch.nn.functional.nll_loss(model(X+delta), y)
+    loss = F.nll_loss(model(X+delta), y)
     #loss = nn.CrossEntropyLoss()(model(X + delta), y)
     loss.backward()
-    """
-    print(delta.grad.detach().sign().cpu()[0,0,...])
-    plt.imshow(delta.grad.detach().sign().cpu()[0,0,...])
-    plt.savefig("test")
-    exit(0)
-   """
 
-    """plt.figure(figsize=(5,5))
-    plt.plot(epsilons, b, label='baseline')
-    plt.plot(epsilons, s, label='student')
-    plt.yticks(np.arange(0, 1.1, step=0.1))
-    plt.xticks(np.arange(lower, upper+step, step=step))
-    plt.title(title)
-    plt.xlabel("Epsilon")
-    plt.ylabel("Accuracy")
-    plt.legend()
-    plt.show()"""
+    # print(delta.grad.detach().sign().cpu()[0,0,...])
+    # plt.imshow(delta.grad.detach().sign().cpu()[0,0,...])
+    # plt.savefig("test")
+    # exit(0)
+
+
+    # plt.figure(figsize=(5,5))
+    # plt.plot(epsilons, b, label='baseline')
+    # plt.plot(epsilons, s, label='student')
+    # plt.yticks(np.arange(0, 1.1, step=0.1))
+    # plt.xticks(np.arange(lower, upper+step, step=step))
+    # plt.title(title)
+    # plt.xlabel("Epsilon")
+    # plt.ylabel("Accuracy")
+    # plt.legend()
+    # plt.show()
     return epsilon * delta.grad.detach().sign()
 
 def pgd(model, X, y, epsilon, alpha, num_iter):
     """ Construct FGSM adversarial examples on the examples X"""
     delta = torch.zeros_like(X, requires_grad=True)
     for t in range(num_iter):
-        loss = torch.nn.functional.nll_loss(model(X+delta), y)
+        loss = F.nll_loss(model(X+delta), y)
         #loss = nn.CrossEntropyLoss()(model(X + delta), y)
         #print(loss)
         loss.backward()
@@ -83,7 +81,7 @@ def pgd_linf(model, X, y, epsilon, alpha, num_iter):
     """ Construct FGSM adversarial examples on the examples X"""
     delta = torch.zeros_like(X, requires_grad=True)
     for t in range(num_iter):
-        loss = torch.nn.functional.nll_loss(model(X+delta), y)
+        loss = F.nll_loss(model(X+delta), y)
         #loss = nn.CrossEntropyLoss()(model(X + delta), y)
         #print("loss")
         #print(loss)
@@ -141,7 +139,7 @@ def pgd_l2(model, X, y, epsilon, alpha, num_iter):
 
     for t in range(num_iter):
         #_x_adv = x_adv.clone().detach().requires_grad_(True)
-        #loss = torch.nn.functional.nll_loss(model(X+delta), y)
+        #loss = F.nll_loss(model(X+delta), y)
         loss = nn.CrossEntropyLoss()(model(X+delta), y)
 
         loss.backward()

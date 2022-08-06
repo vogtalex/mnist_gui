@@ -1,6 +1,5 @@
 import torch.nn as nn
 
-
 class MNISTCost(nn.Module):
     def __init__(self):
         super(MNISTCost, self).__init__()

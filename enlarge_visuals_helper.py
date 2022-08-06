@@ -1,21 +1,6 @@
-#Import the required libraries
-from tkinter import *
-from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
-import tkinter as tk
-import matplotlib.pyplot as plt
+from tkinter import Button, Frame, Scale
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, generateUnattackedImage, trajectoryCostReg
-# from visuals_generator_cifar import generateHistograms as cifar_hist
-# from visuals_generator_cifar import generateBoxPlot as cifar_box
-
-# def loadFiguresCifar(epsilonList, imgIdx):
-#     figureList = []
-#     for eps in epsilonList:
-#         temp, _ = cifar_hist(imgIdx, eps)
-#         figureList.append(temp)
-#     figureList.append(cifar_box(imgIdx))
-#     figureList.append(cifar_hist(imgIdx, 10))
-#     return figureList
+from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, trajectoryCostReg
 
 def loadFigures(epsilonList, imgIdx, maxEpsilon, config):
     figureList = []
@@ -63,11 +48,12 @@ class enlargeVisuals():
     self.period_slider2.grid(row=1, column = 2)
 
   def updateXAxis(self,_):
+    # only update x limits if enabled for visualization
     if self.figureList[self.currPlot][1]:
+        # get x limits from sliders and update limits for all subplots
         xMin = self.period_slider.get()
         xMax = self.period_slider2.get()
         for ax in self.figureList[self.currPlot][0].axes:
-            # get x limits from sliders and update limits for all subplots
             ax.set_xlim(xMin, xMax)
         self.embedPlot(self.figureList[self.currPlot][0])
 
@@ -80,7 +66,6 @@ class enlargeVisuals():
         self.embedPlot(self.figureList[self.currPlot][0])
 
   def embedPlot(self, fig):
-    # delete canvas each time, as creating new FigureCanvasTkAgg's can cause big slowdown when closing window
     temp = self.currentEmbed if self.currentEmbed else None
 
     # set max width/height based on screensize and dpi
@@ -91,5 +76,6 @@ class enlargeVisuals():
     canvas.get_tk_widget().pack()
     self.currentEmbed.grid(row=0, column=0, padx=2, pady=2, columnspan=4)
 
+    # delete old canvas each time, as creating new FigureCanvasTkAgg's can cause big slowdown when closing window
     if temp:
         temp.destroy()

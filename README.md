@@ -1,3 +1,5 @@
+Readme is currently out of date and will be updated later.
+
 # MNIST and CIFAR GUI With Visualizations
 
 Interactive GUI that displays visualizations to aid a user in making decisions on adversarial perturbed images.

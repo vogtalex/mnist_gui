@@ -3,16 +3,10 @@ os.environ['OPENBLAS_NUM_THREADS']='5'
 import torch
 from functions import *
 import numpy as np
-import time
-import torch.onnx as onnx
-import torchvision.models as models
 import torch.nn as nn
 from torch.utils.data import DataLoader
-import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
-import torchvision
-from torch.autograd import Variable
 import json
 import sys
 
