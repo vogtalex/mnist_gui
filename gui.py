@@ -28,7 +28,7 @@ def embedMatplot(fig, col, r):
     canvas.draw()
     canvas.get_tk_widget().grid(row=r, column=col, padx=2, pady=2)
 
-numRows = 2
+numRows = 3
 numCols = 2
 def myClick():
     global imgIdx
@@ -77,14 +77,14 @@ canvas = Canvas(window, bg = "#FFFFFF", height = 800, width = 300, bd = 0, highl
 canvas.grid(row = 0, column = 1)
 
 canvas.create_rectangle(0, 0, 300, 800, fill="#D2D2D2", outline="")
-canvas.create_text(12, 185.0, anchor="nw", text="Which visualization\nmost assisted you in\nmaking this decision?", fill="#000000", font=("Roboto", -24))
-canvas.create_text(12, 419.0, anchor="nw", text="Prediction Confidence:", fill="#000000", font=("Roboto", -24))
-canvas.create_text(12, 104.0, anchor="nw", text="Prediction:", fill="#000000", font=("Roboto", -24))
-
+canvas.create_text(12, 85.0, anchor="nw", text="Which visualization\nmost assisted you in\nmaking this decision?", fill="#000000", font=("Roboto", -24))
+canvas.create_text(12, 380.0, anchor="nw", text="Prediction Confidence:", fill="#000000", font=("Roboto", -24))
+canvas.create_text(12, 24.0, anchor="nw", text="Prediction:", fill="#000000", font=("Roboto", -24))
+104,120.5
 entry_image_1 = PhotoImage(file = ASSETS_PATH / "entry_1.png")
-entry_bg_1 = canvas.create_image(200, 120.5, image=entry_image_1)
+entry_bg_1 = canvas.create_image(200, 40.5, image=entry_image_1)
 entry_1 = Entry(bd=0, bg="#FFFFFF", highlightthickness=0, width=18)
-canvas.create_window(200, 120.5, window=entry_1)
+canvas.create_window(200, 40.5, window=entry_1)
 
 button_image_1 = PhotoImage(file = ASSETS_PATH / "button_1.png")
 button_1 = Button(image=button_image_1, borderwidth=0, highlightthickness=0, command=(myClick), relief="flat", width=298.19, height=115.15)
@@ -124,7 +124,7 @@ if config["Histogram"]["enabled"]:
 if config["TrajectoryRegression"]["enabled"]:
     selections.append(('Attack Reconstruction', 'Attack Reconstruction'))
 
-height = 300
+height = 200
 for visual in selections:
     r = Radiobutton(
         window,
@@ -146,7 +146,7 @@ scale = (('High Confidence', 'High Confidence'),
          ('Moderate Confidence', 'Moderate Confidence'),
          ('Low Confidence', 'Low Confidence'))
 
-height = 480
+height = 440
 for x in scale:
     r2 = Radiobutton(
         window,

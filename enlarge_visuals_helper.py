@@ -11,13 +11,13 @@ def loadFigures(epsilonList, imgIdx, maxEpsilon, config):
         figureList.append((generateBoxPlot(imgIdx),False))
     if config["TSNE"]["enabled"]:
         figureList.append((generateTSNEPlots(imgIdx),False))
+    if config["TrajectoryRegression"]["enabled"]:
+        figureList.append((trajectoryCostReg(imgIdx),False))
     if config["Histogram"]["enabled"]:
         # all epsilons histogram, generates if epsilon val is greater than max
         figureList.append((generateHistograms(imgIdx, maxEpsilon+1)[0],True))
         for eps in epsilonList:
             figureList.append((generateHistograms(imgIdx, eps)[0],True))
-    if config["TrajectoryRegression"]["enabled"]:
-        figureList.append((trajectoryCostReg(imgIdx),False))
     return figureList
 
 class enlargeVisuals():
