@@ -15,9 +15,10 @@ def loadFigures(epsilonList, imgIdx, maxEpsilon, config):
         figureList.append((trajectoryCostReg(imgIdx),False))
     if config["Histogram"]["enabled"]:
         # all epsilons histogram, generates if epsilon val is greater than max
-        figureList.append((generateHistograms(imgIdx, maxEpsilon+1)[0],True))
+        allEpsFig, maxHeight = generateHistograms(imgIdx, maxEpsilon+1)
+        figureList.append((allEpsFig,True))
         for eps in epsilonList:
-            figureList.append((generateHistograms(imgIdx, eps)[0],True))
+            figureList.append((generateHistograms(imgIdx, eps, maxHeight)[0],True))
     return figureList
 
 class enlargeVisuals():

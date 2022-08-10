@@ -129,6 +129,7 @@ def generateTSNEPlots(idx):
 
     plt.colorbar(cb,label="norm")
     cb.set_clim(5,15)
+    # cb.set_clim(min(norms),max(norms))
 
     ax1.legend()
     return fig
@@ -141,7 +142,7 @@ epsilonStepSize = config["General"]["epsilonStepSize"]
 # finds # of significant figures after the decimal place of the step size
 sigFigs = len(repr(float(epsilonStepSize)).split('.')[1].rstrip('0'))
 epsilonList = generateEpsilonList(epsilonStepSize,maxEpsilon)
-def generateHistograms(idx, plotID):
+def generateHistograms(idx, plotID, height = None):
     r=(5,16)
     b=200
 
@@ -151,29 +152,32 @@ def generateHistograms(idx, plotID):
     if plotID > maxEpsilon:
         for epsilon in epsilonList:
             testlabels, advdata = get_data(npys,f'e{roundSigFigs(epsilon,sigFigs)}')
-            norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
+            norms,_,_,_ = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
 
             for i in range(10):
+                arr = norms[(testlabels[...] == labels[i])]
+                weights = np.ones_like(arr)/len(arr)
                 if i:
-                    y, _, _ = axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, histtype="step")
+                    y, _, _ = axs[i].hist(arr, weights=weights, alpha=0.5, bins=b,range=r,density=False, histtype="step")
                 else:
-                    y, _, _ = axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label=f"Epsilon {epsilon}", histtype="step")
+                    y, _, _ = axs[i].hist(arr, weights=weights, alpha=0.5, bins=b,range=r,density=False, histtype="step", label=f"Epsilon {epsilon}")
                 maxHeight = max(maxHeight,y.max())
         fig.legend(loc='upper left')
         fig.suptitle("All Epsilons")
     else:
         testlabels, advdata = get_data(npys,f'e{roundSigFigs(plotID,sigFigs)}')
-        norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels,idx)
-
+        norms,_,_,_ = findNearest(exdata,exoutput,exlabels,advdata,testlabels,idx)
+        normSum = sum(norms)
         for i in range(10):
-            y, _, _ = axs[i].hist(norms[(testlabels[...] == i)], alpha=0.5, bins=b,range=r,density=True, label=f"Epsilon {plotID}", histtype="step")
+            arr = norms[(testlabels[...] == labels[i])]
+            weights = np.ones_like(arr)/len(arr)
+            y, _, _ = axs[i].hist(arr, weights=weights, alpha=0.5, bins=b,range=r,density=False, label=f"Epsilon {plotID}", histtype="step")
             maxHeight = max(maxHeight,y.max())
         fig.suptitle(f"Epsilon {plotID}")
 
     # should it be 0-1 or 0-max?
     for ax in axs:
-        # ax.set_ylim([0, maxHeight])
-        ax.set_ylim([0, 1])
+        ax.set_ylim([0, height if height else maxHeight])
 
     labelAxes(axs, fig)
     return(fig, maxHeight)

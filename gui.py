@@ -28,8 +28,8 @@ def embedMatplot(fig, col, r):
     canvas.draw()
     canvas.get_tk_widget().grid(row=r, column=col, padx=2, pady=2)
 
-numRows = 3
-numCols = 2
+numRows = 2
+numCols = 3
 def myClick():
     global imgIdx
     global figureList
