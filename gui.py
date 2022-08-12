@@ -6,7 +6,7 @@ from tkinter import *
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import json
-from functions import generateEpsilonList
+from functions import generateEpsilonList, AutoScrollbar
 
 imgIdx = 32
 
@@ -70,8 +70,30 @@ window = Tk()
 
 window.configure(bg = "#FFFFFF")
 
-frame = Frame(window)
+horzScrollBar = AutoScrollbar(window, orient=HORIZONTAL)
+horzScrollBar.grid(row = 1, column = 0, stick='ew')
+
+scrollCanvas = Canvas(window, xscrollcommand = horzScrollBar.set, width = 4 + 600*min(2,numCols))
+scrollCanvas.grid(row=0, column=0, sticky='nsew')
+
+horzScrollBar.config(command = scrollCanvas.xview)
+
+frame = Frame(scrollCanvas)
 frame.grid(row=0,column=0, sticky="n")
+
+myClick()
+
+# add frame w/ visualizations to canvas
+scrollCanvas.create_window(0, 0, anchor=NW, window=frame)
+
+# Calling update_idletasks method
+frame.update_idletasks()
+
+# Configuring canvas
+scrollCanvas.config(scrollregion=scrollCanvas.bbox("all"))
+
+# bind vertical scroll to horizontal scroll bar
+scrollCanvas.bind_all('<MouseWheel>', lambda event: scrollCanvas.xview_scroll(int(-1*(event.delta/120)), "units"))
 
 canvas = Canvas(window, bg = "#FFFFFF", height = 800, width = 300, bd = 0, highlightthickness = 0, relief = "ridge")
 canvas.grid(row = 0, column = 1)
@@ -168,7 +190,6 @@ def exitProgram():
     exit()
     window.destroy()
 
-myClick()
 window.protocol("WM_DELETE_WINDOW", exitProgram)
 window.resizable(False, False)
 window.mainloop()

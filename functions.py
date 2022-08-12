@@ -3,6 +3,7 @@ import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
+from tkinter import Scrollbar
 
 import math
 
@@ -10,6 +11,22 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def generateEpsilonList(epsilonStepSize,maxEpsilon):
     return [x * epsilonStepSize for x in range(0, math.floor(1+maxEpsilon*(1/epsilonStepSize)))]
+
+class AutoScrollbar(Scrollbar):
+    # Defining set method with all its parameters
+    def set(self, low, high):
+        if float(low) <= 0.0 and float(high) >= 1.0:
+            # Using grid_remove
+            self.tk.call("grid", "remove", self)
+        else:
+            self.grid()
+        Scrollbar.set(self, low, high)
+
+    def pack(self, **kw):
+        raise (TclError,"pack cannot be used with this widget")
+
+    def place(self, **kw):
+        raise (TclError, "place cannot be used  with this widget")
 
 def SoftCrossEntropyLoss(input, target):
   logprobs = F.log_softmax(input, dim = 1)
