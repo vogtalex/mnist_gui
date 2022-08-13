@@ -3,8 +3,8 @@ import torch.nn as nn
 import numpy as np
 import matplotlib.pyplot as plt
 import torch.nn.functional as F
-from tkinter import Scrollbar
 
+from tkinter import Scrollbar
 import math
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

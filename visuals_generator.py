@@ -71,6 +71,9 @@ def cached_get_data():
     return __get_data
 get_data = cached_get_data()
 
+def getTrueLabel(idx):
+    return exlabels[idx]
+
 def findNearest(exdata,exoutput,exlabels,advdata,_,idx):
     k=10
     example = exdata[idx]
@@ -80,7 +83,7 @@ def findNearest(exdata,exoutput,exlabels,advdata,_,idx):
 
     top = np.argpartition(norms, k-1)
     # returns norms of all data, the nearest k points, the predicted label, and the actual label
-    return norms, top[1:k], label, int(exlabels[idx])
+    return norms, top[1:k], label, exlabels[idx]
 
 def labelAxes(axs, plt):
     count = 0
@@ -95,7 +98,7 @@ def generateTSNEPlots(idx):
     testlabels, origdata = get_data(npys,'e0')
     testlabels, advdata = get_data(npys,displayEpsilon)
 
-    norms,idxs,prediction,truelabel = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
+    norms,idxs,prediction,_ = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
 
     print('max distance', max(norms))
     print('min distance', min(norms))
@@ -188,7 +191,7 @@ def generateBoxPlot(idx):
 
     for epsilon in epsilonList:
         testlabels, advdata = get_data(npys, f'e{roundSigFigs(epsilon,sigFigs)}')
-        norms,idxs,prediction,truelabel = findNearest(exdata, exoutput, exlabels, advdata, testlabels, idx)
+        norms,_,prediction,_ = findNearest(exdata, exoutput, exlabels, advdata, testlabels, idx)
         norm_list.append(norms)
 
     plt.suptitle(f"Model Prediction: {prediction}")

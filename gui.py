@@ -1,6 +1,6 @@
 from pathlib import Path
 from csv_gui import initializeCSV, writeToCSV
-from visuals_generator import generateUnattackedImage, buildTrajectoryCostReg
+from visuals_generator import generateUnattackedImage, buildTrajectoryCostReg, getTrueLabel
 from enlarge_visuals_helper import enlargeVisuals, loadFigures
 from tkinter import *
 import matplotlib.pyplot as plt
@@ -37,6 +37,7 @@ def myClick():
 
     if not initialLoad:
         userData = []
+        userData.append(getTrueLabel(imgIdx))
         userData.append(entry_1.get())
         userData.append(selected_visual.get())
         userData.append(confidence.get())
@@ -47,6 +48,8 @@ def myClick():
         entry_1.insert(0,"")
         selected_visual.set(None)
         confidence.set(None)
+
+        imgIdx += 1
     else:
         initialLoad = False
         if config["TrajectoryRegression"]["enabled"]:
@@ -64,8 +67,6 @@ def myClick():
             if i*numRows+j>=maxFigs: break
             embedMatplot(figureList[i*numRows+j][0],i,j)
 
-    imgIdx += 1
-
 window = Tk()
 
 window.configure(bg = "#FFFFFF")
@@ -73,7 +74,7 @@ window.configure(bg = "#FFFFFF")
 horzScrollBar = AutoScrollbar(window, orient=HORIZONTAL)
 horzScrollBar.grid(row = 1, column = 0, stick='ew')
 
-scrollCanvas = Canvas(window, xscrollcommand = horzScrollBar.set, width = 4 + 600*min(2,numCols))
+scrollCanvas = Canvas(window, xscrollcommand = horzScrollBar.set, width = 604*min(2,numCols))
 scrollCanvas.grid(row=0, column=0, sticky='nsew')
 
 horzScrollBar.config(command = scrollCanvas.xview)
@@ -124,7 +125,7 @@ canvas.create_window(150, 660, window=button_2)
 
 if config["General"]["showOriginal"]:
     def orig_image():
-        fig = generateUnattackedImage(imgIdx-1)
+        fig = generateUnattackedImage(imgIdx)
         fig.show()
 
     button_3 = Button(command=(orig_image), width= 40, height = 3, text= "Original Image")
