@@ -106,8 +106,8 @@ canvas.create_text(12, 24.0, anchor="nw", text="Prediction:", fill="#000000", fo
 104,120.5
 entry_image_1 = PhotoImage(file = ASSETS_PATH / "entry_1.png")
 entry_bg_1 = canvas.create_image(200, 40.5, image=entry_image_1)
-entry_1 = Entry(bd=0, bg="#FFFFFF", highlightthickness=0, width=18)
-canvas.create_window(200, 40.5, window=entry_1)
+entry_1 = Entry(bd=0, bg="#FFFFFF", highlightthickness=0, width=8,font=("segoe-ui 18"))
+canvas.create_window(200, 38.5, window=entry_1)
 
 button_image_1 = PhotoImage(file = ASSETS_PATH / "button_1.png")
 button_1 = Button(image=button_image_1, borderwidth=0, highlightthickness=0, command=(myClick), relief="flat", width=298.19, height=115.15)
