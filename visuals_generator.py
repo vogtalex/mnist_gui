@@ -30,10 +30,20 @@ examples = 'examples'
 # only use this # of images from the image set(s)
 limit = 9000
 
+# constants for trajectory regression
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+dist_metric = 'l2'
+attack_type = 'targeted'
+d=50
+max_epsilon = 6
+batch_size = 10 # MUST NOT BE LOWER THAN 10
+
 #example data
 exlabels = np.load(os.path.join(npys,examples,displayEpsilon,'testlabels.npy')).astype(np.float64)[:limit]
 exoutput = np.load(os.path.join(npys,examples,displayEpsilon,'advoutput.npy')).astype(np.float64)[:limit]
 exdata = np.load(os.path.join(npys,examples,displayEpsilon,'advdata.npy')).astype(np.float64)[:limit]
+
+testlabels = np.load(os.path.join(npys, 'e0','testlabels.npy')).astype(np.float64)[:limit]
 
 # this is kinda a makeshift solution, do it better later
 labels = list(set(exlabels))
@@ -61,12 +71,12 @@ def cached_get_data():
     def __get_data(npys,eps):
         if eps not in cache:
             #adversarial data
-            testlabels = np.load(os.path.join(npys, eps,'testlabels.npy')).astype(np.float64)[:limit]
+            # testlabels = np.load(os.path.join(npys, eps,'testlabels.npy')).astype(np.float64)[:limit]
             # advoutput = np.load(os.path.join(npys,eps,'advoutput.npy')).astype(np.float64)[:limit]
             advdata = np.load(os.path.join(npys,eps,'advdata.npy')).astype(np.float64)[:limit]
 
-            cache[eps] = [testlabels,advdata]
-        return tuple(cache[eps])
+            cache[eps] = advdata
+        return cache[eps]
 
     return __get_data
 get_data = cached_get_data()
@@ -95,14 +105,14 @@ def labelAxes(axs, plt):
     plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9, wspace=0.4, hspace=0.4)
 
 def generateTSNEPlots(idx):
-    testlabels, origdata = get_data(npys,'e0')
-    testlabels, advdata = get_data(npys,displayEpsilon)
+    origdata = get_data(npys,'e0')
+    advdata = get_data(npys,displayEpsilon)
 
     norms,idxs,prediction,_ = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
 
-    print('max distance', max(norms))
-    print('min distance', min(norms))
-    print('avg distance', sum(norms)/len(norms))
+    # print('max distance', max(norms))
+    # print('min distance', min(norms))
+    # print('avg distance', sum(norms)/len(norms))
 
     X_2d = []
     if os.path.exists("./embedding.npy"):
@@ -154,7 +164,7 @@ def generateHistograms(idx, plotID, height = None):
 
     if plotID > maxEpsilon:
         for epsilon in epsilonList:
-            testlabels, advdata = get_data(npys,f'e{roundSigFigs(epsilon,sigFigs)}')
+            advdata = get_data(npys,f'e{roundSigFigs(epsilon,sigFigs)}')
             norms,_,_,_ = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
 
             for i in range(10):
@@ -168,7 +178,7 @@ def generateHistograms(idx, plotID, height = None):
         fig.legend(loc='upper left')
         fig.suptitle("All Epsilons")
     else:
-        testlabels, advdata = get_data(npys,f'e{roundSigFigs(plotID,sigFigs)}')
+        advdata = get_data(npys,f'e{roundSigFigs(plotID,sigFigs)}')
         norms,_,_,_ = findNearest(exdata,exoutput,exlabels,advdata,testlabels,idx)
         normSum = sum(norms)
         for i in range(10):
@@ -190,21 +200,13 @@ def generateBoxPlot(idx):
     norm_list = []
 
     for epsilon in epsilonList:
-        testlabels, advdata = get_data(npys, f'e{roundSigFigs(epsilon,sigFigs)}')
+        advdata = get_data(npys, f'e{roundSigFigs(epsilon,sigFigs)}')
         norms,_,prediction,_ = findNearest(exdata, exoutput, exlabels, advdata, testlabels, idx)
         norm_list.append(norms)
 
     plt.suptitle(f"Model Prediction: {prediction}")
     axs.boxplot(norm_list, patch_artist=True, notch='True', vert=1, labels=[f"Epsilon {epsilon}" for epsilon in epsilonList], showmeans=True)
     return fig
-
-# constants for trajectory regression
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-dist_metric = 'l2'
-attack_type = 'targeted'
-d=50
-max_epsilon = 6
-batch_size = 32 # MUST NOT BE LOWER THAN 10
 
 # function for loading a segment of the autoencoders chain
 def load_part_of_model(model, state_dict, numblocks):
@@ -259,7 +261,8 @@ def buildTrajectoryCostReg(idx):
         cost_reg = MNISTCost()
         cost_reg.load_state_dict(torch.load('./model/costreg_mnist_l2_ce.pth'))
         cost_reg.to(device)
-        cost_reg.train()    # train mode is required for some strange reason, cost regression model does not work properly under eval mode
+        # train mode is required for some strange reason, cost regression model does not work properly under eval mode
+        cost_reg.train()
 
         localIdx = (idx - __trajectoryCostReg.startIdx) % batch_size
         batchNum = (idx - __trajectoryCostReg.startIdx) // batch_size

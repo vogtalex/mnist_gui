@@ -38,48 +38,12 @@ def SoftCrossEntropyLoss(input, target):
   print(val)
   return val / input.shape[0]
 
-def plot_images(X,y,yp,M,N,name):
-    print(X.shape())
-    print(y.shape())
-    print(yp.shape())
-    print('hihihih')
-    exit()
-    plt.clf()
-    f,ax = plt.subplots(M,N, sharex=True, sharey=True, figsize=(N,M*1.3))
-    for i in range(M):
-        for j in range(N):
-            ax[i][j].imshow(1-X[i*N+j][0].cpu().numpy(), cmap="gray")
-            title = ax[i][j].set_title("Pred: {}".format(yp[i*N+j].max(dim=0)[1]))
-            plt.setp(title, color=('g' if yp[i*N+j].max(dim=0)[1] == y[i*N+j] else 'r'))
-            ax[i][j].set_axis_off()
-    plt.tight_layout()
-    #plt.savefig(name)
-    plt.show()
-
-
 def fgsm(model, X, y, epsilon):
     """ Construct FGSM adversarial examples on the examples X"""
     delta = torch.zeros_like(X, requires_grad=True)
     loss = F.nll_loss(model(X+delta), y)
-    #loss = nn.CrossEntropyLoss()(model(X + delta), y)
     loss.backward()
 
-    # print(delta.grad.detach().sign().cpu()[0,0,...])
-    # plt.imshow(delta.grad.detach().sign().cpu()[0,0,...])
-    # plt.savefig("test")
-    # exit(0)
-
-
-    # plt.figure(figsize=(5,5))
-    # plt.plot(epsilons, b, label='baseline')
-    # plt.plot(epsilons, s, label='student')
-    # plt.yticks(np.arange(0, 1.1, step=0.1))
-    # plt.xticks(np.arange(lower, upper+step, step=step))
-    # plt.title(title)
-    # plt.xlabel("Epsilon")
-    # plt.ylabel("Accuracy")
-    # plt.legend()
-    # plt.show()
     return epsilon * delta.grad.detach().sign()
 
 def pgd(model, X, y, epsilon, alpha, num_iter):
@@ -166,32 +130,3 @@ def pgd_l2(model, X, y, epsilon, alpha, num_iter):
         delta.grad.zero_()
 
     return delta.detach()
-
-def create_graphs(epsilons, student, baseline, test_loader, title, pdf, attack, *args):
-    print(f'running {title}')
-    upper = max(epsilons)
-    lower = min(epsilons)
-    step = (upper + lower)/(len(epsilons) - 1)
-
-    students = []
-    baselines = []
-    for e in epsilons:
-        students.append(epoch_adversarial(student, test_loader, attack, e, *args)[0])
-        baselines.append(epoch_adversarial(baseline, test_loader, attack, e, *args)[0])
-
-    s = [(1 - a) for a in students]
-    b = [(1 - a) for a in baselines]
-
-    plt.figure(figsize=(5,5))
-    plt.plot(epsilons, b, label='baseline')
-    plt.plot(epsilons, s, label='student')
-    plt.yticks(np.arange(0, 1.1, step=0.1))
-    plt.xticks(np.arange(lower, upper+step, step=step))
-    plt.title(title)
-    plt.xlabel("Epsilon")
-    plt.ylabel("Accuracy")
-    plt.legend()
-    plt.show()
-
-    print(f'saving {pdf}')
-    plt.savefig(pdf)
