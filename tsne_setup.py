@@ -1,15 +1,12 @@
 import os
-# is this needed?
-# os.environ['OPENBLAS_NUM_THREADS']='5'
 import torch
+from torch.utils.data import DataLoader
 from functions import *
 import numpy as np
 
 # check if swap works
 import torch.nn as nn
 # from torch.nn import CrossEntropyLoss
-
-from torch.utils.data import DataLoader
 
 # check if swap works
 import torch.optim as optim
@@ -74,20 +71,21 @@ def gen_adv_features_test(eps):
     labels = []
     out_data = np.array([])
     out_output = np.array([])
+
+    testLoaderLen = len(test_loader.dataset)
+
     for data, target in test_loader:
         data,target = data.to(device), target.to(device)
         cnt += 1
-        print("processing: %d/%d" % (cnt, len(train_loader.dataset)))
+        print("processing: %d/%d" % (cnt, testLoaderLen))
         if cnt > 9:
             break;
         delta = pgd_l2(model,data,target,eps,2.5*eps/255./numIters,numIters)
 
-        # output = model(data)
         output = model(data + delta)
         output_np = output.data.cpu().numpy()
         out_output = np.vstack([out_output,output_np]) if out_output.size else output_np
 
-        #print(labels)
         labels = np.append(labels,target.cpu().numpy())
 
         data = torch.flatten(data,2,3)
@@ -95,10 +93,11 @@ def gen_adv_features_test(eps):
         out_data = np.vstack([out_data,data.cpu().numpy()]) if out_data.size else data.cpu().numpy()
 
     labelPath = os.path.join(outputDir,"testlabels.npy")
-    if not os.path.exists(labelPath):
+    if not os.path.isfile(labelPath):
         np.save(labelPath, labels, allow_pickle=False)
+    os.mkdir(os.path.join(outputDir,f"e{eps}"))
     np.save(os.path.join(outputDir,f"e{eps}","advoutput.npy"), out_output, allow_pickle=False)
-    np.save(os.path.join(outputDir,f"e{eps}","advdata.npy"), out_data,allow_pickle=False)
+    np.save(os.path.join(outputDir,f"e{eps}","advdata.npy"), out_data, allow_pickle=False)
 
 def gen_adv_features_examples(eps):
     model.eval()
@@ -107,10 +106,13 @@ def gen_adv_features_examples(eps):
     labels = []
     out_data = np.array([])
     out_output = np.array([])
+
+    testLoaderLen = len(test_loader.dataset)
+
     for data, target in test_loader:
         data,target = data.to(device), target.to(device)
         cnt += 1
-        print("processing: %d/%d" % (cnt, len(train_loader.dataset)))
+        print("processing: %d/%d" % (cnt, testLoaderLen))
         if cnt <= 9: continue;
 
         delta = pgd_l2(model,data,target,eps,2.5*eps/255./numIters,numIters)
@@ -118,9 +120,7 @@ def gen_adv_features_examples(eps):
         output = model(data+delta)
         output_np = output.data.cpu().numpy()
         out_output = np.vstack([out_output,output_np]) if out_output.size else output_np
-        #print(np.argmax(output_np),np.argmax(adv_output_np))
 
-        #print(labels)
         labels = np.append(labels,target.cpu().numpy())
 
         data=data+delta
@@ -129,8 +129,9 @@ def gen_adv_features_examples(eps):
         out_data = np.vstack([out_data,data.cpu().numpy()]) if out_data.size else data.cpu().numpy()
 
     labelPath = os.path.join(outputDir,'examples',"testlabels.npy")
-    if not os.path.exists(labelPath):
+    if not os.path.isfile(labelPath):
         np.save(labelPath, labels, allow_pickle=False)
+    os.mkdir(os.path.join(outputDir,'examples',f"e{eps}"))
     np.save(os.path.join(outputDir,'examples',f"e{eps}","advoutput.npy"), out_output, allow_pickle=False)
     np.save(os.path.join(outputDir,'examples',f"e{eps}","advdata.npy"), out_data,allow_pickle=False)
 
@@ -139,7 +140,8 @@ try:
     shutil.rmtree(outputDir)
 except OSError as e:
     print("Error: %s : %s" % (outputDir, e.strerror))
+os.mkdir(os.path.join(outputDir))
 
 for eps in generateEpsilonList(config["General"]["epsilonStepSize"], config["General"]["maxEpsilon"]):
     gen_adv_features_test(eps)
-    gen_adv_features_train(eps)
+    gen_adv_features_examples(eps)

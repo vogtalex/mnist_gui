@@ -1,24 +1,39 @@
 from tkinter import Button, Frame, Scale
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, trajectoryCostReg
+import time
 
 def loadFigures(epsilonList, imgIdx, maxEpsilon, config):
     figureList = []
+    timeList=[]
+    timeList.append(time.time())
     # second value in tuple is whether x limits can be modified
     if config['Images']['enabled']:
         figureList.append((generateUnlabeledImage(imgIdx),False))
+        timeList.append(time.time())
+        print("image:",timeList[1]-timeList[0])
     if config["BoxPlot"]["enabled"]:
         figureList.append((generateBoxPlot(imgIdx),False))
+        timeList.append(time.time())
+        print("boxplot:",timeList[2]-timeList[1])
     if config["TSNE"]["enabled"]:
         figureList.append((generateTSNEPlots(imgIdx),False))
+        timeList.append(time.time())
+        print("tsne:",timeList[3]-timeList[2])
     if config["TrajectoryRegression"]["enabled"]:
         figureList.append((trajectoryCostReg(imgIdx),False))
+        timeList.append(time.time())
+        print("trajectory:",timeList[4]-timeList[3])
     if config["Histogram"]["enabled"]:
         # all epsilons histogram, generates if epsilon val is greater than max
+        allEps = time.time()
         allEpsFig, maxHeight = generateHistograms(imgIdx, maxEpsilon+1)
         figureList.append((allEpsFig,True))
+        print("all epsilons:",time.time()-allEps)
+        individualEps = time.time()
         for eps in epsilonList:
             figureList.append((generateHistograms(imgIdx, eps, maxHeight)[0],True))
+        print("individual epsilons:",time.time()-individualEps)
     return figureList
 
 class enlargeVisuals():
@@ -70,7 +85,7 @@ class enlargeVisuals():
     temp = self.currentEmbed if self.currentEmbed else None
 
     # set max width/height based on screensize and dpi
-    fig.set_size_inches(self.root.winfo_screenwidth()/self.root.winfo_fpixels('1i'), self.root.winfo_screenheight()/self.root.winfo_fpixels('1i')-1)
+    fig.set_size_inches(self.root.winfo_screenwidth()/self.root.winfo_fpixels('1i')-1, self.root.winfo_screenheight()/self.root.winfo_fpixels('1i')-1)
     self.currentEmbed = Frame(self.root)
     canvas = FigureCanvasTkAgg(fig, master = self.currentEmbed)
     canvas.draw()

@@ -15,6 +15,8 @@ from matplotlib.pyplot import subplot
 from chained_AE import Autoencoder, Chained_AE
 from mnist_cost import MNISTCost
 
+import time
+
 with open('config.json') as f:
    config = json.load(f)
 
@@ -54,28 +56,23 @@ images_unattacked = [image.reshape(28, 28) for image in np.load(os.path.join(npy
 
 # Generates an unlabeled image
 def generateUnlabeledImage(idx):
-    image = images[idx]
-    plt.figure(figsize=(4,3))
-    plt.imshow(image, cmap="gray")
-    return plt.gcf()
+    fig = plt.figure()
+    plt.xticks([])
+    plt.yticks([])
+    plt.imshow(images[idx], cmap="gray")
+    return fig
 
 # Generates an unattacked image
 def generateUnattackedImage(idx):
-    image = images_unattacked[idx]
-    plt.figure(figsize=(4,3))
-    plt.imshow(image, cmap="gray")
-    return plt.gcf()
+    fig = plt.figure()
+    plt.imshow(images_unattacked[idx], cmap="gray")
+    return fig
 
 def cached_get_data():
     cache = {}
     def __get_data(npys,eps):
         if eps not in cache:
-            #adversarial data
-            # testlabels = np.load(os.path.join(npys, eps,'testlabels.npy')).astype(np.float64)[:limit]
-            # advoutput = np.load(os.path.join(npys,eps,'advoutput.npy')).astype(np.float64)[:limit]
-            advdata = np.load(os.path.join(npys,eps,'advdata.npy')).astype(np.float64)[:limit]
-
-            cache[eps] = advdata
+            cache[eps] = np.load(os.path.join(npys,eps,'advdata.npy')).astype(np.float64)[:limit]
         return cache[eps]
 
     return __get_data
@@ -84,16 +81,22 @@ get_data = cached_get_data()
 def getTrueLabel(idx):
     return exlabels[idx]
 
-def findNearest(exdata,exoutput,exlabels,advdata,_,idx):
-    k=10
-    example = exdata[idx]
-    label = np.argmax(exoutput[idx])
+k=10
+def cached_find_nearest():
+    cache = {}
+    def __findNearest(exdata,exoutput,advdata,idx,epsilon):
+        if (idx,epsilon) not in cache:
+            example = exdata[idx]
+            label = np.argmax(exoutput[idx])
 
-    norms = np.linalg.norm(advdata - example, axis=1)
+            norms = np.linalg.norm(advdata - example, axis=1)
 
-    top = np.argpartition(norms, k-1)
-    # returns norms of all data, the nearest k points, the predicted label, and the actual label
-    return norms, top[1:k], label, exlabels[idx]
+            top = np.argpartition(norms, k-1)
+            # returns norms of all data, the nearest k points, and the predicted label
+            cache[(idx,epsilon)] = (norms, top[1:k], label)
+        return cache[(idx,epsilon)]
+    return __findNearest
+findNearest = cached_find_nearest()
 
 def labelAxes(axs, plt):
     count = 0
@@ -108,7 +111,7 @@ def generateTSNEPlots(idx):
     origdata = get_data(npys,'e0')
     advdata = get_data(npys,displayEpsilon)
 
-    norms,idxs,prediction,_ = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
+    norms,idxs,prediction = findNearest(exdata,exoutput,advdata,idx,displayEpsilon)
 
     # print('max distance', max(norms))
     # print('min distance', min(norms))
@@ -125,10 +128,14 @@ def generateTSNEPlots(idx):
     colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'aquamarine', 'orange', 'purple'
 
     fig, (ax1,ax2) = plt.subplots(1,2)
+    ax1.set_xticks([])
+    ax1.set_yticks([])
+    ax2.set_xticks([])
+    ax2.set_yticks([])
 
     #plot embedding for class coloration
     for c, label in zip(colors, labels):
-        ax1.scatter(X_2d[(testlabels[...] == label), 0], X_2d[(testlabels[...] == label), 1], c=c, label=label, s=3, picker=True)
+        ax1.scatter(X_2d[(testlabels[...] == label), 0], X_2d[(testlabels[...] == label), 1], c=c, label=label, s=3)
 
     ax1.set_title("Test Data")
 
@@ -136,7 +143,7 @@ def generateTSNEPlots(idx):
     ax2.scatter(X_2d[..., 0], X_2d[..., 1], c=norms[...], s=3, cmap='viridis')
 
     #plot 10 nearest points
-    cb = ax2.scatter(X_2d[idxs,0],X_2d[idxs,1], c='red', label="nearest", s=10, picker=True)
+    cb = ax2.scatter(X_2d[idxs,0],X_2d[idxs,1], c='red', label="nearest", s=10)
 
     ax2.set_title(f"Model Prediction: {prediction}\nAverage Distance: {round(float(sum(norms))/len(norms),2)}")
 
@@ -157,15 +164,19 @@ sigFigs = len(repr(float(epsilonStepSize)).split('.')[1].rstrip('0'))
 epsilonList = generateEpsilonList(epsilonStepSize,maxEpsilon)
 def generateHistograms(idx, plotID, height = None):
     r=(5,16)
-    b=200
+    b=150
+    bin_edges = np.linspace(r[0], r[1], num=b+1)
 
     maxHeight = 0
+    subplot_create = time.time()
     fig, axs = plt.subplots(10)
+    print("Create subplots:",time.time()-subplot_create)
 
+    generateHist = time.time()
     if plotID > maxEpsilon:
         for epsilon in epsilonList:
             advdata = get_data(npys,f'e{roundSigFigs(epsilon,sigFigs)}')
-            norms,_,_,_ = findNearest(exdata,exoutput,exlabels,advdata,testlabels, idx)
+            norms,_,_ = findNearest(exdata,exoutput,advdata,idx,epsilon)
 
             for i in range(10):
                 arr = norms[(testlabels[...] == labels[i])]
@@ -179,8 +190,7 @@ def generateHistograms(idx, plotID, height = None):
         fig.suptitle("All Epsilons")
     else:
         advdata = get_data(npys,f'e{roundSigFigs(plotID,sigFigs)}')
-        norms,_,_,_ = findNearest(exdata,exoutput,exlabels,advdata,testlabels,idx)
-        normSum = sum(norms)
+        norms,_,_ = findNearest(exdata,exoutput,advdata,idx,plotID)
         for i in range(10):
             arr = norms[(testlabels[...] == labels[i])]
             weights = np.ones_like(arr)/len(arr)
@@ -188,11 +198,11 @@ def generateHistograms(idx, plotID, height = None):
             maxHeight = max(maxHeight,y.max())
         fig.suptitle(f"Epsilon {plotID}")
 
-    # should it be 0-1 or 0-max?
     for ax in axs:
         ax.set_ylim([0, height if height else maxHeight])
 
     labelAxes(axs, fig)
+    print("Histogram generation:",time.time()-generateHist)
     return(fig, maxHeight)
 
 def generateBoxPlot(idx):
@@ -201,7 +211,7 @@ def generateBoxPlot(idx):
 
     for epsilon in epsilonList:
         advdata = get_data(npys, f'e{roundSigFigs(epsilon,sigFigs)}')
-        norms,_,prediction,_ = findNearest(exdata, exoutput, exlabels, advdata, testlabels, idx)
+        norms,_,prediction = findNearest(exdata, exoutput, advdata, idx, epsilon)
         norm_list.append(norms)
 
     plt.suptitle(f"Model Prediction: {prediction}")
@@ -246,9 +256,6 @@ def make_models(dist_metric, epsilons, attack_type, d):
 
     return ae
 
-def make_trajectory(expected, ae):
-    return ae(expected, True)
-
 # function for rounding predicted cost to the assigned bins, note that this is for l2 only
 def round_cost(pc):
     rounded_cost = np.clip(pc, 0, max_epsilon)
@@ -279,9 +286,9 @@ def buildTrajectoryCostReg(idx):
 
         reg_epsilons = range(int(cost)+1)
         reg_ae = make_models(dist_metric, reg_epsilons, attack_type, d)
-        reg_recons = make_trajectory(exp, reg_ae)
+        reg_recons = reg_ae(exp,True)
 
-        fig = plt.figure(figsize=(8,4))
+        fig = plt.figure()
         fig.suptitle('Reconstruction using estimated cost ({:.2f}), '.format(__trajectoryCostReg.pc[localIdx].item()) + f'{dist_metric} {attack_type} AE, d={d}')
 
         num_bins = len(reg_recons)+1

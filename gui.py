@@ -50,13 +50,14 @@ def myClick():
         confidence.set(None)
 
         imgIdx += 1
+        # clear current plots
+        plt.clf()
     else:
         initialLoad = False
         if config["TrajectoryRegression"]["enabled"]:
             buildTrajectoryCostReg(imgIdx)
 
-    # clear current matplots and embed new new ones
-    plt.clf()
+
     figureList = loadFigures(epsilonList, imgIdx, maxEpsilon, config)
 
     # embed all available figures that will fit in specified layout size
