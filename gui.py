@@ -73,9 +73,9 @@ window = Tk()
 window.configure(bg = "#FFFFFF")
 
 horzScrollBar = AutoScrollbar(window, orient=HORIZONTAL)
-horzScrollBar.grid(row = 1, column = 0, stick='ew')
+horzScrollBar.grid(row = 1, column = 0, stick='sew')
 
-scrollCanvas = Canvas(window, xscrollcommand = horzScrollBar.set, width = 604*min(2,numCols))
+scrollCanvas = Canvas(window, xscrollcommand = horzScrollBar.set, width = 604*min(2,numCols), height=800)
 scrollCanvas.grid(row=0, column=0, sticky='nsew')
 
 horzScrollBar.config(command = scrollCanvas.xview)
@@ -94,13 +94,15 @@ frame.update_idletasks()
 # Configuring canvas
 scrollCanvas.config(scrollregion=scrollCanvas.bbox("all"))
 
-# bind vertical scroll to horizontal scroll bar
-scrollCanvas.bind_all('<MouseWheel>', lambda event: scrollCanvas.xview_scroll(int(-1*(event.delta/120)), "units"))
+scrollBarShown = min(numRows*numCols,len(figureList))>4
+if scrollBarShown:
+    # bind vertical scroll to horizontal scroll bar
+    scrollCanvas.bind_all('<MouseWheel>', lambda event: scrollCanvas.xview_scroll(int(-1*(event.delta/120)), "units"))
 
-canvas = Canvas(window, bg = "#FFFFFF", height = 800, width = 300, bd = 0, highlightthickness = 0, relief = "ridge")
-canvas.grid(row = 0, column = 1)
+canvas = Canvas(window, bg = "#FFFFFF", height = 824 if scrollBarShown else 800, width = 300, bd = 0, highlightthickness = 0, relief = "ridge")
+canvas.grid(row = 0, column = 1, stick='ns', rowspan = 1 + scrollBarShown)
 
-canvas.create_rectangle(0, 0, 300, 800, fill="#D2D2D2", outline="")
+canvas.create_rectangle(0, 0, 300, 824 if scrollBarShown else 800, fill="#D2D2D2", outline="")
 canvas.create_text(12, 85.0, anchor="nw", text="Which visualization\nmost assisted you in\nmaking this decision?", fill="#000000", font=("Roboto", -24))
 canvas.create_text(12, 380.0, anchor="nw", text="Prediction Confidence:", fill="#000000", font=("Roboto", -24))
 canvas.create_text(12, 24.0, anchor="nw", text="Prediction:", fill="#000000", font=("Roboto", -24))

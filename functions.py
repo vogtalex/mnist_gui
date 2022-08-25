@@ -16,8 +16,7 @@ class AutoScrollbar(Scrollbar):
     # Defining set method with all its parameters
     def set(self, low, high):
         if float(low) <= 0.0 and float(high) >= 1.0:
-            # Using grid_remove
-            self.tk.call("grid", "remove", self)
+            self.grid_remove()
         else:
             self.grid()
         Scrollbar.set(self, low, high)
