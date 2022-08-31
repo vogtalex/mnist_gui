@@ -80,6 +80,7 @@ scrollCanvas.grid(row=0, column=0, sticky='nsew')
 
 horzScrollBar.config(command = scrollCanvas.xview)
 
+global frame
 frame = Frame(scrollCanvas)
 frame.grid(row=0,column=0, sticky="n")
 
@@ -109,11 +110,11 @@ canvas.create_text(12, 24.0, anchor="nw", text="Prediction:", fill="#000000", fo
 104,120.5
 entry_image_1 = PhotoImage(file = ASSETS_PATH / "entry_1.png")
 entry_bg_1 = canvas.create_image(200, 40.5, image=entry_image_1)
-entry_1 = Entry(bd=0, bg="#FFFFFF", highlightthickness=0, width=8,font=("segoe-ui 18"))
+entry_1 = Entry(canvas, bd=0, bg="#FFFFFF", highlightthickness=0, width=8,font=("segoe-ui 18"))
 canvas.create_window(200, 38.5, window=entry_1)
 
 button_image_1 = PhotoImage(file = ASSETS_PATH / "button_1.png")
-button_1 = Button(image=button_image_1, borderwidth=0, highlightthickness=0, command=(myClick), relief="flat", width=298.19, height=115.15)
+button_1 = Button(canvas, image=button_image_1, borderwidth=0, highlightthickness=0, command=(myClick), relief="flat", width=298.19, height=115.15)
 canvas.create_window(150, 750, window=button_1)
 
 def enlarge_plots():
@@ -123,16 +124,19 @@ def enlarge_plots():
     root.protocol("WM_DELETE_WINDOW", root.destroy)
     root.mainloop()
 
-button_2 = Button(command=(enlarge_plots), width= 40, height = 3, text= "Enlarge Visualizations")
+button_2 = Button(canvas, command=(enlarge_plots), width= 40, height = 3, text= "Enlarge Visualizations")
 canvas.create_window(150, 660, window=button_2)
 
+# Disabled this as it was broken by switching matplotlib backend
+'''
 if config["General"]["showOriginal"]:
     def orig_image():
         fig = generateUnattackedImage(imgIdx)
         fig.show()
 
-    button_3 = Button(command=(orig_image), width= 40, height = 3, text= "Original Image")
+    button_3 = Button(canvas, command=(orig_image), width= 40, height = 3, text= "Original Image")
     canvas.create_window(150, 600, window=button_3)
+'''
 
 #Radio Button 1
 selected_visual = StringVar()

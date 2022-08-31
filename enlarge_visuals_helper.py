@@ -1,6 +1,6 @@
 from tkinter import Button, Frame, Scale
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, trajectoryCostReg
+from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, trajectoryCostReg, generateUnattackedImage
 import time
 
 def loadFigures(epsilonList, imgIdx, maxEpsilon, config):
@@ -34,6 +34,8 @@ def loadFigures(epsilonList, imgIdx, maxEpsilon, config):
         for eps in epsilonList:
             figureList.append((generateHistograms(imgIdx, eps, maxHeight)[0],True))
         print("individual epsilons:",time.time()-individualEps)
+    if config["General"]["showOriginal"]:
+        figureList.append((generateUnattackedImage(imgIdx),False))
     return figureList
 
 class enlargeVisuals():

@@ -2,6 +2,8 @@
 import numpy as np
 import os
 import pickle
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 import json
@@ -55,12 +57,32 @@ images = imageData.reshape(imageData.shape[:-1]+(28,28))
 images_unattacked = [image.reshape(28, 28) for image in np.load(os.path.join(npys, examples, 'e0', 'advdata.npy')).astype(np.float64)[:limit]]
 
 # Generates an unlabeled image
-def generateUnlabeledImage(idx):
-    fig = plt.figure()
-    plt.xticks([])
-    plt.yticks([])
-    plt.imshow(images[idx], cmap="gray")
-    return fig
+def blitGenerateUnlabeledImage():
+    def genUImg(idx):
+
+        genUImg.fig.canvas.restore_region(genUImg.background)
+        genUImg.img.set_data(images[idx])
+        genUImg.ax.draw_artist(genUImg.img)
+        genUImg.fig.canvas.blit(genUImg.ax.bbox)
+
+        genUImg.fig.canvas.flush_events()
+        return genUImg.fig
+
+    # generate placeholder image and store figure, image, & bounding box of figure to load later
+    genUImg.fig = plt.figure()
+    genUImg.ax = genUImg.fig.add_subplot(1, 1, 1)
+    genUImg.img = genUImg.ax.imshow(images[0], cmap="gray")
+    genUImg.fig.canvas.draw()
+    genUImg.background = genUImg.fig.canvas.copy_from_bbox(genUImg.ax.bbox)
+    return genUImg
+generateUnlabeledImage = blitGenerateUnlabeledImage()
+
+# def generateUnlabeledImage(idx):
+#     fig = plt.figure()
+#     plt.xticks([])
+#     plt.yticks([])
+#     plt.imshow(images[idx], cmap="gray")
+#     return fig
 
 # Generates an unattacked image
 def generateUnattackedImage(idx):
@@ -107,52 +129,126 @@ def labelAxes(axs, plt):
     axs[count-1].get_xaxis().set_visible(True)
     plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9, wspace=0.4, hspace=0.4)
 
-def generateTSNEPlots(idx):
-    origdata = get_data(npys,'e0')
-    advdata = get_data(npys,displayEpsilon)
+# def generateTSNEPlots(idx):
+#     origdata = get_data(npys,'e0')
+#     advdata = get_data(npys,displayEpsilon)
+#
+#     norms,idxs,prediction = findNearest(exdata,exoutput,advdata,idx,displayEpsilon)
+#
+#     X_2d = []
+#     if os.path.exists("./embedding.npy"):
+#         X_2d = np.load('./embedding.npy').astype(np.float64)
+#     else:
+#         tsne = TSNE(n_components=2, random_state=4, perplexity=100)
+#         X_2d = tsne.fit_transform(origdata)
+#         np.save('./embedding.npy', X_2d, allow_pickle=False)
+#
+#     colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'aquamarine', 'orange', 'purple'
+#
+#     fig, (ax1,ax2) = plt.subplots(1,2,constrained_layout=True)
+#     ax1.set_xticks([])
+#     ax1.set_yticks([])
+#     ax2.set_xticks([])
+#     ax2.set_yticks([])
+#
+#     #plot embedding for class coloration
+#     for c, label in zip(colors, labels):
+#         ax1.scatter(X_2d[(testlabels[...] == label), 0], X_2d[(testlabels[...] == label), 1], c=c, label=label, s=3)
+#
+#     ax1.set_title("Test Data")
+#
+#     #plot embedding for norm coloration
+#     scatterPlot = ax2.scatter(X_2d[:, 0], X_2d[:, 1], c=norms[...], s=3, cmap='viridis')
+#
+#     fig.colorbar(scatterPlot,label="norm")
+#
+#     #plot 10 nearest points
+#     cb = ax2.scatter(X_2d[idxs,0],X_2d[idxs,1], c='red', s=3, zorder=2)
+#     cb.set_clim(5,15)
+#     # norms,idxs,prediction = findNearest(exdata,exoutput,advdata,idx+1,displayEpsilon)
+#     # scatterPlot.set_array(norms)
+#     # cb.set_offsets([[X_2d[i,0],X_2d[i,1]]for i in idxs])
+#
+#     # fig.colorbar(cb,label="norm")
+#
+#     ax2.set_title(f"Model Prediction: {prediction}\nAverage Distance: {round(float(sum(norms))/len(norms),2)}")
+#
+#     # cb.set_clim(min(norms),max(norms))
+#     ax1.legend()
+#     return fig
 
-    norms,idxs,prediction = findNearest(exdata,exoutput,advdata,idx,displayEpsilon)
+def blitgenerateTSNEPlots():
+    def getTSNE(idx):
+        # get closest points & norms to all points from the example at idx
+        norms,idxs,prediction = findNearest(exdata,exoutput,getTSNE.advdata,idx,displayEpsilon)
 
-    # print('max distance', max(norms))
-    # print('min distance', min(norms))
-    # print('avg distance', sum(norms)/len(norms))
+        # restore backgrounds, clearing foregound and allowing redrawing of artists
+        # this doesn't seem to work?
+        getTSNE.fig.canvas.restore_region(getTSNE.background)
+        getTSNE.fig.canvas.restore_region(getTSNE.titleBackground)
 
+        # change array for scatterplot so it'll recolor, changing offsets of cb so the closest 10 points will be in their new positions, and update title based on new model prediction
+        getTSNE.scatterPlot.set_array(norms)
+        getTSNE.cb.set_offsets([ [getTSNE.X_2d[i,0], getTSNE.X_2d[i,1]] for i in idxs])
+        getTSNE.title.set_text(f"Model Prediction: {prediction}\nAverage Distance: {round(float(sum(norms))/len(norms),2)}")
+
+        # redraw artists
+        getTSNE.ax2.draw_artist(getTSNE.title)
+        getTSNE.ax2.draw_artist(getTSNE.scatterPlot)
+        getTSNE.ax2.draw_artist(getTSNE.cb)
+
+        # blit bounding boxes of axis and text so figure will update
+        getTSNE.fig.canvas.blit(getTSNE.ax2.bbox)
+        getTSNE.fig.canvas.blit(getTSNE.title.get_window_extent())
+
+        getTSNE.fig.canvas.flush_events()
+
+        return getTSNE.fig
+    # create figures and turn off all axes ticks
+    getTSNE.fig, (getTSNE.ax1, getTSNE.ax2) = plt.subplots(1,2,constrained_layout=True)
+    getTSNE.ax1.set_xticks([])
+    getTSNE.ax1.set_yticks([])
+    getTSNE.ax2.set_xticks([])
+    getTSNE.ax2.set_yticks([])
+
+    # load adversarial data for epsilon and get closest points to idx 0 for initial plot creation
+    getTSNE.advdata = get_data(npys,displayEpsilon)
+    norms,idxs,prediction = findNearest(exdata,exoutput,getTSNE.advdata,0,displayEpsilon)
+
+    # generate tsne embedding based on original set of data
     X_2d = []
     if os.path.exists("./embedding.npy"):
         X_2d = np.load('./embedding.npy').astype(np.float64)
     else:
         tsne = TSNE(n_components=2, random_state=4, perplexity=100)
+        origdata = get_data(npys,'e0')
         X_2d = tsne.fit_transform(origdata)
         np.save('./embedding.npy', X_2d, allow_pickle=False)
+    getTSNE.X_2d = X_2d
 
+    # create scatter of all points colored & labaled by class. this one never needs to be updated, it's static
     colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'aquamarine', 'orange', 'purple'
-
-    fig, (ax1,ax2) = plt.subplots(1,2)
-    ax1.set_xticks([])
-    ax1.set_yticks([])
-    ax2.set_xticks([])
-    ax2.set_yticks([])
-
-    #plot embedding for class coloration
     for c, label in zip(colors, labels):
-        ax1.scatter(X_2d[(testlabels[...] == label), 0], X_2d[(testlabels[...] == label), 1], c=c, label=label, s=3)
+        getTSNE.ax1.scatter(X_2d[(testlabels[:] == label), 0], X_2d[(testlabels[:] == label), 1], c=c, label=label, s=3)
 
-    ax1.set_title("Test Data")
+    getTSNE.ax1.set_title("Test Data")
+    getTSNE.ax1.legend()
 
-    #plot embedding for norm coloration
-    ax2.scatter(X_2d[..., 0], X_2d[..., 1], c=norms[...], s=3, cmap='viridis')
+    # create scatter plot of all data colored by example's distance from original data & closest 10 points
+    getTSNE.scatterPlot = getTSNE.ax2.scatter(X_2d[:,0], X_2d[:,1], c=norms[:], s=3, cmap='viridis', zorder=1)
+    getTSNE.cb = getTSNE.ax2.scatter(X_2d[idxs,0],X_2d[idxs,1], c='red', s=3, zorder=2)
 
-    #plot 10 nearest points
-    cb = ax2.scatter(X_2d[idxs,0],X_2d[idxs,1], c='red', label="nearest", s=10)
+    getTSNE.fig.colorbar(getTSNE.scatterPlot,label="norm")
 
-    ax2.set_title(f"Model Prediction: {prediction}\nAverage Distance: {round(float(sum(norms))/len(norms),2)}")
+    getTSNE.title = getTSNE.ax2.set_title(f"Model Prediction: {prediction}\nAverage Distance: {round(float(sum(norms))/len(norms),2)}")
 
-    plt.colorbar(cb,label="norm")
-    cb.set_clim(5,15)
-    # cb.set_clim(min(norms),max(norms))
+    # draw figure and store bounding boxes of scatter background & title background
+    getTSNE.fig.canvas.draw()
+    getTSNE.background = getTSNE.fig.canvas.copy_from_bbox(getTSNE.ax2.bbox)
+    getTSNE.titleBackground = getTSNE.fig.canvas.copy_from_bbox(getTSNE.title.get_window_extent())
 
-    ax1.legend()
-    return fig
+    return getTSNE
+generateTSNEPlots = blitgenerateTSNEPlots()
 
 def roundSigFigs(num, sigFigs):
     return str(num)[:(int(math.log(num,10))*(num>1) + 2 + sigFigs if num else 1)]
@@ -165,7 +261,6 @@ epsilonList = generateEpsilonList(epsilonStepSize,maxEpsilon)
 def generateHistograms(idx, plotID, height = None):
     r=(5,16)
     b=150
-    bin_edges = np.linspace(r[0], r[1], num=b+1)
 
     maxHeight = 0
     subplot_create = time.time()
@@ -216,6 +311,7 @@ def generateBoxPlot(idx):
 
     plt.suptitle(f"Model Prediction: {prediction}")
     axs.boxplot(norm_list, patch_artist=True, notch='True', vert=1, labels=[f"Epsilon {epsilon}" for epsilon in epsilonList], showmeans=True)
+    axs.axis([None,None,3,15.5])
     return fig
 
 # function for loading a segment of the autoencoders chain
