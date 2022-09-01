@@ -59,8 +59,6 @@ images_unattacked = [image.reshape(28, 28) for image in np.load(os.path.join(npy
 # Generates an unlabeled image
 def blitGenerateUnlabeledImage():
     def genUImg(idx):
-
-        genUImg.fig.canvas.restore_region(genUImg.background)
         genUImg.img.set_data(images[idx])
         genUImg.ax.draw_artist(genUImg.img)
         genUImg.fig.canvas.blit(genUImg.ax.bbox)
@@ -71,9 +69,8 @@ def blitGenerateUnlabeledImage():
     # generate placeholder image and store figure, image, & bounding box of figure to load later
     genUImg.fig = plt.figure()
     genUImg.ax = genUImg.fig.add_subplot(1, 1, 1)
-    genUImg.img = genUImg.ax.imshow(images[0], cmap="gray")
+    genUImg.img = genUImg.ax.imshow(images[0], cmap="gray", interpolation="None")
     genUImg.fig.canvas.draw()
-    genUImg.background = genUImg.fig.canvas.copy_from_bbox(genUImg.ax.bbox)
     return genUImg
 generateUnlabeledImage = blitGenerateUnlabeledImage()
 
@@ -183,7 +180,6 @@ def blitgenerateTSNEPlots():
         norms,idxs,prediction = findNearest(exdata,exoutput,getTSNE.advdata,idx,displayEpsilon)
 
         # restore backgrounds, clearing foregound and allowing redrawing of artists
-        # this doesn't seem to work?
         getTSNE.fig.canvas.restore_region(getTSNE.background)
         getTSNE.fig.canvas.restore_region(getTSNE.titleBackground)
 
@@ -230,22 +226,26 @@ def blitgenerateTSNEPlots():
     colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'aquamarine', 'orange', 'purple'
     for c, label in zip(colors, labels):
         getTSNE.ax1.scatter(X_2d[(testlabels[:] == label), 0], X_2d[(testlabels[:] == label), 1], c=c, label=label, s=3)
-
     getTSNE.ax1.set_title("Test Data")
     getTSNE.ax1.legend()
+
+    # setting title as blank but with a big size to get background for blitting
+    getTSNE.title = getTSNE.ax2.set_title("  \n                                                     ")
+
+    colorLim = (4,13)
+
+    # manually create colorbar before second scatterplot has been made
+    getTSNE.fig.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(vmin=colorLim[0],vmax=colorLim[1]),cmap='viridis'),ax=[getTSNE.ax1,getTSNE.ax2],label="norm")
+
+    # draw figure and store bounding boxes of scatter background & title background
+    getTSNE.background = getTSNE.fig.canvas.copy_from_bbox(getTSNE.ax2.bbox)
+    getTSNE.fig.canvas.draw()
+    getTSNE.titleBackground = getTSNE.fig.canvas.copy_from_bbox(getTSNE.title.get_window_extent())
 
     # create scatter plot of all data colored by example's distance from original data & closest 10 points
     getTSNE.scatterPlot = getTSNE.ax2.scatter(X_2d[:,0], X_2d[:,1], c=norms[:], s=3, cmap='viridis', zorder=1)
     getTSNE.cb = getTSNE.ax2.scatter(X_2d[idxs,0],X_2d[idxs,1], c='red', s=3, zorder=2)
-
-    getTSNE.fig.colorbar(getTSNE.scatterPlot,label="norm")
-
-    getTSNE.title = getTSNE.ax2.set_title(f"Model Prediction: {prediction}\nAverage Distance: {round(float(sum(norms))/len(norms),2)}")
-
-    # draw figure and store bounding boxes of scatter background & title background
-    getTSNE.fig.canvas.draw()
-    getTSNE.background = getTSNE.fig.canvas.copy_from_bbox(getTSNE.ax2.bbox)
-    getTSNE.titleBackground = getTSNE.fig.canvas.copy_from_bbox(getTSNE.title.get_window_extent())
+    getTSNE.scatterPlot.set_clim(colorLim[0],colorLim[1])
 
     return getTSNE
 generateTSNEPlots = blitgenerateTSNEPlots()
