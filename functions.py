@@ -27,6 +27,58 @@ class AutoScrollbar(Scrollbar):
     def place(self, **kw):
         raise (TclError, "place cannot be used  with this widget")
 
+def l2_projection(x, x_init, r):
+    if r > 0:
+        d = torch.max(l2_norm(x, x_init), torch.tensor(r))
+        x = x_init + r * (x - x_init) / d.view(x.shape[0], 1, 1, 1)
+    else:
+        x = x_init
+
+    return x
+
+def PGD_attack(model, device, loss, x, y, epsilon, niter, stepsize, lpnorm=np.inf, randinit=False, debug=False):
+    x_ptb = x.detach().clone()
+    model.to(device)
+
+    eps = (torch.ones(x.shape[0])*epsilon).to(device)   # for dimension matching in l2 case
+    # set randinit to False for this project, it's mainly used for defense training
+    if randinit:
+        if lpnorm == np.inf:
+            x_ptb = x_ptb + torch.zeros_like(x_ptb).uniform_(-epsilon, epsilon) # random start
+            x_ptb = torch.clamp(x_ptb, 0, 1)
+        if lpnorm == 2:
+            u = torch.normal(0, 1, x.shape, device=x.device)
+            norm = torch.norm(u.flatten(start_dim=1), p=2, dim=1)
+            r = torch.rand(x.shape[0], device=x.device)
+            x_curr = (x + epsilon * u * (r / norm).view(x.shape[0], 1, 1, 1)).detach()
+            x_curr = l2_projection(x_curr, x, epsilon)
+
+            # x_ptb = x_ptb + torch.zeros_like(x_ptb).uniform_(-((epsilon/(x.shape[1]*x.shape[2]*x.shape[3]))**0.5),
+            #     (epsilon/(x.shape[1]*x.shape[2]*x.shape[3]))**0.5)
+    for i in range(niter):
+        x_ptb.requires_grad_()
+        with torch.enable_grad():
+            logits = model(x_ptb)
+            loss_val = loss(logits, y)
+        grad = torch.autograd.grad(loss_val, [x_ptb])[0]
+        if lpnorm == np.inf:
+            x_ptb = x_ptb.detach() + stepsize * torch.sign(grad.detach())   # perturbation
+            x_ptb = torch.min(torch.max(x_ptb, x - epsilon), x + epsilon)   # linf projection
+        if lpnorm == 2:
+            # perturbation
+            grad_norm = torch.norm(grad.view(x.shape[0], -1), p=2, dim=1)
+            grad_norm[grad_norm == 0] = 1
+            x_ptb = x_ptb + stepsize * grad / grad_norm.view(x.shape[0],1,1,1)
+            total_ptb = x_ptb - x
+            ptb_norm = torch.norm(total_ptb.view(x.shape[0], -1), p=2, dim=1)
+            denom = torch.max(ptb_norm, eps)
+            x_ptb = x.detach().clone() + eps.view(x.shape[0],1,1,1) * total_ptb.detach() / denom.view(x.shape[0],1,1,1)
+        x_ptb = torch.clamp(x_ptb, 0, 1)    # pixel value constraint
+        if debug:
+            print('linf norm:', torch.norm(x_ptb-x, p=np.inf).item()*255)
+            print('l1 norm:', torch.norm(x_ptb-x, p=1).item()*255)
+    return x_ptb
+
 def SoftCrossEntropyLoss(input, target):
   logprobs = F.log_softmax(input, dim = 1)
   print("1")

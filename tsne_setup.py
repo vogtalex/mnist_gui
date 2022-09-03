@@ -21,6 +21,8 @@ with open('config.json') as f:
    config = json.load(f)
 
 numIters = 20
+batchSize = 1000
+use_cuda = True
 
 ### import model from variable directory and import it
 # split file into name and path
@@ -39,19 +41,19 @@ test_loader = torch.utils.data.DataLoader(
     datasets.MNIST('../data', train=False, download=True, transform=transforms.Compose([
         transforms.ToTensor(),
     ])),
-    batch_size=1000, shuffle=False)
+    batch_size=batchSize, shuffle=False)
 
-train_loader = torch.utils.data.DataLoader(
-    datasets.MNIST('../data', train=True, download=True, transform=transforms.Compose([
-        transforms.ToTensor(),
-    ])),
-    batch_size=1000, shuffle=True)
-# Starter code if using cuda
-use_cuda = True
+# train_loader = torch.utils.data.DataLoader(
+#     datasets.MNIST('../data', train=True, download=True, transform=transforms.Compose([
+#         transforms.ToTensor(),
+#     ])),
+#     batch_size=batchSize, shuffle=True)
+
+# use cuda if available and var is set
 device = torch.device("cuda:0" if (use_cuda and torch.cuda.is_available()) else "cpu")
 
 # Initialize the network
-model = Net()
+model = MadryNet()
 # model = LeNet_MNIST()
 model.load_state_dict(torch.load(pretrained_model,map_location=device))
 
@@ -75,12 +77,13 @@ def gen_adv_features_test(eps):
     testLoaderLen = len(test_loader.dataset)
 
     for data, target in test_loader:
-        data,target = data.to(device), target.to(device)
         cnt += 1
-        print("processing: %d/%d" % (cnt, testLoaderLen))
-        if cnt > 9:
-            break;
-        delta = pgd_l2(model,data,target,eps,2.5*eps/255./numIters,numIters)
+        if cnt > (testLoaderLen/batchSize)*0.9: break;
+        print("processing: %d/%d" % (cnt*batchSize, testLoaderLen))
+        data,target = data.to(device), target.to(device)
+
+        # delta = pgd_l2(model,data,target,eps,2.5*eps/255./numIters,numIters)
+        delta = PGD_attack(model=model, device=device, loss=F.cross_entropy, x=data, y=target, epsilon=eps, niter=numIters, stepsize=2.5*eps/255./numIters, lpnorm=2, randinit=False)
 
         output = model(data + delta)
         output_np = output.data.cpu().numpy()
@@ -90,8 +93,9 @@ def gen_adv_features_test(eps):
 
         data = torch.flatten(data,2,3)
         data = torch.flatten(data,0,1)
-        out_data = np.vstack([out_data,data.cpu().numpy()]) if out_data.size else data.cpu().numpy()
+        out_data = np.vstack([out_data,data.cpu().detach().numpy()]) if out_data.size else data.cpu().detach().numpy()
 
+    print("Finished test images for epsilon")
     labelPath = os.path.join(outputDir,"testlabels.npy")
     if not os.path.isfile(labelPath):
         np.save(labelPath, labels, allow_pickle=False)
@@ -110,12 +114,13 @@ def gen_adv_features_examples(eps):
     testLoaderLen = len(test_loader.dataset)
 
     for data, target in test_loader:
-        data,target = data.to(device), target.to(device)
         cnt += 1
-        print("processing: %d/%d" % (cnt, testLoaderLen))
-        if cnt <= 9: continue;
+        if cnt <= (testLoaderLen/batchSize)*0.9: continue;
+        print("processing: %d/%d" % (cnt*batchSize, testLoaderLen))
+        data,target = data.to(device), target.to(device)
 
-        delta = pgd_l2(model,data,target,eps,2.5*eps/255./numIters,numIters)
+        # delta = pgd_l2(model,data,target,eps,2.5*eps/255./numIters,numIters)
+        delta = PGD_attack(model=model, device=device, loss=F.cross_entropy, x=data, y=target, epsilon=eps, niter=numIters, stepsize=2.5*eps/255./numIters, lpnorm=2, randinit=False)
 
         output = model(data+delta)
         output_np = output.data.cpu().numpy()
@@ -126,8 +131,12 @@ def gen_adv_features_examples(eps):
         data=data+delta
         data = torch.flatten(data,2,3)
         data = torch.flatten(data,0,1)
-        out_data = np.vstack([out_data,data.cpu().numpy()]) if out_data.size else data.cpu().numpy()
+        out_data = np.vstack([out_data,data.cpu().detach().numpy()]) if out_data.size else data.cpu().detach().numpy()
 
+    print("Finished example images for epsilon")
+    folderPath = os.path.join(outputDir,'examples')
+    if not os.path.isdir(folderPath):
+        os.mkdir(folderPath)
     labelPath = os.path.join(outputDir,'examples',"testlabels.npy")
     if not os.path.isfile(labelPath):
         np.save(labelPath, labels, allow_pickle=False)
@@ -140,8 +149,9 @@ try:
     shutil.rmtree(outputDir)
 except OSError as e:
     print("Error: %s : %s" % (outputDir, e.strerror))
-os.mkdir(os.path.join(outputDir))
+os.mkdir(outputDir)
 
 for eps in generateEpsilonList(config["General"]["epsilonStepSize"], config["General"]["maxEpsilon"]):
+    print(f"Generating epsilon {eps} data")
     gen_adv_features_test(eps)
     gen_adv_features_examples(eps)
