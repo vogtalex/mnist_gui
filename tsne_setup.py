@@ -54,8 +54,8 @@ device = torch.device("cuda:0" if (use_cuda and torch.cuda.is_available()) else 
 
 # Initialize the network
 model = MadryNet()
-# model = LeNet_MNIST()
 model.load_state_dict(torch.load(pretrained_model,map_location=device))
+model.to(device)
 
 # Creates a random seed
 random_seed = 1
@@ -83,9 +83,12 @@ def gen_adv_features_test(eps):
         data,target = data.to(device), target.to(device)
 
         # delta = pgd_l2(model,data,target,eps,2.5*eps/255./numIters,numIters)
-        delta = PGD_attack(model=model, device=device, loss=F.cross_entropy, x=data, y=target, epsilon=eps, niter=numIters, stepsize=2.5*eps/255./numIters, lpnorm=2, randinit=False)
+        if eps:
+            attackedImg = PGD_attack(model=model, device=device, loss=F.cross_entropy, x=data, y=target, epsilon=eps, niter=numIters, stepsize=2.5*eps/numIters, lpnorm=2, randinit=False, debug=False)
+        else:
+            attackedImg = data.detach()
 
-        output = model(data + delta)
+        output = model(attackedImg)
         output_np = output.data.cpu().numpy()
         out_output = np.vstack([out_output,output_np]) if out_output.size else output_np
 
@@ -93,7 +96,7 @@ def gen_adv_features_test(eps):
 
         data = torch.flatten(data,2,3)
         data = torch.flatten(data,0,1)
-        out_data = np.vstack([out_data,data.cpu().detach().numpy()]) if out_data.size else data.cpu().detach().numpy()
+        out_data = np.vstack([out_data,data.cpu().numpy()]) if out_data.size else data.cpu().numpy()
 
     print("Finished test images for epsilon")
     labelPath = os.path.join(outputDir,"testlabels.npy")
@@ -120,18 +123,20 @@ def gen_adv_features_examples(eps):
         data,target = data.to(device), target.to(device)
 
         # delta = pgd_l2(model,data,target,eps,2.5*eps/255./numIters,numIters)
-        delta = PGD_attack(model=model, device=device, loss=F.cross_entropy, x=data, y=target, epsilon=eps, niter=numIters, stepsize=2.5*eps/255./numIters, lpnorm=2, randinit=False)
+        if eps:
+            attackedImg = PGD_attack(model=model, device=device, loss=F.cross_entropy, x=data, y=target, epsilon=eps, niter=numIters, stepsize=2.5*eps/numIters, lpnorm=2, randinit=False, debug=False)
+        else:
+            attackedImg = data.detach()
 
-        output = model(data+delta)
+        output = model(attackedImg)
         output_np = output.data.cpu().numpy()
         out_output = np.vstack([out_output,output_np]) if out_output.size else output_np
 
         labels = np.append(labels,target.cpu().numpy())
 
-        data=data+delta
-        data = torch.flatten(data,2,3)
-        data = torch.flatten(data,0,1)
-        out_data = np.vstack([out_data,data.cpu().detach().numpy()]) if out_data.size else data.cpu().detach().numpy()
+        attackedImg = torch.flatten(attackedImg,2,3)
+        attackedImg = torch.flatten(attackedImg,0,1)
+        out_data = np.vstack([out_data,attackedImg.cpu().numpy()]) if out_data.size else attackedImg.cpu().numpy()
 
     print("Finished example images for epsilon")
     folderPath = os.path.join(outputDir,'examples')
@@ -142,7 +147,7 @@ def gen_adv_features_examples(eps):
         np.save(labelPath, labels, allow_pickle=False)
     os.mkdir(os.path.join(outputDir,'examples',f"e{eps}"))
     np.save(os.path.join(outputDir,'examples',f"e{eps}","advoutput.npy"), out_output, allow_pickle=False)
-    np.save(os.path.join(outputDir,'examples',f"e{eps}","advdata.npy"), out_data,allow_pickle=False)
+    np.save(os.path.join(outputDir,'examples',f"e{eps}","advdata.npy"), out_data, allow_pickle=False)
 
 # clear output directory
 try:

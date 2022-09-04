@@ -35,7 +35,8 @@ examples = 'examples'
 limit = 9000
 
 # constants for trajectory regression
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+use_cuda = False
+device = torch.device('cuda' if torch.cuda.is_available() and use_cuda else 'cpu')
 dist_metric = 'l2'
 attack_type = 'targeted'
 d=50
@@ -43,11 +44,11 @@ max_epsilon = 6
 batch_size = 10 # MUST NOT BE LOWER THAN 10
 
 #example data
-exlabels = np.load(os.path.join(npys,examples,displayEpsilon,'testlabels.npy')).astype(np.float64)[:limit]
+exlabels = np.load(os.path.join(npys,examples,'testlabels.npy')).astype(np.float64)[:limit]
 exoutput = np.load(os.path.join(npys,examples,displayEpsilon,'advoutput.npy')).astype(np.float64)[:limit]
 exdata = np.load(os.path.join(npys,examples,displayEpsilon,'advdata.npy')).astype(np.float64)[:limit]
 
-testlabels = np.load(os.path.join(npys, 'e0','testlabels.npy')).astype(np.float64)[:limit]
+testlabels = np.load(os.path.join(npys,'testlabels.npy')).astype(np.float64)[:limit]
 
 # this is kinda a makeshift solution, do it better later
 labels = list(set(exlabels))

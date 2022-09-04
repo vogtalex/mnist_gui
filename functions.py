@@ -77,7 +77,7 @@ def PGD_attack(model, device, loss, x, y, epsilon, niter, stepsize, lpnorm=np.in
         if debug:
             print('linf norm:', torch.norm(x_ptb-x, p=np.inf).item()*255)
             print('l1 norm:', torch.norm(x_ptb-x, p=1).item()*255)
-    return x_ptb
+    return x_ptb.detach()
 
 def SoftCrossEntropyLoss(input, target):
   logprobs = F.log_softmax(input, dim = 1)
