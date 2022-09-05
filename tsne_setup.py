@@ -94,9 +94,9 @@ def gen_adv_features_test(eps):
 
         labels = np.append(labels,target.cpu().numpy())
 
-        data = torch.flatten(data,2,3)
-        data = torch.flatten(data,0,1)
-        out_data = np.vstack([out_data,data.cpu().numpy()]) if out_data.size else data.cpu().numpy()
+        attackedImg = torch.flatten(attackedImg,2,3)
+        attackedImg = torch.flatten(attackedImg,0,1)
+        out_data = np.vstack([out_data,attackedImg.cpu().numpy()]) if out_data.size else attackedImg.cpu().numpy()
 
     print("Finished test images for epsilon")
     labelPath = os.path.join(outputDir,"testlabels.npy")
