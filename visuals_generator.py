@@ -62,6 +62,8 @@ def blitGenerateUnlabeledImage():
     def genUImg(idx):
         genUImg.img.set_data(images[idx])
         genUImg.ax.draw_artist(genUImg.img)
+
+        # this line silent crashes the program after opening/closing the enlarge_plots gui and submitting current example
         genUImg.fig.canvas.blit(genUImg.ax.bbox)
 
         genUImg.fig.canvas.flush_events()
@@ -70,6 +72,8 @@ def blitGenerateUnlabeledImage():
     # generate placeholder image and store figure, image, & bounding box of figure to load later
     genUImg.fig = plt.figure()
     genUImg.ax = genUImg.fig.add_subplot(1, 1, 1)
+    genUImg.ax.set_xticks([])
+    genUImg.ax.set_yticks([])
     genUImg.img = genUImg.ax.imshow(images[0], cmap="gray", interpolation="None")
     genUImg.fig.canvas.draw()
     return genUImg
@@ -245,7 +249,7 @@ def blitgenerateTSNEPlots():
 
     # create scatter plot of all data colored by example's distance from original data & closest 10 points
     getTSNE.scatterPlot = getTSNE.ax2.scatter(X_2d[:,0], X_2d[:,1], c=norms[:], s=3, cmap='viridis', zorder=1)
-    getTSNE.cb = getTSNE.ax2.scatter(X_2d[idxs,0],X_2d[idxs,1], c='red', s=3, zorder=2)
+    getTSNE.cb = getTSNE.ax2.scatter(X_2d[idxs,0],X_2d[idxs,1], c='red', s=7, zorder=2)
     getTSNE.scatterPlot.set_clim(colorLim[0],colorLim[1])
 
     return getTSNE
@@ -299,7 +303,9 @@ def generateHistograms(idx, plotID, height = None):
 
     labelAxes(axs, fig)
     print("Histogram generation:",time.time()-generateHist)
-    return(fig, maxHeight)
+    if height:
+        return fig
+    return (fig, maxHeight)
 
 def generateBoxPlot(idx):
     fig, axs = plt.subplots()
@@ -391,6 +397,9 @@ def buildTrajectoryCostReg(idx):
         num_bins = len(reg_recons)+1
         for j in range(num_bins):
             ax = fig.add_subplot(1,num_bins,j+1,anchor='N')
+            ax.get_xaxis().set_ticks([])
+            ax.get_yaxis().set_ticks([])
+            ax.set_title(f'Epsilon {reg_epsilons[j]}')
             if j == len(reg_recons):
                 ax.imshow(exp[0][0], cmap="gray")
                 for spine in ax.spines.values():
@@ -398,9 +407,6 @@ def buildTrajectoryCostReg(idx):
                     spine.set_linewidth(2)
             else:
                 ax.imshow(reg_recons[num_bins-2-j][0][0].detach().cpu(), cmap="gray")
-            ax.get_xaxis().set_ticks([])
-            ax.get_yaxis().set_ticks([])
-            ax.set_title(f'Epsilon {reg_epsilons[j]}')
 
         plt.tight_layout()
 

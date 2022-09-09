@@ -1,7 +1,11 @@
 from tkinter import Button, Frame, Scale
+import matplotlib
+matplotlib.use("Agg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, trajectoryCostReg, generateUnattackedImage
 import time
+# import io
+import pickle
 
 def loadFigures(epsilonList, imgIdx, maxEpsilon, config):
     figureList = []
@@ -14,16 +18,14 @@ def loadFigures(epsilonList, imgIdx, maxEpsilon, config):
         print("image:",timeList[1]-timeList[0])
     if config["BoxPlot"]["enabled"]:
         figureList.append((generateBoxPlot(imgIdx),False))
-        timeList.append(time.time())
-        print("boxplot:",timeList[2]-timeList[1])
     if config["TSNE"]["enabled"]:
         figureList.append((generateTSNEPlots(imgIdx),False))
         timeList.append(time.time())
-        print("tsne:",timeList[3]-timeList[2])
+        print("tsne:",timeList[2]-timeList[1])
     if config["TrajectoryRegression"]["enabled"]:
         figureList.append((trajectoryCostReg(imgIdx),False))
         timeList.append(time.time())
-        print("trajectory:",timeList[4]-timeList[3])
+        print("trajectory:",timeList[3]-timeList[2])
     if config["Histogram"]["enabled"]:
         # all epsilons histogram, generates if epsilon val is greater than max
         allEps = time.time()
@@ -32,7 +34,7 @@ def loadFigures(epsilonList, imgIdx, maxEpsilon, config):
         print("all epsilons:",time.time()-allEps)
         individualEps = time.time()
         for eps in epsilonList:
-            figureList.append((generateHistograms(imgIdx, eps, maxHeight)[0],True))
+            figureList.append((generateHistograms(imgIdx, eps, maxHeight),True))
         print("individual epsilons:",time.time()-individualEps)
     if config["General"]["showOriginal"]:
         figureList.append((generateUnattackedImage(imgIdx),False))
@@ -57,11 +59,13 @@ class enlargeVisuals():
     button_2.grid(row=1,column=3)
 
     # create x limit sliders
-    self.period_slider = Scale(master = self.root, from_=0, to_=16, resolution=0.50, orient='horizontal', length= 500, width = 30, label = "X-Axis Lower Bound", command=self.updateXAxis)
+    self.period_slider = Scale(master = self.root, from_=0, to_=16, resolution=0.50, orient='horizontal', length= 500, width = 30, label = "X-Axis Lower Bound", takefocus=False)
+    self.period_slider.bind("<ButtonRelease-1>", self.updateXAxis)
     self.period_slider.set(0)
     self.period_slider.grid(row=1, column = 1)
 
-    self.period_slider2 = Scale(master = self.root, from_=0, to_=16, resolution=0.50, orient='horizontal', length= 500, width = 30, label = "X-Axis Upper Bound", command=self.updateXAxis)
+    self.period_slider2 = Scale(master = self.root, from_=0, to_=16, resolution=0.50, orient='horizontal', length= 500, width = 30, label = "X-Axis Upper Bound", takefocus=False)
+    self.period_slider2.bind("<ButtonRelease-1>", self.updateXAxis)
     self.period_slider2.set(16)
     self.period_slider2.grid(row=1, column = 2)
 
@@ -84,6 +88,7 @@ class enlargeVisuals():
         self.embedPlot(self.figureList[self.currPlot][0])
 
   def embedPlot(self, fig):
+    fig = pickle.loads(pickle.dumps(fig))
     temp = self.currentEmbed if self.currentEmbed else None
 
     # set max width/height based on screensize and dpi

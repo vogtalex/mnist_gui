@@ -51,12 +51,11 @@ def myClick():
 
         imgIdx += 1
         # clear current plots
-        plt.clf()
+        # plt.clf()
     else:
         initialLoad = False
         if config["TrajectoryRegression"]["enabled"]:
             buildTrajectoryCostReg(imgIdx)
-
 
     figureList = loadFigures(epsilonList, imgIdx, maxEpsilon, config)
 
@@ -140,7 +139,7 @@ if config["General"]["showOriginal"]:
 
 #Radio Button 1
 selected_visual = StringVar()
-selected_visual.set(' ')
+selected_visual.set(None)
 
 selections = []
 if config['Images']['enabled']:
@@ -171,7 +170,7 @@ for visual in selections:
 
 #Radio Button 2
 confidence = StringVar()
-confidence.set(' ')
+confidence.set(None)
 scale = (('High Confidence', 'High Confidence'),
          ('Moderate Confidence', 'Moderate Confidence'),
          ('Low Confidence', 'Low Confidence'))
