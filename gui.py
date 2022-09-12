@@ -23,7 +23,6 @@ epsilonStepSize = config["General"]["epsilonStepSize"]
 epsilonList = generateEpsilonList(epsilonStepSize,maxEpsilon)
 
 def embedMatplot(fig, col, r):
-    fig.set_size_inches(6, 4)
     canvas = FigureCanvasTkAgg(fig, master=frame)
     canvas.draw()
     canvas.get_tk_widget().grid(row=r, column=col, padx=2, pady=2)
@@ -50,8 +49,6 @@ def myClick():
         confidence.set(None)
 
         imgIdx += 1
-        # clear current plots
-        # plt.clf()
     else:
         initialLoad = False
         if config["TrajectoryRegression"]["enabled"]:

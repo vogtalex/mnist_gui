@@ -91,8 +91,9 @@ class enlargeVisuals():
     fig = pickle.loads(pickle.dumps(fig))
     temp = self.currentEmbed if self.currentEmbed else None
 
+    scaler = 1
     # set max width/height based on screensize and dpi
-    fig.set_size_inches(self.root.winfo_screenwidth()/self.root.winfo_fpixels('1i')-1, self.root.winfo_screenheight()/self.root.winfo_fpixels('1i')-1)
+    fig.set_size_inches((self.root.winfo_screenwidth()/self.root.winfo_fpixels('1i')-1)/scaler, (self.root.winfo_screenheight()/self.root.winfo_fpixels('1i')-1)/scaler)
     self.currentEmbed = Frame(self.root)
     canvas = FigureCanvasTkAgg(fig, master = self.currentEmbed)
     canvas.draw()

@@ -33,6 +33,8 @@ examples = 'examples'
 
 # only use this # of images from the image set(s)
 limit = 9000
+# figure size downscale value
+scaler = 1
 
 # constants for trajectory regression
 use_cuda = False
@@ -51,40 +53,11 @@ exdata = np.load(os.path.join(npys,examples,displayEpsilon,'advdata.npy')).astyp
 testlabels = np.load(os.path.join(npys,'testlabels.npy')).astype(np.float64)[:limit]
 
 # this is kinda a makeshift solution, do it better later
-labels = list(set(exlabels))
+labels = list(map(int,set(exlabels)))
 
 imageData = np.load(os.path.join(npys, examples, displayEpsilon, 'advdata.npy')).astype(np.float64)[:limit]
 images = imageData.reshape(imageData.shape[:-1]+(28,28))
 images_unattacked = [image.reshape(28, 28) for image in np.load(os.path.join(npys, examples, 'e0', 'advdata.npy')).astype(np.float64)[:limit]]
-
-# Generates an unlabeled image
-def blitGenerateUnlabeledImage():
-    def genUImg(idx):
-        genUImg.img.set_data(images[idx])
-        genUImg.ax.draw_artist(genUImg.img)
-
-        # this line silent crashes the program after opening/closing the enlarge_plots gui and submitting current example
-        genUImg.fig.canvas.blit(genUImg.ax.bbox)
-
-        genUImg.fig.canvas.flush_events()
-        return genUImg.fig
-
-    # generate placeholder image and store figure, image, & bounding box of figure to load later
-    genUImg.fig = plt.figure()
-    genUImg.ax = genUImg.fig.add_subplot(1, 1, 1)
-    genUImg.ax.set_xticks([])
-    genUImg.ax.set_yticks([])
-    genUImg.img = genUImg.ax.imshow(images[0], cmap="gray", interpolation="None")
-    genUImg.fig.canvas.draw()
-    return genUImg
-generateUnlabeledImage = blitGenerateUnlabeledImage()
-
-# def generateUnlabeledImage(idx):
-#     fig = plt.figure()
-#     plt.xticks([])
-#     plt.yticks([])
-#     plt.imshow(images[idx], cmap="gray")
-#     return fig
 
 # Generates an unattacked image
 def generateUnattackedImage(idx):
@@ -130,6 +103,51 @@ def labelAxes(axs, plt):
         count += 1
     axs[count-1].get_xaxis().set_visible(True)
     plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9, wspace=0.4, hspace=0.4)
+
+# Generates an unlabeled image
+def blitGenerateUnlabeledImage():
+    def genUImg(idx):
+        norms,idxs,prediction = findNearest(exdata,exoutput,genUImg.advdata,idx,displayEpsilon)
+
+        genUImg.fig.canvas.restore_region(genUImg.titleBackground)
+
+        genUImg.img.set_data(images[idx])
+        genUImg.title.set_text(f"Model prediction: {prediction}")
+
+        genUImg.ax.draw_artist(genUImg.img)
+        genUImg.ax.draw_artist(genUImg.title)
+
+        # this line silent crashes the program after opening/closing the enlarge_plots gui and submitting current example
+        genUImg.fig.canvas.blit(genUImg.ax.bbox)
+        genUImg.fig.canvas.blit(genUImg.title.get_window_extent())
+
+        genUImg.fig.canvas.flush_events()
+        return genUImg.fig
+
+    genUImg.advdata = get_data(npys,displayEpsilon)
+    norms,idxs,prediction = findNearest(exdata,exoutput,genUImg.advdata,0,displayEpsilon)
+
+    # generate placeholder image and store figure, image, & bounding box of figure to load later
+    genUImg.fig = plt.figure(tight_layout=True)
+    genUImg.fig.set_size_inches(6/scaler, 4/scaler)
+    genUImg.ax = genUImg.fig.add_subplot(1,1,1)
+    genUImg.ax.set_xticks([])
+    genUImg.ax.set_yticks([])
+
+    genUImg.title = genUImg.ax.set_title("                                ")
+
+    genUImg.img = genUImg.ax.imshow(images[0], cmap="gray", interpolation="None")
+    genUImg.fig.canvas.draw()
+    genUImg.titleBackground = genUImg.fig.canvas.copy_from_bbox(genUImg.title.get_window_extent())
+    return genUImg
+generateUnlabeledImage = blitGenerateUnlabeledImage()
+
+# def generateUnlabeledImage(idx):
+#     fig = plt.figure()
+#     plt.xticks([])
+#     plt.yticks([])
+#     plt.imshow(images[idx], cmap="gray")
+#     return fig
 
 # def generateTSNEPlots(idx):
 #     origdata = get_data(npys,'e0')
@@ -186,27 +204,24 @@ def blitgenerateTSNEPlots():
 
         # restore backgrounds, clearing foregound and allowing redrawing of artists
         getTSNE.fig.canvas.restore_region(getTSNE.background)
-        getTSNE.fig.canvas.restore_region(getTSNE.titleBackground)
 
         # change array for scatterplot so it'll recolor, changing offsets of cb so the closest 10 points will be in their new positions, and update title based on new model prediction
         getTSNE.scatterPlot.set_array(norms)
         getTSNE.cb.set_offsets([ [getTSNE.X_2d[i,0], getTSNE.X_2d[i,1]] for i in idxs])
-        getTSNE.title.set_text(f"Model Prediction: {prediction}\nAverage Distance: {round(float(sum(norms))/len(norms),2)}")
 
         # redraw artists
-        getTSNE.ax2.draw_artist(getTSNE.title)
         getTSNE.ax2.draw_artist(getTSNE.scatterPlot)
         getTSNE.ax2.draw_artist(getTSNE.cb)
 
         # blit bounding boxes of axis and text so figure will update
         getTSNE.fig.canvas.blit(getTSNE.ax2.bbox)
-        getTSNE.fig.canvas.blit(getTSNE.title.get_window_extent())
 
         getTSNE.fig.canvas.flush_events()
 
         return getTSNE.fig
     # create figures and turn off all axes ticks
-    getTSNE.fig, (getTSNE.ax1, getTSNE.ax2) = plt.subplots(1,2,constrained_layout=True)
+    getTSNE.fig, (getTSNE.ax1, getTSNE.ax2, getTSNE.ax3) = plt.subplots(1,3,constrained_layout=False, tight_layout=True, gridspec_kw={'width_ratios': [10, 10, 1]})
+    getTSNE.fig.set_size_inches(6/scaler, 4/scaler)
     getTSNE.ax1.set_xticks([])
     getTSNE.ax1.set_yticks([])
     getTSNE.ax2.set_xticks([])
@@ -231,25 +246,23 @@ def blitgenerateTSNEPlots():
     colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'aquamarine', 'orange', 'purple'
     for c, label in zip(colors, labels):
         getTSNE.ax1.scatter(X_2d[(testlabels[:] == label), 0], X_2d[(testlabels[:] == label), 1], c=c, label=label, s=3)
-    getTSNE.ax1.set_title("Test Data")
+    getTSNE.ax1.set_title("Class Labels")
     getTSNE.ax1.legend()
 
-    # setting title as blank but with a big size to get background for blitting
-    getTSNE.title = getTSNE.ax2.set_title("  \n                                                     ")
+    getTSNE.ax2.set_title("Distance heatmap")
 
     colorLim = (4,13)
 
     # manually create colorbar before second scatterplot has been made
-    getTSNE.fig.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(vmin=colorLim[0],vmax=colorLim[1]),cmap='viridis'),ax=[getTSNE.ax1,getTSNE.ax2],label="norm")
+    getTSNE.fig.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(vmin=colorLim[0],vmax=colorLim[1]),cmap='viridis'),cax=getTSNE.ax3,label="norm")
 
     # draw figure and store bounding boxes of scatter background & title background
     getTSNE.background = getTSNE.fig.canvas.copy_from_bbox(getTSNE.ax2.bbox)
     getTSNE.fig.canvas.draw()
-    getTSNE.titleBackground = getTSNE.fig.canvas.copy_from_bbox(getTSNE.title.get_window_extent())
 
     # create scatter plot of all data colored by example's distance from original data & closest 10 points
-    getTSNE.scatterPlot = getTSNE.ax2.scatter(X_2d[:,0], X_2d[:,1], c=norms[:], s=3, cmap='viridis', zorder=1)
-    getTSNE.cb = getTSNE.ax2.scatter(X_2d[idxs,0],X_2d[idxs,1], c='red', s=7, zorder=2)
+    getTSNE.scatterPlot = getTSNE.ax2.scatter(X_2d[:,0], X_2d[:,1], c=norms[:], s=2, cmap='viridis', zorder=1)
+    getTSNE.cb = getTSNE.ax2.scatter(X_2d[idxs,0],X_2d[idxs,1], c='red', s=5, zorder=2)
     getTSNE.scatterPlot.set_clim(colorLim[0],colorLim[1])
 
     return getTSNE
@@ -270,33 +283,39 @@ def generateHistograms(idx, plotID, height = None):
     maxHeight = 0
     subplot_create = time.time()
     fig, axs = plt.subplots(10)
+    fig.set_size_inches(6/scaler, 4/scaler)
     print("Create subplots:",time.time()-subplot_create)
 
     generateHist = time.time()
+    cmap = plt.get_cmap("tab10")
     if plotID > maxEpsilon:
         for epsilon in epsilonList:
             advdata = get_data(npys,f'e{roundSigFigs(epsilon,sigFigs)}')
             norms,_,_ = findNearest(exdata,exoutput,advdata,idx,epsilon)
 
+            colorIdx = epsilonList.index(epsilon)
+
             for i in range(10):
                 arr = norms[(testlabels[...] == labels[i])]
                 weights = np.ones_like(arr)/len(arr)
                 if i:
-                    y, _, _ = axs[i].hist(arr, weights=weights, alpha=0.5, bins=b,range=r,density=False, histtype="step")
+                    y, _, _ = axs[i].hist(arr, weights=weights, color=cmap(colorIdx), alpha=0.5, bins=b,range=r,density=False, histtype="step")
                 else:
-                    y, _, _ = axs[i].hist(arr, weights=weights, alpha=0.5, bins=b,range=r,density=False, histtype="step", label=f"Epsilon {epsilon}")
+                    y, _, _ = axs[i].hist(arr, weights=weights, color=cmap(colorIdx), alpha=0.5, bins=b,range=r,density=False, histtype="step", label=f"Attack Strength {epsilon}")
                 maxHeight = max(maxHeight,y.max())
         fig.legend(loc='upper left')
-        fig.suptitle("All Epsilons")
+        fig.suptitle("All Attack Strengths")
     else:
         advdata = get_data(npys,f'e{roundSigFigs(plotID,sigFigs)}')
         norms,_,_ = findNearest(exdata,exoutput,advdata,idx,plotID)
+
+        colorIdx = epsilonList.index(plotID)
         for i in range(10):
             arr = norms[(testlabels[...] == labels[i])]
             weights = np.ones_like(arr)/len(arr)
-            y, _, _ = axs[i].hist(arr, weights=weights, alpha=0.5, bins=b,range=r,density=False, label=f"Epsilon {plotID}", histtype="step")
+            y, _, _ = axs[i].hist(arr, weights=weights, color=cmap(colorIdx), alpha=0.5, bins=b,range=r,density=False, label=f"Attack Strength {plotID}", histtype="step")
             maxHeight = max(maxHeight,y.max())
-        fig.suptitle(f"Epsilon {plotID}")
+        fig.suptitle(f"Attack Strength {plotID}")
 
     for ax in axs:
         ax.set_ylim([0, height if height else maxHeight])
@@ -309,6 +328,7 @@ def generateHistograms(idx, plotID, height = None):
 
 def generateBoxPlot(idx):
     fig, axs = plt.subplots()
+    fig.set_size_inches(6/scaler, 4/scaler)
     norm_list = []
 
     for epsilon in epsilonList:
@@ -392,14 +412,15 @@ def buildTrajectoryCostReg(idx):
         reg_recons = reg_ae(exp,True)
 
         fig = plt.figure()
-        fig.suptitle('Reconstruction using estimated cost ({:.2f}), '.format(__trajectoryCostReg.pc[localIdx].item()) + f'{dist_metric} {attack_type} AE, d={d}')
+        fig.set_size_inches(6/scaler, 4/scaler)
+        fig.suptitle('Predicted Attack Strength: ({:.2f})'.format(__trajectoryCostReg.pc[localIdx].item()))
 
         num_bins = len(reg_recons)+1
         for j in range(num_bins):
             ax = fig.add_subplot(1,num_bins,j+1,anchor='N')
             ax.get_xaxis().set_ticks([])
             ax.get_yaxis().set_ticks([])
-            ax.set_title(f'Epsilon {reg_epsilons[j]}')
+            ax.set_title(f'Attack\nStrength {reg_epsilons[j]}')
             if j == len(reg_recons):
                 ax.imshow(exp[0][0], cmap="gray")
                 for spine in ax.spines.values():
