@@ -1,12 +1,13 @@
 from pathlib import Path
 from csv_gui import initializeCSV, writeToCSV
-from visuals_generator import generateUnattackedImage, buildTrajectoryCostReg, getTrueLabel
-from enlarge_visuals_helper import enlargeVisuals, loadFigures
 from tkinter import *
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import json
+
 from functions import generateEpsilonList, AutoScrollbar
+from visuals_generator import buildTrajectoryCostReg, getTrueLabel
+from enlarge_visuals_helper import enlargeVisuals, loadFigures
 
 imgIdx = 32
 
@@ -28,7 +29,7 @@ def embedMatplot(fig, col, r):
     canvas.get_tk_widget().grid(row=r, column=col, padx=2, pady=2)
 
 numRows = 2
-numCols = 3
+numCols = 2
 def myClick():
     global imgIdx
     global figureList
@@ -122,17 +123,6 @@ def enlarge_plots():
 
 button_2 = Button(canvas, command=(enlarge_plots), width= 40, height = 3, text= "Enlarge Visualizations")
 canvas.create_window(150, 660, window=button_2)
-
-# Disabled this as it was broken by switching matplotlib backend
-'''
-if config["General"]["showOriginal"]:
-    def orig_image():
-        fig = generateUnattackedImage(imgIdx)
-        fig.show()
-
-    button_3 = Button(canvas, command=(orig_image), width= 40, height = 3, text= "Original Image")
-    canvas.create_window(150, 600, window=button_3)
-'''
 
 #Radio Button 1
 selected_visual = StringVar()

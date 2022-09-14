@@ -1,7 +1,6 @@
 # Load Python Libraries
 import numpy as np
 import os
-import pickle
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -22,12 +21,13 @@ import time
 with open('config.json') as f:
    config = json.load(f)
 
+# get pre-generated data
 try:
     npys = config['Model']['outputDir']
 except:
     exit("Data path not valid")
 
-#what epsilon for embedding
+# what epsilon for embedding
 displayEpsilon = f"e{config['General']['displayEpsilon']}"
 examples = 'examples'
 
@@ -35,6 +35,8 @@ examples = 'examples'
 limit = 9000
 # figure size downscale value
 scaler = 1
+# num of closest points for tsne
+k=10
 
 # constants for trajectory regression
 use_cuda = False
@@ -65,6 +67,7 @@ def generateUnattackedImage(idx):
     plt.imshow(images_unattacked[idx], cmap="gray")
     return fig
 
+# get the adversarial data for a specific epsilon, caching it after the first time
 def cached_get_data():
     cache = {}
     def __get_data(npys,eps):
@@ -78,7 +81,7 @@ get_data = cached_get_data()
 def getTrueLabel(idx):
     return exlabels[idx]
 
-k=10
+# cache the data for the nearest points as the same data will always be called at least twice if histogram is enabled
 def cached_find_nearest():
     cache = {}
     def __findNearest(exdata,exoutput,advdata,idx,epsilon):
@@ -89,12 +92,13 @@ def cached_find_nearest():
             norms = np.linalg.norm(advdata - example, axis=1)
 
             top = np.argpartition(norms, k-1)
-            # returns norms of all data, the nearest k points, and the predicted label
+            # cache norms of all data, the nearest k points, and the predicted label
             cache[(idx,epsilon)] = (norms, top[1:k], label)
         return cache[(idx,epsilon)]
     return __findNearest
 findNearest = cached_find_nearest()
 
+# create labels for histograms and sets labels to be visible only for the bottom one
 def labelAxes(axs, plt):
     count = 0
     for ax in axs:
@@ -107,25 +111,28 @@ def labelAxes(axs, plt):
 # Generates an unlabeled image
 def blitGenerateUnlabeledImage():
     def genUImg(idx):
-        norms,idxs,prediction = findNearest(exdata,exoutput,genUImg.advdata,idx,displayEpsilon)
+        _,_,prediction = findNearest(exdata,exoutput,genUImg.advdata,idx,displayEpsilon)
 
+        # set area where new text will go to blank
         genUImg.fig.canvas.restore_region(genUImg.titleBackground)
 
+        # set image based on new data, and set prediction
         genUImg.img.set_data(images[idx])
         genUImg.title.set_text(f"Model prediction: {prediction}")
 
+        # redraw image and title with altered data
         genUImg.ax.draw_artist(genUImg.img)
         genUImg.ax.draw_artist(genUImg.title)
 
-        # this line silent crashes the program after opening/closing the enlarge_plots gui and submitting current example
+        # update only the changed areas and flush updates
         genUImg.fig.canvas.blit(genUImg.ax.bbox)
         genUImg.fig.canvas.blit(genUImg.title.get_window_extent())
-
         genUImg.fig.canvas.flush_events()
+
         return genUImg.fig
 
     genUImg.advdata = get_data(npys,displayEpsilon)
-    norms,idxs,prediction = findNearest(exdata,exoutput,genUImg.advdata,0,displayEpsilon)
+    _,_,prediction = findNearest(exdata,exoutput,genUImg.advdata,0,displayEpsilon)
 
     # generate placeholder image and store figure, image, & bounding box of figure to load later
     genUImg.fig = plt.figure(tight_layout=True)
@@ -134,10 +141,12 @@ def blitGenerateUnlabeledImage():
     genUImg.ax.set_xticks([])
     genUImg.ax.set_yticks([])
 
+    # create blank title that is larger than area where new text will go, to get blank backgorund
     genUImg.title = genUImg.ax.set_title("                                ")
 
     genUImg.img = genUImg.ax.imshow(images[0], cmap="gray", interpolation="None")
     genUImg.fig.canvas.draw()
+    # copy title background
     genUImg.titleBackground = genUImg.fig.canvas.copy_from_bbox(genUImg.title.get_window_extent())
     return genUImg
 generateUnlabeledImage = blitGenerateUnlabeledImage()
@@ -213,14 +222,13 @@ def blitgenerateTSNEPlots():
         getTSNE.ax2.draw_artist(getTSNE.scatterPlot)
         getTSNE.ax2.draw_artist(getTSNE.cb)
 
-        # blit bounding boxes of axis and text so figure will update
+        # update only the changed area and flush updates
         getTSNE.fig.canvas.blit(getTSNE.ax2.bbox)
-
         getTSNE.fig.canvas.flush_events()
 
         return getTSNE.fig
-    # create figures and turn off all axes ticks
-    getTSNE.fig, (getTSNE.ax1, getTSNE.ax2, getTSNE.ax3) = plt.subplots(1,3,constrained_layout=False, tight_layout=True, gridspec_kw={'width_ratios': [10, 10, 1]})
+    # create figure/subplots, set widths so color bar will be much smaller than scatterplots, and turn off axes ticks
+    getTSNE.fig, (getTSNE.ax1, getTSNE.ax2, getTSNE.ax3) = plt.subplots(1,3, tight_layout=True, gridspec_kw={'width_ratios': [10, 10, 1]})
     getTSNE.fig.set_size_inches(6/scaler, 4/scaler)
     getTSNE.ax1.set_xticks([])
     getTSNE.ax1.set_yticks([])
@@ -246,22 +254,25 @@ def blitgenerateTSNEPlots():
     colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'aquamarine', 'orange', 'purple'
     for c, label in zip(colors, labels):
         getTSNE.ax1.scatter(X_2d[(testlabels[:] == label), 0], X_2d[(testlabels[:] == label), 1], c=c, label=label, s=3)
-    getTSNE.ax1.set_title("Class Labels")
-    getTSNE.ax1.legend()
 
+    # set static title for both hists and legends for first hist
+    getTSNE.ax1.set_title("Class Labels")
     getTSNE.ax2.set_title("Distance heatmap")
+    lgnd = getTSNE.ax1.legend(loc='lower left', framealpha=0.75, handletextpad=0.2, scatteryoffsets=[0.5], labelspacing=0.25, borderpad=0.3, borderaxespad=0.25, handlelength=1.1)
+    for label in lgnd.legendHandles:
+        label._sizes = [30]
 
     colorLim = (4,13)
 
     # manually create colorbar before second scatterplot has been made
     getTSNE.fig.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(vmin=colorLim[0],vmax=colorLim[1]),cmap='viridis'),cax=getTSNE.ax3,label="norm")
 
-    # draw figure and store bounding boxes of scatter background & title background
+    # store bounding boxes of scatterplot background and draw figure
     getTSNE.background = getTSNE.fig.canvas.copy_from_bbox(getTSNE.ax2.bbox)
     getTSNE.fig.canvas.draw()
 
     # create scatter plot of all data colored by example's distance from original data & closest 10 points
-    getTSNE.scatterPlot = getTSNE.ax2.scatter(X_2d[:,0], X_2d[:,1], c=norms[:], s=2, cmap='viridis', zorder=1)
+    getTSNE.scatterPlot = getTSNE.ax2.scatter(X_2d[:,0], X_2d[:,1], c=norms[:], s=1, cmap='viridis', zorder=1)
     getTSNE.cb = getTSNE.ax2.scatter(X_2d[idxs,0],X_2d[idxs,1], c='red', s=5, zorder=2)
     getTSNE.scatterPlot.set_clim(colorLim[0],colorLim[1])
 
@@ -269,6 +280,8 @@ def blitgenerateTSNEPlots():
 generateTSNEPlots = blitgenerateTSNEPlots()
 
 def roundSigFigs(num, sigFigs):
+    # convert num to string and cut end based on # of significant figures
+    # if num is 0, only print single digit. Else cut based on # of significant figures, +2 for the decimal & first full digit, and if it's greater than 1 log10 of num
     return str(num)[:(int(math.log(num,10))*(num>1) + 2 + sigFigs if num else 1)]
 
 maxEpsilon = config["General"]["maxEpsilon"]
@@ -371,8 +384,7 @@ def load_part_of_model(model, state_dict, numblocks):
 def make_models(dist_metric, epsilons, attack_type, d):
     numblocks = len(epsilons)-1
     ae = Chained_AE(block=Autoencoder, num_blocks=numblocks, codeword_dim=d, fc2_input_dim=128)
-    pt_state_dict = torch.load('./model/' + attack_type + '/chained_ae_' + dist_metric +
-        '_{}_to_{}_d={}_epc{}.pth'.format(6, 0, d, 500))
+    pt_state_dict = torch.load('./model/' + attack_type + '/chained_ae_' + dist_metric + '_{}_to_{}_d={}_epc{}.pth'.format(6, 0, d, 500))
     ae = load_part_of_model(ae, pt_state_dict, numblocks)
     ae.to(device)
     ae.eval()
@@ -394,10 +406,11 @@ def buildTrajectoryCostReg(idx):
         # train mode is required for some strange reason, cost regression model does not work properly under eval mode
         cost_reg.train()
 
+        # calculate current batch number and where in that batch based on current index compared to starting index and preset batch size
         localIdx = (idx - __trajectoryCostReg.startIdx) % batch_size
         batchNum = (idx - __trajectoryCostReg.startIdx) // batch_size
 
-        # if new index requires new batch, cut out new batch and generate cost regressions
+        # if new index requires new batch, cut out new batch from loaded data, generate cost regressions, and round cost regressions
         if not localIdx:
              temp = images[__trajectoryCostReg.startIdx + batchNum*batch_size:__trajectoryCostReg.startIdx + batchNum*batch_size + batch_size]
              __trajectoryCostReg.batchData = torch.unsqueeze(torch.from_numpy(temp),1).to(torch.float)
@@ -405,8 +418,10 @@ def buildTrajectoryCostReg(idx):
              __trajectoryCostReg.rounded_pc = round_cost(__trajectoryCostReg.pc)
 
         exp = torch.unsqueeze(__trajectoryCostReg.batchData[localIdx], 0)
+        # get cost of current index
         cost = __trajectoryCostReg.rounded_pc[localIdx]
 
+        # create models and perform Reconstruction of current example
         reg_epsilons = range(int(cost)+1)
         reg_ae = make_models(dist_metric, reg_epsilons, attack_type, d)
         reg_recons = reg_ae(exp,True)
@@ -415,12 +430,14 @@ def buildTrajectoryCostReg(idx):
         fig.set_size_inches(6/scaler, 4/scaler)
         fig.suptitle('Predicted Attack Strength: ({:.2f})'.format(__trajectoryCostReg.pc[localIdx].item()))
 
+        # embed reconstructed images and label them
         num_bins = len(reg_recons)+1
         for j in range(num_bins):
             ax = fig.add_subplot(1,num_bins,j+1,anchor='N')
             ax.get_xaxis().set_ticks([])
             ax.get_yaxis().set_ticks([])
             ax.set_title(f'Attack\nStrength {reg_epsilons[j]}')
+            # outline original image in red
             if j == len(reg_recons):
                 ax.imshow(exp[0][0], cmap="gray")
                 for spine in ax.spines.values():

@@ -4,7 +4,6 @@ matplotlib.use("Agg")
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generateHistograms, generateBoxPlot, trajectoryCostReg, generateUnattackedImage
 import time
-# import io
 import pickle
 
 def loadFigures(epsilonList, imgIdx, maxEpsilon, config):
@@ -42,6 +41,7 @@ def loadFigures(epsilonList, imgIdx, maxEpsilon, config):
 
 class enlargeVisuals():
   def __init__(self, master, figureList):
+    # variable initialization
     self.root = master
     self.currPlot = 0
     self.figureList = figureList
@@ -51,14 +51,14 @@ class enlargeVisuals():
     # generate initial plot
     self.embedPlot(self.figureList[self.currPlot][0])
 
-    # back button
+    # create back/next buttons
     button_1 = Button(master = self.root, command=lambda:self.nextPlot(-1), width= 40, height = 3, text= "Back")
     button_1.grid(row=1,column=0)
-    # next button
+
     button_2 = Button(master = self.root, command=lambda:self.nextPlot(1), width= 40, height = 3, text= "Next")
     button_2.grid(row=1,column=3)
 
-    # create x limit sliders
+    # create x limit sliders. bind updateXAxis to mouse release so it's only called when slider is released
     self.period_slider = Scale(master = self.root, from_=0, to_=16, resolution=0.50, orient='horizontal', length= 500, width = 30, label = "X-Axis Lower Bound", takefocus=False)
     self.period_slider.bind("<ButtonRelease-1>", self.updateXAxis)
     self.period_slider.set(0)
@@ -82,16 +82,18 @@ class enlargeVisuals():
   def nextPlot(self, dir):
     # go to next plot based on which button was pressed, wrapping around if it goes below 0 or above max
     self.currPlot = (self.currPlot + dir) % self.maxPlots
+    # update plots x axis if allowed in visualization creation, else just embed it
     if self.figureList[self.currPlot][1]:
         self.updateXAxis(0)
     else:
         self.embedPlot(self.figureList[self.currPlot][0])
 
   def embedPlot(self, fig):
+    # pickle/unpickle to make the figure a new figure to avoid this bug: https://github.com/matplotlib/matplotlib/issues/23809
     fig = pickle.loads(pickle.dumps(fig))
     temp = self.currentEmbed if self.currentEmbed else None
 
-    scaler = 1
+    scaler = 1.1
     # set max width/height based on screensize and dpi
     fig.set_size_inches((self.root.winfo_screenwidth()/self.root.winfo_fpixels('1i')-1)/scaler, (self.root.winfo_screenheight()/self.root.winfo_fpixels('1i')-1)/scaler)
     self.currentEmbed = Frame(self.root)
