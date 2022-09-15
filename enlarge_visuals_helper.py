@@ -93,6 +93,12 @@ class enlargeVisuals():
     fig = pickle.loads(pickle.dumps(fig))
     temp = self.currentEmbed if self.currentEmbed else None
 
+    if fig.get_label() == 'TSNE':
+        for scatter in fig.get_axes()[0].collections:
+            scatter.set_sizes([10])
+        fig.get_axes()[1].collections[0].set_sizes([5])
+        fig.get_axes()[1].collections[1].set_sizes([25])
+
     scaler = 1.1
     # set max width/height based on screensize and dpi
     fig.set_size_inches((self.root.winfo_screenwidth()/self.root.winfo_fpixels('1i')-1)/scaler, (self.root.winfo_screenheight()/self.root.winfo_fpixels('1i')-1)/scaler)

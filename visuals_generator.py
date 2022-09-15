@@ -228,7 +228,7 @@ def blitgenerateTSNEPlots():
 
         return getTSNE.fig
     # create figure/subplots, set widths so color bar will be much smaller than scatterplots, and turn off axes ticks
-    getTSNE.fig, (getTSNE.ax1, getTSNE.ax2, getTSNE.ax3) = plt.subplots(1,3, tight_layout=True, gridspec_kw={'width_ratios': [10, 10, 1]})
+    getTSNE.fig, (getTSNE.ax1, getTSNE.ax2, getTSNE.ax3) = plt.subplots(1,3, tight_layout=True, gridspec_kw={'width_ratios': [10, 10, 1]},num="TSNE")
     getTSNE.fig.set_size_inches(6/scaler, 4/scaler)
     getTSNE.ax1.set_xticks([])
     getTSNE.ax1.set_yticks([])
@@ -258,7 +258,7 @@ def blitgenerateTSNEPlots():
     # set static title for both hists and legends for first hist
     getTSNE.ax1.set_title("Class Labels")
     getTSNE.ax2.set_title("Distance heatmap")
-    lgnd = getTSNE.ax1.legend(loc='lower left', framealpha=0.75, handletextpad=0.2, scatteryoffsets=[0.5], labelspacing=0.25, borderpad=0.3, borderaxespad=0.25, handlelength=1.1)
+    lgnd = getTSNE.ax1.legend(loc='lower left', framealpha=1, handletextpad=0.2, scatteryoffsets=[0.5], labelspacing=0.25, borderpad=0.3, borderaxespad=0.25, handlelength=1.1, bbox_to_anchor=(-0.1, -0.0125), edgecolor='black')
     for label in lgnd.legendHandles:
         label._sizes = [30]
 
@@ -436,7 +436,7 @@ def buildTrajectoryCostReg(idx):
             ax = fig.add_subplot(1,num_bins,j+1,anchor='N')
             ax.get_xaxis().set_ticks([])
             ax.get_yaxis().set_ticks([])
-            ax.set_title(f'Attack\nStrength {reg_epsilons[j]}')
+            ax.set_title(f'Attack\nStrength {reg_epsilons[j]}', fontsize=10)
             # outline original image in red
             if j == len(reg_recons):
                 ax.imshow(exp[0][0], cmap="gray")

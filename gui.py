@@ -39,14 +39,17 @@ def myClick():
         userData = []
         userData.append(getTrueLabel(imgIdx))
         userData.append(entry_1.get())
-        userData.append(selected_visual.get())
+        for item in selections:
+            userData.append(item[1].get())
         userData.append(confidence.get())
         print(userData)
         outputArray.append(userData)
+        
         # clear entry/radio buttons on submission
         entry_1.delete(0,END)
         entry_1.insert(0,"")
-        selected_visual.set(None)
+        for item in selections:
+            item[1].set(None)
         confidence.set(None)
 
         imgIdx += 1
@@ -97,12 +100,12 @@ if scrollBarShown:
     # bind vertical scroll to horizontal scroll bar
     scrollCanvas.bind_all('<MouseWheel>', lambda event: scrollCanvas.xview_scroll(int(-1*(event.delta/120)), "units"))
 
-canvas = Canvas(window, bg = "#FFFFFF", height = 824 if scrollBarShown else 800, width = 300, bd = 0, highlightthickness = 0, relief = "ridge")
+canvas = Canvas(window, bg = "#FFFFFF", height = 800 + 24*scrollBarShown, width = 300, bd = 0, highlightthickness = 0, relief = "ridge")
 canvas.grid(row = 0, column = 1, stick='ns', rowspan = 1 + scrollBarShown)
 
-canvas.create_rectangle(0, 0, 300, 824 if scrollBarShown else 800, fill="#D2D2D2", outline="")
-canvas.create_text(12, 85.0, anchor="nw", text="Which visualization\nmost assisted you in\nmaking this decision?", fill="#000000", font=("Roboto", -24))
-canvas.create_text(12, 380.0, anchor="nw", text="Prediction Confidence:", fill="#000000", font=("Roboto", -24))
+canvas.create_rectangle(0, 0, 300, 800 + 24*scrollBarShown, fill="#D2D2D2", outline="")
+canvas.create_text(12*6, 80.0, anchor="nw", text="Helpfulness of\nvisualizations:", fill="#000000", font=("Roboto", -24), justify=CENTER)
+canvas.create_text(12, 400.0, anchor="nw", text="Prediction Confidence:", fill="#000000", font=("Roboto", -24))
 canvas.create_text(12, 24.0, anchor="nw", text="Prediction:", fill="#000000", font=("Roboto", -24))
 104,120.5
 entry_image_1 = PhotoImage(file = ASSETS_PATH / "entry_1.png")
@@ -112,48 +115,51 @@ canvas.create_window(200, 38.5, window=entry_1)
 
 button_image_1 = PhotoImage(file = ASSETS_PATH / "button_1.png")
 button_1 = Button(canvas, image=button_image_1, borderwidth=0, highlightthickness=0, command=(myClick), relief="flat", width=298.19, height=115.15)
-canvas.create_window(150, 750, window=button_1)
+canvas.create_window(150, 750 + 24*scrollBarShown, window=button_1)
 
 def enlarge_plots():
     global figureList
     root = Tk()
     p1 = enlargeVisuals(root, figureList)
     root.protocol("WM_DELETE_WINDOW", root.destroy)
+    root.resizable(height=True, width=False)
     root.mainloop()
 
 button_2 = Button(canvas, command=(enlarge_plots), width= 40, height = 3, text= "Enlarge Visualizations")
-canvas.create_window(150, 660, window=button_2)
+canvas.create_window(150, 660 + 24*scrollBarShown, window=button_2)
 
 #Radio Button 1
-selected_visual = StringVar()
-selected_visual.set(None)
-
 selections = []
 if config['Images']['enabled']:
-    selections.append(('Image', 'Image'))
+    selections.append(('Image', IntVar()))
 if config["BoxPlot"]["enabled"]:
-    selections.append(('Box Plot', 'Box Plot'))
+    selections.append(('Box Plot', IntVar()))
 if config["TSNE"]["enabled"]:
-    selections.append(('TSNE', 'TSNE'))
+    selections.append(('TSNE', IntVar()))
 if config["Histogram"]["enabled"]:
-    selections.append(('Histogram', 'Histogram'))
+    selections.append(('Histogram', IntVar()))
 if config["TrajectoryRegression"]["enabled"]:
-    selections.append(('Attack Reconstruction', 'Attack Reconstruction'))
+    selections.append(('Attack\nRegression', IntVar()))
 
-height = 200
+for item in selections:
+    item[1].set(None)
+
+width = 105
+for radioLabel in ['Very\nhelpful','Somewhat\nhelpful','Not very\nhelpful']:
+    canvas.create_text(width, 140, anchor="n", text=radioLabel, fill="#000000", font=("Roboto", -18), justify = CENTER)
+    width+=80
+
+height = 210
 for visual in selections:
-    r = Radiobutton(
-        window,
-        text=visual[0],
-        value=visual[1],
-        variable=selected_visual,
-        anchor=W,
-        justify = LEFT,
-        bg="#D2D2D2",
-        font=("Roboto", -18)
-    )
-    canvas.create_window(20, height, anchor=W, window=r)
-    height += 30
+    l = Label(window,text=visual[0],anchor=W,justify = LEFT,bg="#D2D2D2",font=("Roboto", -18))
+    canvas.create_window(1, height, anchor=W, window=l)
+
+    for i in range(3):
+        r = Radiobutton(window, value = 3-i, variable=visual[1], bg="#D2D2D2")
+        idx = canvas.create_window(108 + i*80, height + 2, window=r)
+        canvas.tag_lower(idx)
+
+    height += 35
 
 #Radio Button 2
 confidence = StringVar()
@@ -162,7 +168,7 @@ scale = (('High Confidence', 'High Confidence'),
          ('Moderate Confidence', 'Moderate Confidence'),
          ('Low Confidence', 'Low Confidence'))
 
-height = 440
+height = 450
 for x in scale:
     r2 = Radiobutton(
         window,
