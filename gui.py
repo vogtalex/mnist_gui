@@ -44,7 +44,7 @@ def myClick():
         userData.append(confidence.get())
         print(userData)
         outputArray.append(userData)
-        
+
         # clear entry/radio buttons on submission
         entry_1.delete(0,END)
         entry_1.insert(0,"")
@@ -53,20 +53,22 @@ def myClick():
         confidence.set(None)
 
         imgIdx += 1
+
+        figureList = loadFigures(epsilonList, imgIdx, maxEpsilon, config)
     else:
         initialLoad = False
         if config["TrajectoryRegression"]["enabled"]:
             buildTrajectoryCostReg(imgIdx)
 
-    figureList = loadFigures(epsilonList, imgIdx, maxEpsilon, config)
+        figureList = loadFigures(epsilonList, imgIdx, maxEpsilon, config)
 
-    # embed all available figures that will fit in specified layout size
-    maxFigs = min(numRows*numCols,len(figureList))
-    for i in range(numCols):
-        if i*numRows>=maxFigs: break
-        for j in range(numRows):
-            if i*numRows+j>=maxFigs: break
-            embedMatplot(figureList[i*numRows+j][0],i,j)
+        # embed all available figures that will fit in specified layout size
+        maxFigs = min(numRows*numCols,len(figureList))
+        for i in range(numCols):
+            if i*numRows>=maxFigs: break
+            for j in range(numRows):
+                if i*numRows+j>=maxFigs: break
+                embedMatplot(figureList[i*numRows+j][0],i,j)
 
 window = Tk()
 
@@ -120,7 +122,7 @@ canvas.create_window(150, 750 + 24*scrollBarShown, window=button_1)
 def enlarge_plots():
     global figureList
     root = Tk()
-    p1 = enlargeVisuals(root, figureList)
+    enlargeVisuals(root, figureList)
     root.protocol("WM_DELETE_WINDOW", root.destroy)
     root.resizable(height=True, width=False)
     root.mainloop()

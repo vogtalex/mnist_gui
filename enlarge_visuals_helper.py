@@ -59,12 +59,12 @@ class enlargeVisuals():
     button_2.grid(row=1,column=3)
 
     # create x limit sliders. bind updateXAxis to mouse release so it's only called when slider is released
-    self.period_slider = Scale(master = self.root, from_=0, to_=16, resolution=0.50, orient='horizontal', length= 500, width = 30, label = "X-Axis Lower Bound", takefocus=False)
+    self.period_slider = Scale(master = self.root, from_=5, to_=16, resolution=0.50, orient='horizontal', length= 500, width = 30, label = "X-Axis Lower Bound", takefocus=False)
     self.period_slider.bind("<ButtonRelease-1>", self.updateXAxis)
     self.period_slider.set(0)
     self.period_slider.grid(row=1, column = 1)
 
-    self.period_slider2 = Scale(master = self.root, from_=0, to_=16, resolution=0.50, orient='horizontal', length= 500, width = 30, label = "X-Axis Upper Bound", takefocus=False)
+    self.period_slider2 = Scale(master = self.root, from_=5, to_=16, resolution=0.50, orient='horizontal', length= 500, width = 30, label = "X-Axis Upper Bound", takefocus=False)
     self.period_slider2.bind("<ButtonRelease-1>", self.updateXAxis)
     self.period_slider2.set(16)
     self.period_slider2.grid(row=1, column = 2)

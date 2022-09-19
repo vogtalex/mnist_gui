@@ -4,6 +4,7 @@ import os
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.pyplot import subplot
 from sklearn.manifold import TSNE
 import json
 import math
@@ -12,7 +13,6 @@ import torch
 import torch.nn as nn
 import torch.optim
 from collections import OrderedDict
-from matplotlib.pyplot import subplot
 from chained_AE import Autoencoder, Chained_AE
 from mnist_cost import MNISTCost
 
@@ -289,55 +289,157 @@ epsilonStepSize = config["General"]["epsilonStepSize"]
 # finds # of significant figures after the decimal place of the step size
 sigFigs = len(repr(float(epsilonStepSize)).split('.')[1].rstrip('0'))
 epsilonList = generateEpsilonList(epsilonStepSize,maxEpsilon)
-def generateHistograms(idx, plotID, height = None):
+# def generateHistograms(idx, plotID, height = None):
+#     r=(5,16)
+#     b=150
+#
+#     maxHeight = 0
+#     fig, axs = plt.subplots(10)
+#     fig.set_size_inches(6/scaler, 4/scaler)
+#
+#     cmap = plt.get_cmap("tab10")
+#     if plotID > maxEpsilon:
+#         for epsilon in epsilonList:
+#             advdata = get_data(npys,f'e{roundSigFigs(epsilon,sigFigs)}')
+#             norms,_,_ = findNearest(exdata,exoutput,advdata,idx,epsilon)
+#
+#             colorIdx = epsilonList.index(epsilon)
+#
+#             for i in range(10):
+#                 arr = norms[(testlabels[...] == labels[i])]
+#                 weights = np.ones_like(arr)/len(arr)
+#                 if i:
+#                     y, _, _ = axs[i].hist(arr, weights=weights, color=cmap(colorIdx), alpha=0.5, bins=b,range=r,density=False, histtype="step")
+#                 else:
+#                     y, _, _ = axs[i].hist(arr, weights=weights, color=cmap(colorIdx), alpha=0.5, bins=b,range=r,density=False, histtype="step", label=f"Attack Strength {epsilon}")
+#                 maxHeight = max(maxHeight,y.max())
+#         fig.legend(loc='upper left')
+#         fig.suptitle("All Attack Strengths")
+#     else:
+#         advdata = get_data(npys,f'e{roundSigFigs(plotID,sigFigs)}')
+#         norms,_,_ = findNearest(exdata,exoutput,advdata,idx,plotID)
+#
+#         colorIdx = epsilonList.index(plotID)
+#         for i in range(10):
+#             arr = norms[(testlabels[...] == labels[i])]
+#             weights = np.ones_like(arr)/len(arr)
+#             y, _, _ = axs[i].hist(arr, weights=weights, color=cmap(colorIdx), alpha=0.5, bins=b,range=r,density=False, label=f"Attack Strength {plotID}", histtype="step")
+#             maxHeight = max(maxHeight,y.max())
+#         fig.suptitle(f"Attack Strength {plotID}")
+#
+#     for ax in axs:
+#         ax.set_ylim([0, height if height else maxHeight])
+#
+#     labelAxes(axs, fig)
+#     if height:
+#         return fig
+#     return (fig, maxHeight)
+
+def blitGenerateHistograms():
     r=(5,16)
     b=150
 
-    maxHeight = 0
-    subplot_create = time.time()
-    fig, axs = plt.subplots(10)
-    fig.set_size_inches(6/scaler, 4/scaler)
-    print("Create subplots:",time.time()-subplot_create)
+    def genHist(idx, eps, height = None):
+        maxHeight = 0
+        if eps > maxEpsilon:
+            (fig,axs,histObjs) = genHist.figCache[len(epsilonList)]
+            for epsilon in epsilonList:
+                advdata = get_data(npys,f'e{roundSigFigs(epsilon,sigFigs)}')
+                norms,_,_ = findNearest(exdata,exoutput,advdata,idx,epsilon)
+                for i in range(10):
+                    if (idx,epsilon,i) not in genHist.histCache:
+                        arr = norms[(testlabels[...] == labels[i])]
+                        weights = np.ones_like(arr)/len(arr)
 
-    generateHist = time.time()
-    cmap = plt.get_cmap("tab10")
-    if plotID > maxEpsilon:
-        for epsilon in epsilonList:
-            advdata = get_data(npys,f'e{roundSigFigs(epsilon,sigFigs)}')
-            norms,_,_ = findNearest(exdata,exoutput,advdata,idx,epsilon)
+                        n, _ = np.histogram(arr,bins=b,range=r,weights=weights)
+                        genHist.histCache[(idx,epsilon,i)] = n
+                    else:
+                        n = genHist.histCache[(idx,epsilon,i)]
 
-            colorIdx = epsilonList.index(epsilon)
+                    figIdx = epsilonList.index(epsilon)
+                    maxHeight = max(maxHeight,n.max())
+                    histObjs[i][figIdx][0].set_ydata(n)
+        else:
+            figIdx = epsilonList.index(eps)
+            (fig,axs,histObjs) = genHist.figCache[figIdx]
+
+            advdata = get_data(npys,f'e{roundSigFigs(eps,sigFigs)}')
+            norms,_,_ = findNearest(exdata,exoutput,advdata,idx,eps)
 
             for i in range(10):
-                arr = norms[(testlabels[...] == labels[i])]
-                weights = np.ones_like(arr)/len(arr)
-                if i:
-                    y, _, _ = axs[i].hist(arr, weights=weights, color=cmap(colorIdx), alpha=0.5, bins=b,range=r,density=False, histtype="step")
-                else:
-                    y, _, _ = axs[i].hist(arr, weights=weights, color=cmap(colorIdx), alpha=0.5, bins=b,range=r,density=False, histtype="step", label=f"Attack Strength {epsilon}")
-                maxHeight = max(maxHeight,y.max())
-        fig.legend(loc='upper left')
-        fig.suptitle("All Attack Strengths")
-    else:
-        advdata = get_data(npys,f'e{roundSigFigs(plotID,sigFigs)}')
-        norms,_,_ = findNearest(exdata,exoutput,advdata,idx,plotID)
+                if (idx,eps,i) not in genHist.histCache:
+                    arr = norms[(testlabels[...] == labels[i])]
+                    weights = np.ones_like(arr)/len(arr)
 
-        colorIdx = epsilonList.index(plotID)
+                    n, _ = np.histogram(arr,bins=b,range=r,weights=weights)
+                    genHist.histCache[(idx,eps,i)] = n
+                else:
+                    n = genHist.histCache[(idx,eps,i)]
+
+                maxHeight = max(maxHeight,n.max())
+                histObjs[i][0].set_ydata(n)
+
+        for ax in axs:
+            ax.set_ylim([0, height if height else maxHeight])
+
+        fig.canvas.draw()
+
+        if height:
+            return fig
+        return (fig, maxHeight)
+
+    cmap = plt.get_cmap("tab10")
+
+    genHist.histCache = {}
+    genHist.figCache = [None] * (len(epsilonList)+1)
+
+    # populate figure cache with figures for each single epsilon plot
+    for epsilon in epsilonList:
+        advdata = get_data(npys,f'e{roundSigFigs(epsilon,sigFigs)}')
+        norms,_,_ = findNearest(exdata,exoutput,advdata,0,epsilon)
+
+        colorIdx = epsilonList.index(epsilon)
+        fig, axs = plt.subplots(10)
+        fig.set_size_inches(6/scaler, 4/scaler)
+        histObjs = []
+
         for i in range(10):
             arr = norms[(testlabels[...] == labels[i])]
             weights = np.ones_like(arr)/len(arr)
-            y, _, _ = axs[i].hist(arr, weights=weights, color=cmap(colorIdx), alpha=0.5, bins=b,range=r,density=False, label=f"Attack Strength {plotID}", histtype="step")
-            maxHeight = max(maxHeight,y.max())
-        fig.suptitle(f"Attack Strength {plotID}")
 
-    for ax in axs:
-        ax.set_ylim([0, height if height else maxHeight])
+            n, edges = np.histogram(arr,bins=b,range=r,weights=weights)
+            genHist.histCache[(0,epsilon,i)] = n
 
+            newHist = axs[i].step(edges[:-1],n,where='post',color=cmap(colorIdx),alpha=0.5, label=f"Attack Strength {epsilon}")
+            axs[i].set_xlim(r)
+            histObjs.append(newHist)
+
+        fig.suptitle(f"Attack Strength {epsilon}")
+        labelAxes(axs, fig)
+        genHist.figCache[colorIdx] = (fig,axs,histObjs)
+
+    fig, axs = plt.subplots(10)
+    fig.set_size_inches(6/scaler, 4/scaler)
+    histObjs = [[] for i in range(10)]
+    for epsilon in epsilonList:
+        colorIdx = epsilonList.index(epsilon)
+
+        for i in range(10):
+            n = genHist.histCache[(0,epsilon,i)]
+            if i:
+                newHist = axs[i].step(edges[:-1],n,where='post',color=cmap(colorIdx),alpha=0.5)
+            else:
+                newHist = axs[i].step(edges[:-1],n,where='post',color=cmap(colorIdx),alpha=0.5, label=f"Attack Strength {epsilon}")
+            axs[i].set_xlim(r)
+            histObjs[i].append(newHist)
+
+    fig.legend(loc='upper left')
+    fig.suptitle("All Attack Strengths")
     labelAxes(axs, fig)
-    print("Histogram generation:",time.time()-generateHist)
-    if height:
-        return fig
-    return (fig, maxHeight)
+    genHist.figCache[len(epsilonList)] = (fig,axs,histObjs)
+
+    return genHist
+generateHistograms = blitGenerateHistograms()
 
 def generateBoxPlot(idx):
     fig, axs = plt.subplots()
@@ -399,13 +501,6 @@ def round_cost(pc):
 
 def buildTrajectoryCostReg(idx):
     def __trajectoryCostReg(idx):
-        # load cost regression model
-        cost_reg = MNISTCost()
-        cost_reg.load_state_dict(torch.load('./model/costreg_mnist_l2_ce.pth'))
-        cost_reg.to(device)
-        # train mode is required for some strange reason, cost regression model does not work properly under eval mode
-        cost_reg.train()
-
         # calculate current batch number and where in that batch based on current index compared to starting index and preset batch size
         localIdx = (idx - __trajectoryCostReg.startIdx) % batch_size
         batchNum = (idx - __trajectoryCostReg.startIdx) // batch_size
@@ -414,7 +509,7 @@ def buildTrajectoryCostReg(idx):
         if not localIdx:
              temp = images[__trajectoryCostReg.startIdx + batchNum*batch_size:__trajectoryCostReg.startIdx + batchNum*batch_size + batch_size]
              __trajectoryCostReg.batchData = torch.unsqueeze(torch.from_numpy(temp),1).to(torch.float)
-             __trajectoryCostReg.pc = cost_reg(__trajectoryCostReg.batchData).detach().cpu().numpy()
+             __trajectoryCostReg.pc = __trajectoryCostReg.cost_reg(__trajectoryCostReg.batchData).detach().cpu().numpy()
              __trajectoryCostReg.rounded_pc = round_cost(__trajectoryCostReg.pc)
 
         exp = torch.unsqueeze(__trajectoryCostReg.batchData[localIdx], 0)
@@ -426,16 +521,15 @@ def buildTrajectoryCostReg(idx):
         reg_ae = make_models(dist_metric, reg_epsilons, attack_type, d)
         reg_recons = reg_ae(exp,True)
 
-        fig = plt.figure()
-        fig.set_size_inches(6/scaler, 4/scaler)
-        fig.suptitle('Predicted Attack Strength: ({:.2f})'.format(__trajectoryCostReg.pc[localIdx].item()))
+        __trajectoryCostReg.fig.clf()
+        __trajectoryCostReg.fig.suptitle('Predicted Attack Strength: ({:.2f})'.format(__trajectoryCostReg.pc[localIdx].item()))
 
         # embed reconstructed images and label them
         num_bins = len(reg_recons)+1
         for j in range(num_bins):
-            ax = fig.add_subplot(1,num_bins,j+1,anchor='N')
-            ax.get_xaxis().set_ticks([])
-            ax.get_yaxis().set_ticks([])
+            ax = __trajectoryCostReg.fig.add_subplot(1,num_bins,j+1,anchor='N')
+            ax.set_xticks([])
+            ax.set_yticks([])
             ax.set_title(f'Attack\nStrength {reg_epsilons[j]}', fontsize=10)
             # outline original image in red
             if j == len(reg_recons):
@@ -446,9 +540,18 @@ def buildTrajectoryCostReg(idx):
             else:
                 ax.imshow(reg_recons[num_bins-2-j][0][0].detach().cpu(), cmap="gray")
 
-        plt.tight_layout()
+        __trajectoryCostReg.fig.canvas.draw()
+        return __trajectoryCostReg.fig
 
-        return fig
+    __trajectoryCostReg.fig = plt.figure(tight_layout=True)
+    __trajectoryCostReg.fig.set_size_inches(6/scaler, 4/scaler)
+    # load cost regression model
+    __trajectoryCostReg.cost_reg = MNISTCost()
+    __trajectoryCostReg.cost_reg.load_state_dict(torch.load('./model/costreg_mnist_l2_ce.pth'))
+    __trajectoryCostReg.cost_reg.to(device)
+    # train mode is required for some strange reason, cost regression model does not work properly under eval mode
+    __trajectoryCostReg.cost_reg.train()
+
     __trajectoryCostReg.startIdx = idx
     __trajectoryCostReg.batchData = None
     __trajectoryCostReg.pc = 0
