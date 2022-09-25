@@ -9,6 +9,12 @@ import math
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+def shuffle_together(*args):
+    seed = np.random.randint(0, 2**(32 - 1) - 1)
+    for arg in args:
+        rng_state = np.random.RandomState(seed)
+        rng_state.shuffle(arg)
+
 def generateEpsilonList(epsilonStepSize,maxEpsilon):
     return [x * epsilonStepSize for x in range(0, math.floor(1+maxEpsilon*(1/epsilonStepSize)))]
 
@@ -26,6 +32,12 @@ class AutoScrollbar(Scrollbar):
 
     def place(self, **kw):
         raise (TclError, "place cannot be used  with this widget")
+
+def l2_norm(u, v=None):
+    if v is None:
+        return torch.norm(u.flatten(start_dim=1), p=2, dim=1)
+    else:
+        return torch.norm((u - v).flatten(start_dim=1), p=2, dim=1)
 
 def l2_projection(x, x_init, r):
     if r > 0:
