@@ -1,21 +1,14 @@
 import os
 import torch
 from torch.utils.data import DataLoader
-from functions import *
+from functions import shuffle_together, generateEpsilonList, PGD_attack
 import numpy as np
-
-# check if swap works
 import torch.nn as nn
-# from torch.nn import CrossEntropyLoss
-
-# check if swap works
-import torch.optim as optim
-# from torch.optim import SGD
-
 from torchvision import datasets, transforms
 import json
 import sys
 import shutil
+import math
 
 with open('config.json') as f:
    config = json.load(f)
@@ -23,6 +16,9 @@ with open('config.json') as f:
 numIters = 20
 batchSize = 1000
 use_cuda = True
+
+# epsilons for subset to be generated with
+subset_eps = [3,6]
 
 ### import model from variable directory and import it
 # split file into name and path
@@ -43,12 +39,6 @@ test_loader = torch.utils.data.DataLoader(
     ])),
     batch_size=batchSize, shuffle=False)
 
-# train_loader = torch.utils.data.DataLoader(
-#     datasets.MNIST('../data', train=True, download=True, transform=transforms.Compose([
-#         transforms.ToTensor(),
-#     ])),
-#     batch_size=batchSize, shuffle=True)
-
 # use cuda if available and var is set
 device = torch.device("cuda:0" if (use_cuda and torch.cuda.is_available()) else "cpu")
 
@@ -59,13 +49,12 @@ model.to(device)
 
 # Creates a random seed
 random_seed = 1
-torch.backends.cudnn.enabled = False
+torch.backends.cudnn.enabled = False # I don't know what this does
 torch.manual_seed(random_seed)
 
-# Creates loss function and optimizer
 loss_fn = nn.CrossEntropyLoss()
-optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
+# generates the "known" data
 def gen_adv_features_test(eps):
     model.eval()
     cnt = 0
@@ -74,80 +63,111 @@ def gen_adv_features_test(eps):
     out_data = np.array([])
     out_output = np.array([])
 
-    testLoaderLen = len(test_loader.dataset)
-
     for data, target in test_loader:
         cnt += 1
-        if cnt > (testLoaderLen/batchSize)*0.9: break;
-        print("processing: %d/%d" % (cnt*batchSize, testLoaderLen))
+
+        # break loop after going through 90% of the total examples
+        if cnt > (len(test_loader.dataset)/batchSize)*0.9: break;
+        print("processing: %d/%d" % (cnt*batchSize, math.floor(len(test_loader.dataset)*0.9)))
         data,target = data.to(device), target.to(device)
 
-        # delta = pgd_l2(model,data,target,eps,2.5*eps/255./numIters,numIters)
+        # if not epsilon 0, generate attacked image
         if eps:
-            attackedImg = PGD_attack(model=model, device=device, loss=F.cross_entropy, x=data, y=target, epsilon=eps, niter=numIters, stepsize=2.5*eps/numIters, lpnorm=2, randinit=False, debug=False)
+            attackedImg = PGD_attack(model=model, device=device, loss=loss_fn, x=data, y=target, epsilon=eps, niter=numIters, stepsize=2.5*eps/numIters, lpnorm=2, randinit=True, debug=False)
         else:
             attackedImg = data.detach()
 
+        # generate model output from example and append to other examples
         output = model(attackedImg)
         output_np = output.data.cpu().numpy()
         out_output = np.vstack([out_output,output_np]) if out_output.size else output_np
 
         labels = np.append(labels,target.cpu().numpy())
 
+        # reshape attacked image tensor and add to output
         attackedImg = torch.flatten(attackedImg,2,3)
         attackedImg = torch.flatten(attackedImg,0,1)
         out_data = np.vstack([out_data,attackedImg.cpu().numpy()]) if out_data.size else attackedImg.cpu().numpy()
 
     print("Finished test images for epsilon")
     labelPath = os.path.join(outputDir,"testlabels.npy")
+    # only save labels once, since all epsilon sets share same true labels
     if not os.path.isfile(labelPath):
         np.save(labelPath, labels, allow_pickle=False)
     os.mkdir(os.path.join(outputDir,f"e{eps}"))
     np.save(os.path.join(outputDir,f"e{eps}","advoutput.npy"), out_output, allow_pickle=False)
     np.save(os.path.join(outputDir,f"e{eps}","advdata.npy"), out_data, allow_pickle=False)
 
-def gen_adv_features_examples(eps):
+# generate the "unkown" data
+def gen_adv_features_examples(numSubsets,subsetSize):
     model.eval()
     cnt = 0
 
-    labels = []
-    out_data = np.array([])
-    out_output = np.array([])
-
-    testLoaderLen = len(test_loader.dataset)
+    currentSubset = 0
 
     for data, target in test_loader:
         cnt += 1
-        if cnt <= (testLoaderLen/batchSize)*0.9: continue;
-        print("processing: %d/%d" % (cnt*batchSize, testLoaderLen))
+        # skip until last 10% of dataset (so it's separate dataset from "test" set)
+        if cnt <= (len(test_loader.dataset)/batchSize)*0.9: continue;
+        # finish if generated number of requested subsets
+        if currentSubset >= numSubsets: break;
+
         data,target = data.to(device), target.to(device)
 
-        # delta = pgd_l2(model,data,target,eps,2.5*eps/255./numIters,numIters)
-        if eps:
-            attackedImg = PGD_attack(model=model, device=device, loss=F.cross_entropy, x=data, y=target, epsilon=eps, niter=numIters, stepsize=2.5*eps/numIters, lpnorm=2, randinit=False, debug=False)
-        else:
-            attackedImg = data.detach()
+        idx=0
+        # if generating new subset would index out of batch, or if all subsets are generated, exit loop
+        while((idx+1)*subsetSize < batchSize*0.1 and currentSubset<numSubsets):
+            labels = []
+            out_data = np.array([])
+            out_output = np.array([])
+            data_subset_whole = np.array([])
 
-        output = model(attackedImg)
-        output_np = output.data.cpu().numpy()
-        out_output = np.vstack([out_output,output_np]) if out_output.size else output_np
+            for eps in subset_eps:
+                # create subsets of the data, splitting the subset based on how many epsilons are going to be generated
+                data_subset = data[math.floor(idx*subsetSize):math.floor((idx+1/len(subset_eps))*subsetSize)]
+                target_subset = target[math.floor(idx*subsetSize):math.floor((idx+1/len(subset_eps))*subsetSize)]
 
-        labels = np.append(labels,target.cpu().numpy())
+                # generate attacked examples
+                if eps:
+                    attackedImg = PGD_attack(model=model, device=device, loss=loss_fn, x=data_subset, y=target_subset, epsilon=eps, niter=numIters, stepsize=2.5*eps/numIters, lpnorm=2, randinit=True, debug=False)
+                else:
+                    attackedImg = data_subset.detach()
 
-        attackedImg = torch.flatten(attackedImg,2,3)
-        attackedImg = torch.flatten(attackedImg,0,1)
-        out_data = np.vstack([out_data,attackedImg.cpu().numpy()]) if out_data.size else attackedImg.cpu().numpy()
+                # append model output to outputs for subset
+                output = model(attackedImg)
+                output_np = output.data.cpu().numpy()
+                out_output = np.vstack([out_output,output_np]) if out_output.size else output_np
 
-    print("Finished example images for epsilon")
-    folderPath = os.path.join(outputDir,'examples')
-    if not os.path.isdir(folderPath):
-        os.mkdir(folderPath)
-    labelPath = os.path.join(outputDir,'examples',"testlabels.npy")
-    if not os.path.isfile(labelPath):
-        np.save(labelPath, labels, allow_pickle=False)
-    os.mkdir(os.path.join(outputDir,'examples',f"e{eps}"))
-    np.save(os.path.join(outputDir,'examples',f"e{eps}","advoutput.npy"), out_output, allow_pickle=False)
-    np.save(os.path.join(outputDir,'examples',f"e{eps}","advdata.npy"), out_data, allow_pickle=False)
+                labels = np.append(labels,target_subset.cpu().numpy())
+
+                # append attacked image to output for subset
+                attackedImg = torch.flatten(attackedImg,2,3)
+                attackedImg = torch.flatten(attackedImg,0,1)
+                out_data = np.vstack([out_data,attackedImg.cpu().numpy()]) if out_data.size else attackedImg.cpu().numpy()
+
+                # append unattacked image to output for subset
+                data_subset = torch.flatten(data_subset,2,3)
+                data_subset = torch.flatten(data_subset,0,1)
+                data_subset_whole = np.vstack([data_subset_whole,data_subset.cpu().numpy()]) if data_subset_whole.size else data_subset.cpu().numpy()
+
+                # increment index by fraction of subset, based on how many epsilons the subset is being split into
+                idx += 1/len(subset_eps)
+
+            # shuffle all output arrays with same randomness
+            shuffle_together(labels,out_data,out_output,data_subset_whole)
+
+            # save all generated arrays for subset
+            print(f"Generated subset {currentSubset}")
+            folderPath = os.path.join(outputDir,'examples')
+            if not os.path.isdir(folderPath):
+                os.mkdir(folderPath)
+            os.mkdir(os.path.join(outputDir,'examples',f'subset{currentSubset}'))
+            np.save(os.path.join(outputDir,'examples',f'subset{currentSubset}',"testlabels.npy"), labels, allow_pickle=False)
+            np.save(os.path.join(outputDir,'examples',f'subset{currentSubset}',"advoutput.npy"), out_output, allow_pickle=False)
+            np.save(os.path.join(outputDir,'examples',f'subset{currentSubset}',"advdata.npy"), out_data, allow_pickle=False)
+            np.save(os.path.join(outputDir,'examples',f'subset{currentSubset}',"data.npy"), data_subset_whole, allow_pickle=False)
+
+            currentSubset += 1
 
 # clear output directory
 try:
@@ -156,7 +176,10 @@ except OSError as e:
     print("Error: %s : %s" % (outputDir, e.strerror))
 os.mkdir(outputDir)
 
+# generate full epsilon sets for known data
 for eps in generateEpsilonList(config["General"]["epsilonStepSize"], config["General"]["maxEpsilon"]):
     print(f"Generating epsilon {eps} data")
     gen_adv_features_test(eps)
-    gen_adv_features_examples(eps)
+
+# generate requested number of subsets of requested size
+gen_adv_features_examples(config['Model']['numSubsets'],config['Model']['subsetSize'])

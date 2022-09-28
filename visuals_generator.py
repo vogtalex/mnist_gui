@@ -347,6 +347,7 @@ def blitGenerateHistograms():
             for epsilon in epsilonList:
                 advdata = get_data(npys,f'e{roundSigFigs(epsilon,sigFigs)}')
                 norms,_,_ = findNearest(exdata,exoutput,advdata,idx,epsilon)
+                figIdx = epsilonList.index(epsilon)
                 for i in range(10):
                     if (idx,epsilon,i) not in genHist.histCache:
                         arr = norms[(testlabels[...] == labels[i])]
@@ -357,7 +358,6 @@ def blitGenerateHistograms():
                     else:
                         n = genHist.histCache[(idx,epsilon,i)]
 
-                    figIdx = epsilonList.index(epsilon)
                     maxHeight = max(maxHeight,n.max())
                     histObjs[i][figIdx][0].set_ydata(n)
         else:
