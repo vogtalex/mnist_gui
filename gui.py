@@ -1,15 +1,12 @@
 from pathlib import Path
 from csv_gui import initializeCSV, writeToCSV
 from tkinter import *
-import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import json
 
 from functions import generateEpsilonList, AutoScrollbar
 from visuals_generator import buildTrajectoryCostReg, getTrueLabel
 from enlarge_visuals_helper import enlargeVisuals, loadFigures
-
-imgIdx = 32
 
 with open('config.json') as f:
    config = json.load(f)
@@ -19,6 +16,7 @@ initialLoad = True
 
 ASSETS_PATH = Path(__file__).parent / Path("assets")
 
+imgIdx = config["General"]["startIdx"]
 maxEpsilon = config["General"]["maxEpsilon"]
 epsilonStepSize = config["General"]["epsilonStepSize"]
 epsilonList = generateEpsilonList(epsilonStepSize,maxEpsilon)
@@ -132,8 +130,8 @@ canvas.create_window(150, 660 + 24*scrollBarShown, window=button_2)
 
 #Radio Button 1
 selections = []
-if config['Images']['enabled']:
-    selections.append(('Image', IntVar()))
+# if config['Images']['enabled']:
+#     selections.append(('Image', IntVar()))
 if config["BoxPlot"]["enabled"]:
     selections.append(('Box Plot', IntVar()))
 if config["TSNE"]["enabled"]:
@@ -147,7 +145,7 @@ for item in selections:
     item[1].set(None)
 
 width = 105
-for radioLabel in ['Very\nhelpful','Somewhat\nhelpful','Not very\nhelpful']:
+for radioLabel in ['Not very\nhelpful','Somewhat\nhelpful','Very\nhelpful']:
     canvas.create_text(width, 140, anchor="n", text=radioLabel, fill="#000000", font=("Roboto", -18), justify = CENTER)
     width+=80
 
@@ -157,7 +155,7 @@ for visual in selections:
     canvas.create_window(1, height, anchor=W, window=l)
 
     for i in range(3):
-        r = Radiobutton(window, value = 3-i, variable=visual[1], bg="#D2D2D2")
+        r = Radiobutton(window, value = i+1, variable=visual[1], bg="#D2D2D2")
         idx = canvas.create_window(108 + i*80, height + 2, window=r)
         canvas.tag_lower(idx)
 

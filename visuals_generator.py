@@ -27,8 +27,8 @@ try:
 except:
     exit("Data path not valid")
 
-# what epsilon for embedding
-displayEpsilon = f"e{config['General']['displayEpsilon']}"
+# which subset to use for experiment run
+displaySubset = f"subset{config['General']['displaySubset']}"
 examples = 'examples'
 
 # only use this # of images from the image set(s)
@@ -42,24 +42,25 @@ k=10
 use_cuda = False
 device = torch.device('cuda' if torch.cuda.is_available() and use_cuda else 'cpu')
 dist_metric = 'l2'
-attack_type = 'targeted'
+attack_type = 'untargeted'
 d=50
 max_epsilon = 6
 batch_size = 10 # MUST NOT BE LOWER THAN 10
 
 #example data
-exlabels = np.load(os.path.join(npys,examples,'testlabels.npy')).astype(np.float64)[:limit]
-exoutput = np.load(os.path.join(npys,examples,displayEpsilon,'advoutput.npy')).astype(np.float64)[:limit]
-exdata = np.load(os.path.join(npys,examples,displayEpsilon,'advdata.npy')).astype(np.float64)[:limit]
+exlabels = np.load(os.path.join(npys,examples,displaySubset,'testlabels.npy')).astype(np.float64)[:limit]
+exoutput = np.load(os.path.join(npys,examples,displaySubset,'advoutput.npy')).astype(np.float64)[:limit]
+exdata = np.load(os.path.join(npys,examples,displaySubset,'advdata.npy')).astype(np.float64)[:limit]
 
 testlabels = np.load(os.path.join(npys,'testlabels.npy')).astype(np.float64)[:limit]
 
 # this is kinda a makeshift solution, do it better later
 labels = list(map(int,set(exlabels)))
 
-imageData = np.load(os.path.join(npys, examples, displayEpsilon, 'advdata.npy')).astype(np.float64)[:limit]
+imageData = np.load(os.path.join(npys, examples, displaySubset, 'advdata.npy')).astype(np.float64)[:limit]
 images = imageData.reshape(imageData.shape[:-1]+(28,28))
-images_unattacked = [image.reshape(28, 28) for image in np.load(os.path.join(npys, examples, 'e0', 'advdata.npy')).astype(np.float64)[:limit]]
+
+images_unattacked = [image.reshape(28, 28) for image in np.load(os.path.join(npys, examples,displaySubset, 'data.npy')).astype(np.float64)[:limit]]
 
 # Generates an unattacked image
 def generateUnattackedImage(idx):
@@ -111,7 +112,7 @@ def labelAxes(axs, plt):
 # Generates an unlabeled image
 def blitGenerateUnlabeledImage():
     def genUImg(idx):
-        _,_,prediction = findNearest(exdata,exoutput,genUImg.advdata,idx,displayEpsilon)
+        _,_,prediction = findNearest(exdata,exoutput,genUImg.advdata,idx,-1)
 
         # set area where new text will go to blank
         genUImg.fig.canvas.restore_region(genUImg.titleBackground)
@@ -131,8 +132,8 @@ def blitGenerateUnlabeledImage():
 
         return genUImg.fig
 
-    genUImg.advdata = get_data(npys,displayEpsilon)
-    _,_,prediction = findNearest(exdata,exoutput,genUImg.advdata,0,displayEpsilon)
+    genUImg.advdata = get_data(npys,'e0')
+    _,_,prediction = findNearest(exdata,exoutput,genUImg.advdata,0,-1)
 
     # generate placeholder image and store figure, image, & bounding box of figure to load later
     genUImg.fig = plt.figure(tight_layout=True)
@@ -209,7 +210,7 @@ generateUnlabeledImage = blitGenerateUnlabeledImage()
 def blitgenerateTSNEPlots():
     def getTSNE(idx):
         # get closest points & norms to all points from the example at idx
-        norms,idxs,prediction = findNearest(exdata,exoutput,getTSNE.advdata,idx,displayEpsilon)
+        norms,idxs,prediction = findNearest(exdata,exoutput,getTSNE.advdata,idx,-1)
 
         # restore backgrounds, clearing foregound and allowing redrawing of artists
         getTSNE.fig.canvas.restore_region(getTSNE.background)
@@ -236,8 +237,8 @@ def blitgenerateTSNEPlots():
     getTSNE.ax2.set_yticks([])
 
     # load adversarial data for epsilon and get closest points to idx 0 for initial plot creation
-    getTSNE.advdata = get_data(npys,displayEpsilon)
-    norms,idxs,prediction = findNearest(exdata,exoutput,getTSNE.advdata,0,displayEpsilon)
+    getTSNE.advdata = get_data(npys,'e0')
+    norms,idxs,_ = findNearest(exdata,exoutput,getTSNE.advdata,0,-1)
 
     # generate tsne embedding based on original set of data
     X_2d = []
@@ -265,7 +266,7 @@ def blitgenerateTSNEPlots():
     colorLim = (4,13)
 
     # manually create colorbar before second scatterplot has been made
-    getTSNE.fig.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(vmin=colorLim[0],vmax=colorLim[1]),cmap='viridis'),cax=getTSNE.ax3,label="norm")
+    getTSNE.fig.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(vmin=colorLim[0],vmax=colorLim[1]),cmap='viridis'),cax=getTSNE.ax3)
 
     # store bounding boxes of scatterplot background and draw figure
     getTSNE.background = getTSNE.fig.canvas.copy_from_bbox(getTSNE.ax2.bbox)
@@ -281,7 +282,7 @@ generateTSNEPlots = blitgenerateTSNEPlots()
 
 def roundSigFigs(num, sigFigs):
     # convert num to string and cut end based on # of significant figures
-    # if num is 0, only print single digit. Else cut based on # of significant figures, +2 for the decimal & first full digit, and if it's greater than 1 log10 of num
+    # if num is 0, only print single digit. Else cut based on # of significant figures, +2 for the decimal & first full digit, and if it's greater than 1 +log10 of num
     return str(num)[:(int(math.log(num,10))*(num>1) + 2 + sigFigs if num else 1)]
 
 maxEpsilon = config["General"]["maxEpsilon"]
