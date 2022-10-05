@@ -52,7 +52,7 @@ random_seed = 1
 torch.backends.cudnn.enabled = False # I don't know what this does
 torch.manual_seed(random_seed)
 
-loss_fn = nn.CrossEntropyLoss()
+loss_fn = nn.functional.cross_entropy
 
 # generates the "known" data
 def gen_adv_features_test(eps):
