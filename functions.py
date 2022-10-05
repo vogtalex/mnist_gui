@@ -48,48 +48,78 @@ def l2_projection(x, x_init, r):
 
     return x
 
-def PGD_attack(model, device, loss, x, y, epsilon, niter, stepsize, lpnorm=np.inf, randinit=False, debug=False):
-    x_ptb = x.detach().clone()
-    model.to(device)
+def PGD_attack(model, device, loss, x, y, epsilon, niter, stepsize, lpnorm=np.inf, randinit=False, fixed_step=True,
+debug=False, verbose=False, req_valid=True):
+    if epsilon == 0:
+        x_curr = x.detach().clone()
+        return x_curr
+
+    x_curr = x.detach().clone()
+
+    if debug:
+        loss_list = []
+        step_norm = []
+        grad_list = []
 
     eps = (torch.ones(x.shape[0])*epsilon).to(device)   # for dimension matching in l2 case
     # set randinit to False for this project, it's mainly used for defense training
     if randinit:
-        if lpnorm == np.inf:
-            x_ptb = x_ptb + torch.zeros_like(x_ptb).uniform_(-epsilon, epsilon) # random start
-            x_ptb = torch.clamp(x_ptb, 0, 1)
-        if lpnorm == 2:
+        if lpnorm == np.inf or lpnorm == 'linf':
+            x_curr = x_curr + torch.zeros_like(x_curr).uniform_(-epsilon, epsilon) # random start
+        if lpnorm == 2 or lpnorm == 'l2':
             u = torch.normal(0, 1, x.shape, device=x.device)
             norm = torch.norm(u.flatten(start_dim=1), p=2, dim=1)
             r = torch.rand(x.shape[0], device=x.device)
             x_curr = (x + epsilon * u * (r / norm).view(x.shape[0], 1, 1, 1)).detach()
             x_curr = l2_projection(x_curr, x, epsilon)
 
-            # x_ptb = x_ptb + torch.zeros_like(x_ptb).uniform_(-((epsilon/(x.shape[1]*x.shape[2]*x.shape[3]))**0.5),
+            # x_curr = x_curr + torch.zeros_like(x_curr).uniform_(-((epsilon/(x.shape[1]*x.shape[2]*x.shape[3]))**0.5),
             #     (epsilon/(x.shape[1]*x.shape[2]*x.shape[3]))**0.5)
+        if req_valid:
+            x_curr = torch.clamp(x_curr, 0, 1)
     for i in range(niter):
-        x_ptb.requires_grad_()
+        if debug:
+            x_prev = x_curr.clone()
+        x_curr.requires_grad_()
         with torch.enable_grad():
-            logits = model(x_ptb)
-            loss_val = loss(logits, y)
-        grad = torch.autograd.grad(loss_val, [x_ptb])[0]
-        if lpnorm == np.inf:
-            x_ptb = x_ptb.detach() + stepsize * torch.sign(grad.detach())   # perturbation
-            x_ptb = torch.min(torch.max(x_ptb, x - epsilon), x + epsilon)   # linf projection
-        if lpnorm == 2:
+            logits = model(x_curr)
+            loss_val = loss(logits, y, reduction='none')
+            grad = torch.autograd.grad(loss_val.sum(), [x_curr])[0]
+        if debug:
+            print('iter', i)
+        if verbose:
+            print(loss_val.sum())
+            print(torch.norm(grad))
+        if lpnorm == np.inf or lpnorm == 'linf':
+            if fixed_step:
+                x_curr = x_curr.detach() + stepsize * torch.sign(grad.detach())   # perturbation
+            else:
+                x_curr = x_curr.detach() + stepsize * grad.detach()
+            x_curr = torch.min(torch.max(x_curr, x - epsilon), x + epsilon)   # linf projection
+        if lpnorm == 2 or lpnorm == 'l2':
             # perturbation
-            grad_norm = torch.norm(grad.view(x.shape[0], -1), p=2, dim=1)
-            grad_norm[grad_norm == 0] = 1
-            x_ptb = x_ptb + stepsize * grad / grad_norm.view(x.shape[0],1,1,1)
-            total_ptb = x_ptb - x
+            if fixed_step:
+                grad_norm = torch.norm(grad.view(x.shape[0], -1), p=2, dim=1)
+                grad_norm[grad_norm == 0] = 1   # avoid dividing by zero entries
+                x_curr = x_curr + stepsize * grad / grad_norm.view(x.shape[0],1,1,1)
+            else:
+                x_curr = x_curr.detach() + stepsize * grad.detach()
+            total_ptb = x_curr - x
             ptb_norm = torch.norm(total_ptb.view(x.shape[0], -1), p=2, dim=1)
             denom = torch.max(ptb_norm, eps)
-            x_ptb = x.detach().clone() + eps.view(x.shape[0],1,1,1) * total_ptb.detach() / denom.view(x.shape[0],1,1,1)
-        x_ptb = torch.clamp(x_ptb, 0, 1)    # pixel value constraint
+            x_curr = x.detach().clone() + eps.view(x.shape[0],1,1,1) * total_ptb.detach() / denom.view(x.shape[0],1,1,1)
+        if req_valid:
+            x_curr = torch.clamp(x_curr, 0, 1)    # pixel value constraint
         if debug:
-            print('linf norm:', torch.norm(x_ptb-x, p=np.inf).item()*255)
-            print('l1 norm:', torch.norm(x_ptb-x, p=1).item()*255)
-    return x_ptb.detach()
+            loss_list.append(loss_val.sum().detach().item())
+            step_norm.append(torch.norm(x_curr - x_prev).item())
+            grad_list.append(torch.norm(grad).item())
+            # print('linf norm:', torch.norm(x_curr-x, p=np.inf).item()*255)
+            # print('l1 norm:', torch.norm(x_curr-x, p=1).item()*255)
+    if debug:
+        return x_curr, loss_list, step_norm, grad_list
+    else:
+        return x_curr.detach()
 
 def SoftCrossEntropyLoss(input, target):
   logprobs = F.log_softmax(input, dim = 1)

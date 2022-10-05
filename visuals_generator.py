@@ -57,10 +57,9 @@ testlabels = np.load(os.path.join(npys,'testlabels.npy')).astype(np.float64)[:li
 # this is kinda a makeshift solution, do it better later
 labels = list(map(int,set(exlabels)))
 
-imageData = np.load(os.path.join(npys, examples, displaySubset, 'advdata.npy')).astype(np.float64)[:limit]
-images = imageData.reshape(imageData.shape[:-1]+(28,28))
-
-images_unattacked = [image.reshape(28, 28) for image in np.load(os.path.join(npys, examples,displaySubset, 'data.npy')).astype(np.float64)[:limit]]
+images = exdata.reshape(exdata.shape[:-1]+(28,28))
+data = np.load(os.path.join(npys, examples,displaySubset, 'data.npy')).astype(np.float64)[:limit]
+images_unattacked = data.reshape(data.shape[:-1]+(28,28))
 
 # Generates an unattacked image
 def generateUnattackedImage(idx):
@@ -81,6 +80,9 @@ get_data = cached_get_data()
 
 def getTrueLabel(idx):
     return exlabels[idx]
+
+def getAttackStrength(idx):
+    return np.linalg.norm(data[idx]-exdata[idx])
 
 # cache the data for the nearest points as the same data will always be called at least twice if histogram is enabled
 def cached_find_nearest():
@@ -548,7 +550,7 @@ def buildTrajectoryCostReg(idx):
     __trajectoryCostReg.fig.set_size_inches(6/scaler, 4/scaler)
     # load cost regression model
     __trajectoryCostReg.cost_reg = MNISTCost()
-    __trajectoryCostReg.cost_reg.load_state_dict(torch.load('./model/costreg_mnist_l2_ce.pth'))
+    __trajectoryCostReg.cost_reg.load_state_dict(torch.load('./model/MNIST-Cost_est_l2.pth'))
     __trajectoryCostReg.cost_reg.to(device)
     # train mode is required for some strange reason, cost regression model does not work properly under eval mode
     __trajectoryCostReg.cost_reg.train()

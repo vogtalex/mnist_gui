@@ -5,7 +5,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import json
 
 from functions import generateEpsilonList, AutoScrollbar
-from visuals_generator import buildTrajectoryCostReg, getTrueLabel
+from visuals_generator import buildTrajectoryCostReg, getTrueLabel, getAttackStrength
 from enlarge_visuals_helper import enlargeVisuals, loadFigures
 
 with open('config.json') as f:
@@ -40,6 +40,9 @@ def myClick():
         for item in selections:
             userData.append(item[1].get())
         userData.append(confidence.get())
+        userData.append(getAttackStrength(imgIdx))
+        userData.append(config["General"]["displaySubset"])
+        userData.append(imgIdx)
         print(userData)
         outputArray.append(userData)
 
@@ -54,6 +57,19 @@ def myClick():
 
         figureList = loadFigures(epsilonList, imgIdx, maxEpsilon, config)
     else:
+        userData = []
+        userData.append("True label")
+        userData.append("User prediction")
+        for item in selections:
+            userData.append((item[0]).replace('\n',' '))
+        userData.append("User confidence")
+        userData.append("Attack strength")
+        userData.append("Subset")
+        userData.append("Index")
+        print(userData)
+        outputArray.append(userData)
+
+
         initialLoad = False
         if config["TrajectoryRegression"]["enabled"]:
             buildTrajectoryCostReg(imgIdx)
@@ -70,12 +86,25 @@ def myClick():
 
 window = Tk()
 
+selections = []
+if config["BoxPlot"]["enabled"]:
+    selections.append(('Box Plot', IntVar()))
+if config["TSNE"]["enabled"]:
+    selections.append(('TSNE', IntVar()))
+if config["Histogram"]["enabled"]:
+    selections.append(('Histogram', IntVar()))
+if config["TrajectoryRegression"]["enabled"]:
+    selections.append(('Attack\nRegression', IntVar()))
+
+for item in selections:
+    item[1].set(None)
+
 window.configure(bg = "#FFFFFF")
 
 horzScrollBar = AutoScrollbar(window, orient=HORIZONTAL)
 horzScrollBar.grid(row = 1, column = 0, stick='sew')
 
-scrollCanvas = Canvas(window, xscrollcommand = horzScrollBar.set, width = 604*min(2,numCols), height=800)
+scrollCanvas = Canvas(window, xscrollcommand = horzScrollBar.set, width = 604*min(2,numCols,1+len(selections)), height=800)
 scrollCanvas.grid(row=0, column=0, sticky='nsew')
 
 horzScrollBar.config(command = scrollCanvas.xview)
@@ -104,8 +133,6 @@ canvas = Canvas(window, bg = "#FFFFFF", height = 800 + 24*scrollBarShown, width 
 canvas.grid(row = 0, column = 1, stick='ns', rowspan = 1 + scrollBarShown)
 
 canvas.create_rectangle(0, 0, 300, 800 + 24*scrollBarShown, fill="#D2D2D2", outline="")
-canvas.create_text(12*6, 80.0, anchor="nw", text="Helpfulness of\nvisualizations:", fill="#000000", font=("Roboto", -24), justify=CENTER)
-canvas.create_text(12, 400.0, anchor="nw", text="Prediction Confidence:", fill="#000000", font=("Roboto", -24))
 canvas.create_text(12, 24.0, anchor="nw", text="Prediction:", fill="#000000", font=("Roboto", -24))
 104,120.5
 entry_image_1 = PhotoImage(file = ASSETS_PATH / "entry_1.png")
@@ -121,54 +148,44 @@ def enlarge_plots():
     global figureList
     root = Tk()
     enlargeVisuals(root, figureList)
-    root.protocol("WM_DELETE_WINDOW", root.destroy)
+    root.protocol("WM_DELETE_WINDOW", lambda: root.destroy())
+    root.bind('<Control-w>', lambda e: root.destroy())
     root.resizable(height=True, width=False)
     root.mainloop()
 
 button_2 = Button(canvas, command=(enlarge_plots), width= 40, height = 3, text= "Enlarge Visualizations")
 canvas.create_window(150, 660 + 24*scrollBarShown, window=button_2)
 
-#Radio Button 1
-selections = []
-# if config['Images']['enabled']:
-#     selections.append(('Image', IntVar()))
-if config["BoxPlot"]["enabled"]:
-    selections.append(('Box Plot', IntVar()))
-if config["TSNE"]["enabled"]:
-    selections.append(('TSNE', IntVar()))
-if config["Histogram"]["enabled"]:
-    selections.append(('Histogram', IntVar()))
-if config["TrajectoryRegression"]["enabled"]:
-    selections.append(('Attack\nRegression', IntVar()))
+if len(selections) > 0:
+    canvas.create_text(12*6, 80.0, anchor="nw", text="Helpfulness of\nvisualizations:", fill="#000000", font=("Roboto", -24), justify=CENTER)
 
-for item in selections:
-    item[1].set(None)
+    width = 105
+    for radioLabel in ['Not very\nhelpful','Somewhat\nhelpful','Very\nhelpful']:
+        canvas.create_text(width, 140, anchor="n", text=radioLabel, fill="#000000", font=("Roboto", -18), justify = CENTER)
+        width+=80
 
-width = 105
-for radioLabel in ['Not very\nhelpful','Somewhat\nhelpful','Very\nhelpful']:
-    canvas.create_text(width, 140, anchor="n", text=radioLabel, fill="#000000", font=("Roboto", -18), justify = CENTER)
-    width+=80
+    height = 210
+    for visual in selections:
+        l = Label(window,text=visual[0],anchor=W,justify = LEFT,bg="#D2D2D2",font=("Roboto", -18))
+        canvas.create_window(1, height, anchor=W, window=l)
 
-height = 210
-for visual in selections:
-    l = Label(window,text=visual[0],anchor=W,justify = LEFT,bg="#D2D2D2",font=("Roboto", -18))
-    canvas.create_window(1, height, anchor=W, window=l)
+        for i in range(3):
+            r = Radiobutton(window, value = i+1, variable=visual[1], bg="#D2D2D2")
+            idx = canvas.create_window(108 + i*80, height + 2, window=r)
+            canvas.tag_lower(idx)
 
-    for i in range(3):
-        r = Radiobutton(window, value = i+1, variable=visual[1], bg="#D2D2D2")
-        idx = canvas.create_window(108 + i*80, height + 2, window=r)
-        canvas.tag_lower(idx)
-
-    height += 35
+        height += 35
 
 #Radio Button 2
+height = 480
+canvas.create_text(12, height, anchor="nw", text="Prediction Confidence:", fill="#000000", font=("Roboto", -24))
 confidence = StringVar()
 confidence.set(None)
 scale = (('High Confidence', 'High Confidence'),
          ('Moderate Confidence', 'Moderate Confidence'),
          ('Low Confidence', 'Low Confidence'))
 
-height = 450
+height+=50
 for x in scale:
     r2 = Radiobutton(
         window,
@@ -191,5 +208,6 @@ def exitProgram():
     window.destroy()
 
 window.protocol("WM_DELETE_WINDOW", exitProgram)
+window.bind('<Control-w>', lambda e:exitProgram())
 window.resizable(False, False)
 window.mainloop()

@@ -1,3 +1,5 @@
+# THIS IS VERY OUT OF DATE
+
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter.filedialog import askopenfilenames, askdirectory
