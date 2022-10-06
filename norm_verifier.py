@@ -10,9 +10,9 @@ with open('config.json') as f:
 
 npys = config['Model']['outputDir']
 displaySubset = f"subset{config['General']['displaySubset']}"
-
 idx = config["General"]["startIdx"]
 
+# open unattacked and attacked versions of the same image
 exdata1 = np.load(os.path.join(npys,'examples',displaySubset,'data.npy')).astype(np.float64)[:limit]
 img = exdata1[idx].reshape((28,28))
 plt.figure()
@@ -24,7 +24,8 @@ plt.figure()
 plt.imshow(img, cmap='gray')
 plt.show(block=False)
 
+# compute norm between the unattacked/attacked examples
 print("L2: ",np.linalg.norm(exdata1[idx] - exdata2[idx]))
-print("Linf: ",np.linalg.norm(exdata1[idx] - exdata2[idx],ord=np.Inf))
+print("Linf: ",np.linalg.norm(exdata1[idx] - exdata2[idx], ord=np.Inf))
 
 input("Press Enter to continue...")

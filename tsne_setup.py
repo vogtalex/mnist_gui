@@ -47,7 +47,7 @@ model = MadryNet()
 model.load_state_dict(torch.load(pretrained_model,map_location=device))
 model.to(device)
 
-# Creates a random seed
+# Creates a random(?) seed
 random_seed = 1
 torch.backends.cudnn.enabled = False # I don't know what this does
 torch.manual_seed(random_seed)
@@ -153,7 +153,7 @@ def gen_adv_features_examples(numSubsets,subsetSize):
                 # increment index by fraction of subset, based on how many epsilons the subset is being split into
                 idx += 1/len(subset_eps)
 
-            # shuffle all output arrays with same randomness
+            # shuffle all output arrays with same randomness (since they're all same length, results in same shuffle)
             shuffle_together(labels,out_data,out_output,data_subset_whole)
 
             # save all generated arrays for subset

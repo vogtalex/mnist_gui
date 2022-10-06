@@ -6,35 +6,36 @@ from visuals_generator import generateUnlabeledImage, generateTSNEPlots, generat
 import time
 import pickle
 
+# load enabled figures
 def loadFigures(epsilonList, imgIdx, maxEpsilon, config):
     figureList = []
-    timeList=[]
-    timeList.append(time.time())
+    # timeList=[]
+    # timeList.append(time.time())
     # second value in tuple is whether x limits can be modified
     if config['Images']['enabled']:
         figureList.append((generateUnlabeledImage(imgIdx),False))
-        timeList.append(time.time())
-        print("image:",timeList[1]-timeList[0])
+        # timeList.append(time.time())
+        # print("image:",timeList[1]-timeList[0])
     if config["BoxPlot"]["enabled"]:
         figureList.append((generateBoxPlot(imgIdx),False))
     if config["TSNE"]["enabled"]:
         figureList.append((generateTSNEPlots(imgIdx),False))
-        timeList.append(time.time())
-        print("tsne:",timeList[2]-timeList[1])
+        # timeList.append(time.time())
+        # print("tsne:",timeList[2]-timeList[1])
     if config["TrajectoryRegression"]["enabled"]:
         figureList.append((trajectoryCostReg(imgIdx),False))
-        timeList.append(time.time())
-        print("trajectory:",timeList[3]-timeList[2])
+        # timeList.append(time.time())
+        # print("trajectory:",timeList[3]-timeList[2])
     if config["Histogram"]["enabled"]:
         # all epsilons histogram, generates if epsilon val is greater than max
-        allEps = time.time()
+        # allEps = time.time()
         allEpsFig, maxHeight = generateHistograms(imgIdx, maxEpsilon+1)
         figureList.append((allEpsFig,True))
-        print("all epsilons:",time.time()-allEps)
-        individualEps = time.time()
+        # print("all epsilons:",time.time()-allEps)
+        # individualEps = time.time()
         for eps in epsilonList:
             figureList.append((generateHistograms(imgIdx, eps, maxHeight),True))
-        print("individual epsilons:",time.time()-individualEps)
+        # print("individual epsilons:",time.time()-individualEps)
     if config["General"]["showOriginal"]:
         figureList.append((generateUnattackedImage(imgIdx),False))
     return figureList
@@ -93,6 +94,7 @@ class enlargeVisuals():
     fig = pickle.loads(pickle.dumps(fig))
     temp = self.currentEmbed if self.currentEmbed else None
 
+    # if figure is TSNE increase the size of points in the figure
     if fig.get_label() == 'TSNE':
         for scatter in fig.get_axes()[0].collections:
             scatter.set_sizes([10])

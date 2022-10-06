@@ -1,0 +1,31 @@
+{
+    "General": {
+        "epsilonStepSize": 2,
+        "maxEpsilon": 8,
+        "displaySubset": 0,
+        "showOriginal": true,
+        "startIdx": 1
+    },
+    "Model": {
+        "modelDir": "C:\\path\\to\\gui\\model\\madry_mnist.py",
+        "weightDir": "C:\\path\\to\\gui\\lenet_mnist_model.pth",
+        "outputDir": "C:\\path\\to\\gui\\Data\\madrynet_mnist_l2",
+        "numSubsets": 3,
+        "subsetSize": 32
+    },
+    "Images": {
+        "enabled": true
+    },
+    "Histogram": {
+        "enabled": true
+    },
+    "BoxPlot": {
+        "enabled": false
+    },
+    "TSNE": {
+        "enabled": true
+    },
+    "TrajectoryRegression": {
+        "enabled": true
+    }
+}

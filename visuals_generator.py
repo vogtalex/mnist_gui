@@ -16,8 +16,6 @@ from collections import OrderedDict
 from chained_AE import Autoencoder, Chained_AE
 from mnist_cost import MNISTCost
 
-import time
-
 with open('config.json') as f:
    config = json.load(f)
 
@@ -31,8 +29,6 @@ except:
 displaySubset = f"subset{config['General']['displaySubset']}"
 examples = 'examples'
 
-# only use this # of images from the image set(s)
-limit = 9000
 # figure size downscale value
 scaler = 1
 # num of closest points for tsne
@@ -48,18 +44,18 @@ max_epsilon = 6
 batch_size = 10 # MUST NOT BE LOWER THAN 10
 
 #example data
-exlabels = np.load(os.path.join(npys,examples,displaySubset,'testlabels.npy')).astype(np.float64)[:limit]
-exoutput = np.load(os.path.join(npys,examples,displaySubset,'advoutput.npy')).astype(np.float64)[:limit]
-exdata = np.load(os.path.join(npys,examples,displaySubset,'advdata.npy')).astype(np.float64)[:limit]
+exlabels = np.load(os.path.join(npys,examples,displaySubset,'testlabels.npy'),mmap_mode='r').astype(np.float64)
+exoutput = np.load(os.path.join(npys,examples,displaySubset,'advoutput.npy'),mmap_mode='r').astype(np.float64)
+exdata = np.load(os.path.join(npys,examples,displaySubset,'advdata.npy'),mmap_mode='r').astype(np.float64)
+data = np.load(os.path.join(npys, examples,displaySubset, 'data.npy'),mmap_mode='r').astype(np.float64)
 
-testlabels = np.load(os.path.join(npys,'testlabels.npy')).astype(np.float64)[:limit]
+images = exdata.reshape(exdata.shape[:-1]+(28,28))
+images_unattacked = data.reshape(data.shape[:-1]+(28,28))
 
 # this is kinda a makeshift solution, do it better later
 labels = list(map(int,set(exlabels)))
 
-images = exdata.reshape(exdata.shape[:-1]+(28,28))
-data = np.load(os.path.join(npys, examples,displaySubset, 'data.npy')).astype(np.float64)[:limit]
-images_unattacked = data.reshape(data.shape[:-1]+(28,28))
+testlabels = np.load(os.path.join(npys,'testlabels.npy'),mmap_mode='r').astype(np.float64)
 
 # Generates an unattacked image
 def generateUnattackedImage(idx):
@@ -72,7 +68,7 @@ def cached_get_data():
     cache = {}
     def __get_data(npys,eps):
         if eps not in cache:
-            cache[eps] = np.load(os.path.join(npys,eps,'advdata.npy')).astype(np.float64)[:limit]
+            cache[eps] = np.load(os.path.join(npys,eps,'advdata.npy'),mmap_mode='r').astype(np.float64)
         return cache[eps]
 
     return __get_data
@@ -81,6 +77,7 @@ get_data = cached_get_data()
 def getTrueLabel(idx):
     return exlabels[idx]
 
+# get l2 norm between attacked example and unattacked example
 def getAttackStrength(idx):
     return np.linalg.norm(data[idx]-exdata[idx])
 
@@ -101,14 +98,12 @@ def cached_find_nearest():
     return __findNearest
 findNearest = cached_find_nearest()
 
-# create labels for histograms and sets labels to be visible only for the bottom one
+# create labels for histograms and sets labels to be visible only for the bottom hist
 def labelAxes(axs, plt):
-    count = 0
-    for ax in axs:
-        ax.set_title(labels[count], fontstyle='italic', x = 0.8, y = 0.0)
-        ax.get_xaxis().set_visible(False)
-        count += 1
-    axs[count-1].get_xaxis().set_visible(True)
+    for i in range(len(axs)):
+        axs[i].set_title(labels[i], fontstyle='italic', x = 0.8, y = 0.0)
+        axs[i].get_xaxis().set_visible(False)
+    axs[len(axs)-1].get_xaxis().set_visible(True)
     plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9, wspace=0.4, hspace=0.4)
 
 # Generates an unlabeled image
@@ -137,7 +132,6 @@ def blitGenerateUnlabeledImage():
     genUImg.advdata = get_data(npys,'e0')
     _,_,prediction = findNearest(exdata,exoutput,genUImg.advdata,0,-1)
 
-    # generate placeholder image and store figure, image, & bounding box of figure to load later
     genUImg.fig = plt.figure(tight_layout=True)
     genUImg.fig.set_size_inches(6/scaler, 4/scaler)
     genUImg.ax = genUImg.fig.add_subplot(1,1,1)
@@ -154,72 +148,17 @@ def blitGenerateUnlabeledImage():
     return genUImg
 generateUnlabeledImage = blitGenerateUnlabeledImage()
 
-# def generateUnlabeledImage(idx):
-#     fig = plt.figure()
-#     plt.xticks([])
-#     plt.yticks([])
-#     plt.imshow(images[idx], cmap="gray")
-#     return fig
-
-# def generateTSNEPlots(idx):
-#     origdata = get_data(npys,'e0')
-#     advdata = get_data(npys,displayEpsilon)
-#
-#     norms,idxs,prediction = findNearest(exdata,exoutput,advdata,idx,displayEpsilon)
-#
-#     X_2d = []
-#     if os.path.exists("./embedding.npy"):
-#         X_2d = np.load('./embedding.npy').astype(np.float64)
-#     else:
-#         tsne = TSNE(n_components=2, random_state=4, perplexity=100)
-#         X_2d = tsne.fit_transform(origdata)
-#         np.save('./embedding.npy', X_2d, allow_pickle=False)
-#
-#     colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'aquamarine', 'orange', 'purple'
-#
-#     fig, (ax1,ax2) = plt.subplots(1,2,constrained_layout=True)
-#     ax1.set_xticks([])
-#     ax1.set_yticks([])
-#     ax2.set_xticks([])
-#     ax2.set_yticks([])
-#
-#     #plot embedding for class coloration
-#     for c, label in zip(colors, labels):
-#         ax1.scatter(X_2d[(testlabels[...] == label), 0], X_2d[(testlabels[...] == label), 1], c=c, label=label, s=3)
-#
-#     ax1.set_title("Test Data")
-#
-#     #plot embedding for norm coloration
-#     scatterPlot = ax2.scatter(X_2d[:, 0], X_2d[:, 1], c=norms[...], s=3, cmap='viridis')
-#
-#     fig.colorbar(scatterPlot,label="norm")
-#
-#     #plot 10 nearest points
-#     cb = ax2.scatter(X_2d[idxs,0],X_2d[idxs,1], c='red', s=3, zorder=2)
-#     cb.set_clim(5,15)
-#     # norms,idxs,prediction = findNearest(exdata,exoutput,advdata,idx+1,displayEpsilon)
-#     # scatterPlot.set_array(norms)
-#     # cb.set_offsets([[X_2d[i,0],X_2d[i,1]]for i in idxs])
-#
-#     # fig.colorbar(cb,label="norm")
-#
-#     ax2.set_title(f"Model Prediction: {prediction}\nAverage Distance: {round(float(sum(norms))/len(norms),2)}")
-#
-#     # cb.set_clim(min(norms),max(norms))
-#     ax1.legend()
-#     return fig
-
 def blitgenerateTSNEPlots():
     def getTSNE(idx):
         # get closest points & norms to all points from the example at idx
-        norms,idxs,prediction = findNearest(exdata,exoutput,getTSNE.advdata,idx,-1)
+        norms,idxs,prediction = findNearest(exdata,exoutput,getTSNE.data,idx,-1)
 
         # restore backgrounds, clearing foregound and allowing redrawing of artists
         getTSNE.fig.canvas.restore_region(getTSNE.background)
 
-        # change array for scatterplot so it'll recolor, changing offsets of cb so the closest 10 points will be in their new positions, and update title based on new model prediction
+        # change array for scatterplot so it'll recolor and change offsets of cb so the closest 10 points will be in their new positions
         getTSNE.scatterPlot.set_array(norms)
-        getTSNE.cb.set_offsets([ [getTSNE.X_2d[i,0], getTSNE.X_2d[i,1]] for i in idxs])
+        getTSNE.cb.set_offsets([ [getTSNE.X_2d[i,0], getTSNE.X_2d[i,1]] for i in idxs ])
 
         # redraw artists
         getTSNE.ax2.draw_artist(getTSNE.scatterPlot)
@@ -238,9 +177,9 @@ def blitgenerateTSNEPlots():
     getTSNE.ax2.set_xticks([])
     getTSNE.ax2.set_yticks([])
 
-    # load adversarial data for epsilon and get closest points to idx 0 for initial plot creation
-    getTSNE.advdata = get_data(npys,'e0')
-    norms,idxs,_ = findNearest(exdata,exoutput,getTSNE.advdata,0,-1)
+    # load unattacked data for epsilon and get closest points to idx 0 for initial plot creation
+    getTSNE.data = get_data(npys,'e0')
+    norms,idxs,_ = findNearest(exdata,exoutput,getTSNE.data,0,-1)
 
     # generate tsne embedding based on original set of data
     X_2d = []
@@ -248,8 +187,7 @@ def blitgenerateTSNEPlots():
         X_2d = np.load('./embedding.npy').astype(np.float64)
     else:
         tsne = TSNE(n_components=2, random_state=4, perplexity=100)
-        origdata = get_data(npys,'e0')
-        X_2d = tsne.fit_transform(origdata)
+        X_2d = tsne.fit_transform(getTSNE.data)
         np.save('./embedding.npy', X_2d, allow_pickle=False)
     getTSNE.X_2d = X_2d
 
@@ -271,13 +209,13 @@ def blitgenerateTSNEPlots():
     getTSNE.fig.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(vmin=colorLim[0],vmax=colorLim[1]),cmap='viridis'),cax=getTSNE.ax3)
 
     # store bounding boxes of scatterplot background and draw figure
-    getTSNE.background = getTSNE.fig.canvas.copy_from_bbox(getTSNE.ax2.bbox)
     getTSNE.fig.canvas.draw()
+    getTSNE.background = getTSNE.fig.canvas.copy_from_bbox(getTSNE.ax2.bbox)
 
     # create scatter plot of all data colored by example's distance from original data & closest 10 points
     getTSNE.scatterPlot = getTSNE.ax2.scatter(X_2d[:,0], X_2d[:,1], c=norms[:], s=1, cmap='viridis', zorder=1)
     getTSNE.cb = getTSNE.ax2.scatter(X_2d[idxs,0],X_2d[idxs,1], c='red', s=5, zorder=2)
-    getTSNE.scatterPlot.set_clim(colorLim[0],colorLim[1])
+    getTSNE.scatterPlot.set_clim(*colorLim)
 
     return getTSNE
 generateTSNEPlots = blitgenerateTSNEPlots()
@@ -292,101 +230,72 @@ epsilonStepSize = config["General"]["epsilonStepSize"]
 # finds # of significant figures after the decimal place of the step size
 sigFigs = len(repr(float(epsilonStepSize)).split('.')[1].rstrip('0'))
 epsilonList = generateEpsilonList(epsilonStepSize,maxEpsilon)
-# def generateHistograms(idx, plotID, height = None):
-#     r=(5,16)
-#     b=150
-#
-#     maxHeight = 0
-#     fig, axs = plt.subplots(10)
-#     fig.set_size_inches(6/scaler, 4/scaler)
-#
-#     cmap = plt.get_cmap("tab10")
-#     if plotID > maxEpsilon:
-#         for epsilon in epsilonList:
-#             advdata = get_data(npys,f'e{roundSigFigs(epsilon,sigFigs)}')
-#             norms,_,_ = findNearest(exdata,exoutput,advdata,idx,epsilon)
-#
-#             colorIdx = epsilonList.index(epsilon)
-#
-#             for i in range(10):
-#                 arr = norms[(testlabels[...] == labels[i])]
-#                 weights = np.ones_like(arr)/len(arr)
-#                 if i:
-#                     y, _, _ = axs[i].hist(arr, weights=weights, color=cmap(colorIdx), alpha=0.5, bins=b,range=r,density=False, histtype="step")
-#                 else:
-#                     y, _, _ = axs[i].hist(arr, weights=weights, color=cmap(colorIdx), alpha=0.5, bins=b,range=r,density=False, histtype="step", label=f"Attack Strength {epsilon}")
-#                 maxHeight = max(maxHeight,y.max())
-#         fig.legend(loc='upper left')
-#         fig.suptitle("All Attack Strengths")
-#     else:
-#         advdata = get_data(npys,f'e{roundSigFigs(plotID,sigFigs)}')
-#         norms,_,_ = findNearest(exdata,exoutput,advdata,idx,plotID)
-#
-#         colorIdx = epsilonList.index(plotID)
-#         for i in range(10):
-#             arr = norms[(testlabels[...] == labels[i])]
-#             weights = np.ones_like(arr)/len(arr)
-#             y, _, _ = axs[i].hist(arr, weights=weights, color=cmap(colorIdx), alpha=0.5, bins=b,range=r,density=False, label=f"Attack Strength {plotID}", histtype="step")
-#             maxHeight = max(maxHeight,y.max())
-#         fig.suptitle(f"Attack Strength {plotID}")
-#
-#     for ax in axs:
-#         ax.set_ylim([0, height if height else maxHeight])
-#
-#     labelAxes(axs, fig)
-#     if height:
-#         return fig
-#     return (fig, maxHeight)
-
 def blitGenerateHistograms():
     r=(5,16)
     b=150
 
     def genHist(idx, eps, height = None):
         maxHeight = 0
+        # all epsilon histogram
         if eps > maxEpsilon:
+            # get figure from cache
             (fig,axs,histObjs) = genHist.figCache[len(epsilonList)]
             for epsilon in epsilonList:
+                # load adversarial data & calculate norms to example
                 advdata = get_data(npys,f'e{roundSigFigs(epsilon,sigFigs)}')
                 norms,_,_ = findNearest(exdata,exoutput,advdata,idx,epsilon)
                 figIdx = epsilonList.index(epsilon)
                 for i in range(10):
+                    # if histogram hasn't been cached yet, generate hist for it & cache it
                     if (idx,epsilon,i) not in genHist.histCache:
                         arr = norms[(testlabels[...] == labels[i])]
                         weights = np.ones_like(arr)/len(arr)
 
                         n, _ = np.histogram(arr,bins=b,range=r,weights=weights)
                         genHist.histCache[(idx,epsilon,i)] = n
+                    # otherwise pull generated data out of cache
                     else:
                         n = genHist.histCache[(idx,epsilon,i)]
 
+                    # set heights of hist to new histogram data
                     maxHeight = max(maxHeight,n.max())
                     histObjs[i][figIdx][0].set_ydata(n)
+
+        # individual epsilon histogram
         else:
+            # get figure from cache
             figIdx = epsilonList.index(eps)
             (fig,axs,histObjs) = genHist.figCache[figIdx]
 
+            # load adversarial data & calculate norms to example
             advdata = get_data(npys,f'e{roundSigFigs(eps,sigFigs)}')
             norms,_,_ = findNearest(exdata,exoutput,advdata,idx,eps)
 
             for i in range(10):
+                # if histogram hasn't been cached yet, generate hist for it & cache it
                 if (idx,eps,i) not in genHist.histCache:
                     arr = norms[(testlabels[...] == labels[i])]
                     weights = np.ones_like(arr)/len(arr)
 
                     n, _ = np.histogram(arr,bins=b,range=r,weights=weights)
                     genHist.histCache[(idx,eps,i)] = n
+                # otherwise pull generated data out of cache
                 else:
                     n = genHist.histCache[(idx,eps,i)]
 
+                # set heights of hist to new histogram data
                 maxHeight = max(maxHeight,n.max())
                 histObjs[i][0].set_ydata(n)
 
+        # set max height of all axis, either to calculated max height or height argument if provided
         for ax in axs:
             ax.set_ylim([0, height if height else maxHeight])
 
+        # redraw figure w/ changes and flush changes
         fig.canvas.draw()
+        fig.canvas.flush_events()
 
+        # if no height argument was given return calculated maxheight
         if height:
             return fig
         return (fig, maxHeight)
@@ -401,6 +310,7 @@ def blitGenerateHistograms():
         advdata = get_data(npys,f'e{roundSigFigs(epsilon,sigFigs)}')
         norms,_,_ = findNearest(exdata,exoutput,advdata,0,epsilon)
 
+        # get index of epsilon in list for line color
         colorIdx = epsilonList.index(epsilon)
         fig, axs = plt.subplots(10)
         fig.set_size_inches(6/scaler, 4/scaler)
@@ -411,22 +321,27 @@ def blitGenerateHistograms():
             weights = np.ones_like(arr)/len(arr)
 
             n, edges = np.histogram(arr,bins=b,range=r,weights=weights)
+            # cache height values for histogram
             genHist.histCache[(0,epsilon,i)] = n
 
+            # create matplotlib hist from generated numpy vals
             newHist = axs[i].step(edges[:-1],n,where='post',color=cmap(colorIdx),alpha=0.5, label=f"Attack Strength {epsilon}")
             axs[i].set_xlim(r)
             histObjs.append(newHist)
 
         fig.suptitle(f"Attack Strength {epsilon}")
         labelAxes(axs, fig)
+        # cache figure and reference to histograms for epsilon index
         genHist.figCache[colorIdx] = (fig,axs,histObjs)
 
+    # populate and cache all epsilon plot
     fig, axs = plt.subplots(10)
     fig.set_size_inches(6/scaler, 4/scaler)
-    histObjs = [[] for i in range(10)]
+    histObjs = [[] for _ in range(10)]
     for epsilon in epsilonList:
         colorIdx = epsilonList.index(epsilon)
 
+        # since all data we need was already generated by single hist creation, just pull it out of cache and plot it together
         for i in range(10):
             n = genHist.histCache[(0,epsilon,i)]
             if i:
@@ -439,11 +354,13 @@ def blitGenerateHistograms():
     fig.legend(loc='upper left')
     fig.suptitle("All Attack Strengths")
     labelAxes(axs, fig)
+    # cache figure and references to arrays of hists for greater than max epsilon index (which is used for all eps hist)
     genHist.figCache[len(epsilonList)] = (fig,axs,histObjs)
 
     return genHist
 generateHistograms = blitGenerateHistograms()
 
+# generate box plot visualization (currently unused)
 def generateBoxPlot(idx):
     fig, axs = plt.subplots()
     fig.set_size_inches(6/scaler, 4/scaler)
@@ -519,7 +436,7 @@ def buildTrajectoryCostReg(idx):
         # get cost of current index
         cost = __trajectoryCostReg.rounded_pc[localIdx]
 
-        # create models and perform Reconstruction of current example
+        # create models and perform Reconstruction for current example
         reg_epsilons = range(int(cost)+1)
         reg_ae = make_models(dist_metric, reg_epsilons, attack_type, d)
         reg_recons = reg_ae(exp,True)
@@ -534,7 +451,7 @@ def buildTrajectoryCostReg(idx):
             ax.set_xticks([])
             ax.set_yticks([])
             ax.set_title(f'Attack\nStrength {reg_epsilons[j]}', fontsize=10)
-            # outline original image in red
+            # embed images and outline original image in red
             if j == len(reg_recons):
                 ax.imshow(exp[0][0], cmap="gray")
                 for spine in ax.spines.values():
@@ -544,6 +461,7 @@ def buildTrajectoryCostReg(idx):
                 ax.imshow(reg_recons[num_bins-2-j][0][0].detach().cpu(), cmap="gray")
 
         __trajectoryCostReg.fig.canvas.draw()
+        __trajectoryCostReg.fig.canvas.flush_events()
         return __trajectoryCostReg.fig
 
     __trajectoryCostReg.fig = plt.figure(tight_layout=True)
@@ -555,6 +473,7 @@ def buildTrajectoryCostReg(idx):
     # train mode is required for some strange reason, cost regression model does not work properly under eval mode
     __trajectoryCostReg.cost_reg.train()
 
+    # important to set start index for relative indexing into batch
     __trajectoryCostReg.startIdx = idx
     __trajectoryCostReg.batchData = None
     __trajectoryCostReg.pc = 0
