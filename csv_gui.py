@@ -1,7 +1,11 @@
 import csv
 import os
+import json
 
-csvName = "response.csv"
+with open('config.json') as f:
+   config = json.load(f)
+
+csvName = config["CSV"]["fileName"]
 
 def writeToCSV(array):
     with open(csvName, 'a', newline='') as csvfile:

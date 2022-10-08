@@ -59,7 +59,10 @@ testlabels = np.load(os.path.join(npys,'testlabels.npy'),mmap_mode='r').astype(n
 
 # Generates an unattacked image
 def generateUnattackedImage(idx):
-    fig = plt.figure()
+    fig = plt.figure(tight_layout=True)
+    fig.set_size_inches(6/scaler, 4/scaler)
+    plt.xticks([])
+    plt.yticks([])
     plt.imshow(images_unattacked[idx], cmap="gray")
     return fig
 
@@ -93,7 +96,7 @@ def cached_find_nearest():
 
             top = np.argpartition(norms, k-1)
             # cache norms of all data, the nearest k points, and the predicted label
-            cache[(idx,epsilon)] = (norms, top[1:k], label)
+            cache[(idx,epsilon)] = (norms, top[0:k], label)
         return cache[(idx,epsilon)]
     return __findNearest
 findNearest = cached_find_nearest()
@@ -101,7 +104,7 @@ findNearest = cached_find_nearest()
 # create labels for histograms and sets labels to be visible only for the bottom hist
 def labelAxes(axs, plt):
     for i in range(len(axs)):
-        axs[i].set_title(labels[i], fontstyle='italic', x = 0.8, y = 0.0)
+        axs[i].set_title(labels[i], fontstyle='italic', x = 0.7, y = 0.0)
         axs[i].get_xaxis().set_visible(False)
     axs[len(axs)-1].get_xaxis().set_visible(True)
     plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.9, wspace=0.4, hspace=0.4)
@@ -351,7 +354,7 @@ def blitGenerateHistograms():
             axs[i].set_xlim(r)
             histObjs[i].append(newHist)
 
-    fig.legend(loc='upper left')
+    fig.legend(loc='upper right')
     fig.suptitle("All Attack Strengths")
     labelAxes(axs, fig)
     # cache figure and references to arrays of hists for greater than max epsilon index (which is used for all eps hist)
@@ -427,7 +430,7 @@ def buildTrajectoryCostReg(idx):
 
         # if new index requires new batch, cut out new batch from loaded data, generate cost regressions, and round cost regressions
         if not localIdx:
-             temp = images[__trajectoryCostReg.startIdx + batchNum*batch_size:__trajectoryCostReg.startIdx + batchNum*batch_size + batch_size]
+             temp = images[__trajectoryCostReg.startIdx + batchNum*batch_size:__trajectoryCostReg.startIdx + (batchNum+1)*batch_size]
              __trajectoryCostReg.batchData = torch.unsqueeze(torch.from_numpy(temp),1).to(torch.float)
              __trajectoryCostReg.pc = __trajectoryCostReg.cost_reg(__trajectoryCostReg.batchData).detach().cpu().numpy()
              __trajectoryCostReg.rounded_pc = round_cost(__trajectoryCostReg.pc)

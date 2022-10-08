@@ -55,9 +55,11 @@ class enlargeVisuals():
     # create back/next buttons
     button_1 = Button(master = self.root, command=lambda:self.nextPlot(-1), width= 40, height = 3, text= "Back")
     button_1.grid(row=1,column=0)
+    self.root.bind("<Left>",lambda e:self.nextPlot(-1))
 
     button_2 = Button(master = self.root, command=lambda:self.nextPlot(1), width= 40, height = 3, text= "Next")
     button_2.grid(row=1,column=3)
+    self.root.bind("<Right>",lambda e:self.nextPlot(1))
 
     # create x limit sliders. bind updateXAxis to mouse release so it's only called when slider is released
     self.period_slider = Scale(master = self.root, from_=5, to_=16, resolution=0.50, orient='horizontal', length= 500, width = 30, label = "X-Axis Lower Bound", takefocus=False)
