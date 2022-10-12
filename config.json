@@ -6,6 +6,9 @@
         "showOriginal": true,
         "startIdx": 1
     },
+    "CSV": {
+        "fileName": "response.csv"
+    },
     "Model": {
         "modelDir": "C:\\path\\to\\gui\\model\\madry_mnist.py",
         "weightDir": "C:\\path\\to\\gui\\lenet_mnist_model.pth",
