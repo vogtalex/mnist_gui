@@ -37,7 +37,7 @@ test_loader = torch.utils.data.DataLoader(
     datasets.MNIST('../data', train=False, download=True, transform=transforms.Compose([
         transforms.ToTensor(),
     ])),
-    batch_size=batchSize, shuffle=False)
+    batch_size=batchSize, shuffle=True)
 
 # use cuda if available and var is set
 device = torch.device("cuda:0" if (use_cuda and torch.cuda.is_available()) else "cpu")

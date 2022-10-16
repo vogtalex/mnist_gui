@@ -409,7 +409,7 @@ def load_part_of_model(model, state_dict, numblocks):
 def make_models(dist_metric, epsilons, attack_type, d):
     numblocks = len(epsilons)-1
     ae = Chained_AE(block=Autoencoder, num_blocks=numblocks, codeword_dim=d, fc2_input_dim=128)
-    pt_state_dict = torch.load('./model/' + attack_type + '/chained_ae_' + dist_metric + '_{}_to_{}_d={}_epc{}.pth'.format(6, 0, d, 500))
+    pt_state_dict = torch.load('./model/' + attack_type + '/chained_ae_' + dist_metric + '_{}_to_{}_d={}_epc{}.pth'.format(6, 0, d, 500),map_location=torch.device(device))
     ae = load_part_of_model(ae, pt_state_dict, numblocks)
     ae.to(device)
     ae.eval()
@@ -471,7 +471,7 @@ def buildTrajectoryCostReg(idx):
     __trajectoryCostReg.fig.set_size_inches(6/scaler, 4/scaler)
     # load cost regression model
     __trajectoryCostReg.cost_reg = MNISTCost()
-    __trajectoryCostReg.cost_reg.load_state_dict(torch.load('./model/MNIST-Cost_est_l2.pth'))
+    __trajectoryCostReg.cost_reg.load_state_dict(torch.load('./model/MNIST-Cost_est_l2.pth',map_location=torch.device(device)))
     __trajectoryCostReg.cost_reg.to(device)
     # train mode is required for some strange reason, cost regression model does not work properly under eval mode
     __trajectoryCostReg.cost_reg.train()

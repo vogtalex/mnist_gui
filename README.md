@@ -34,6 +34,7 @@ $ python gui.py
 - run `python tsne_setup.py` to run the data generation.
 
 ## Additional notes
+- The output csv file for a runthrough can be changed in the CSV fileName part of the config.
 - The norm verifier can be run to verify the attack strength of the example from the display subset at the starting index, using `python norm_verifier.py`.
 - The different visualizations can be easily enabled/disabled by swapping their respective true/false values in the config.
 - The BoxPlot visualization won't visually update in the normal view after submitting, as it still needs to be rewritten to redraw like the other visualizations.

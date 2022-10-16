@@ -31,6 +31,10 @@ def myClick():
     global startTime
 
     if not initialLoad:
+        endTime = time.time()
+        if entry_1.get()=="" or confidence.get()=="None" or any([item[1].get()==-1 for item in selections]):
+            return
+
         userData = []
         # get all data values and append them to the output data array
         userData.append(getTrueLabel(imgIdx))
@@ -41,7 +45,7 @@ def myClick():
         userData.append(getAttackStrength(imgIdx))
         userData.append(config["General"]["displaySubset"])
         userData.append(imgIdx)
-        userData.append(time.time()-startTime)
+        userData.append(endTime-startTime)
         print(userData)
         outputArray.append(userData)
 
@@ -49,10 +53,14 @@ def myClick():
         entry_1.delete(0,END)
         entry_1.insert(0,"")
         for item in selections:
-            item[1].set(None)
+            item[1].set(-1)
         confidence.set(None)
 
         imgIdx += 1
+
+        if imgIdx > config["Model"]["subsetSize"]:
+            print("End of experiment run")
+            exitProgram()
 
         figureList = loadFigures(epsilonList, imgIdx, maxEpsilon, config)
         startTime = time.time()
@@ -107,7 +115,7 @@ if config["TrajectoryRegression"]["enabled"]:
     selections.append(('Attack\nRegression', IntVar()))
 
 for item in selections:
-    item[1].set(None)
+    item[1].set(-1)
 
 window.configure(bg = "#FFFFFF")
 
