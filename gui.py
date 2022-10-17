@@ -9,8 +9,14 @@ from functions import generateEpsilonList, AutoScrollbar
 from visuals_generator import buildTrajectoryCostReg, getTrueLabel, getAttackStrength
 from enlarge_visuals_helper import enlargeVisuals, loadFigures
 
+# define how many examples of each visualization type are wanted
+visualization_split = [10,5,10]
+
 with open('config.json') as f:
    config = json.load(f)
+
+transitions = [sum(visualization_split[:i+1]) for i in range(len(visualization_split))]
+current_mode = 0
 
 outputArray = []
 initialLoad = True
@@ -25,27 +31,25 @@ epsilonList = generateEpsilonList(epsilonStepSize,maxEpsilon)
 numRows = 2
 numCols = 2
 def myClick():
-    global imgIdx
-    global figureList
-    global initialLoad
-    global startTime
+    global imgIdx,figureList,initialLoad,startTime,current_mode
 
     if not initialLoad:
         endTime = time.time()
-        if entry_1.get()=="" or confidence.get()=="None" or any([item[1].get()==-1 for item in selections]):
+        # verify the user has entered all currently visible fields
+        if entry_1.get()=="" or current_mode==0 and (confidence.get()=="None" or any([item[1].get()==-1 for item in selections])):
             return
 
         userData = []
         # get all data values and append them to the output data array
         userData.append(getTrueLabel(imgIdx))
         userData.append(entry_1.get())
-        for item in selections:
-            userData.append(item[1].get())
-        userData.append(confidence.get())
         userData.append(getAttackStrength(imgIdx))
         userData.append(config["General"]["displaySubset"])
         userData.append(imgIdx)
         userData.append(endTime-startTime)
+        userData.append(confidence.get())
+        for item in selections:
+            userData.append(item[1].get())
         print(userData)
         outputArray.append(userData)
 
@@ -62,6 +66,24 @@ def myClick():
             print("End of experiment run")
             exitProgram()
 
+        # if user has hit threshold for current mode, transition and update what's active on the screen.
+        if current_mode < len(transitions) and imgIdx > transitions[current_mode]-1:
+            current_mode+=1
+            if current_mode==1:
+                print("switching to no feedback")
+                # remove elements from canvas which are no longer necessary
+                for element in canvasDelete:
+                    canvas.delete(element)
+            elif current_mode==2:
+                print("switching to no visualizations")
+                # disable visualizations in config and remove matplotlib canvases
+                config["BoxPlot"]["enabled"]=False
+                config["TSNE"]["enabled"]=False
+                config["TrajectoryRegression"]["enabled"]=False
+                config["Histogram"]["enabled"]=False
+                while len(frame.winfo_children())>1:
+                    frame.winfo_children()[1].destroy()
+
         figureList = loadFigures(epsilonList, imgIdx, maxEpsilon, config)
         startTime = time.time()
     # on initial load
@@ -70,13 +92,13 @@ def myClick():
         userData = []
         userData.append("True label")
         userData.append("User prediction")
-        for item in selections:
-            userData.append((item[0]).replace('\n',' '))
-        userData.append("User confidence")
         userData.append("Attack strength")
         userData.append("Subset")
         userData.append("Index")
         userData.append("Time taken (in s)")
+        userData.append("User confidence")
+        for item in selections:
+            userData.append((item[0]).replace('\n',' '))
         print(userData)
         outputArray.append(userData)
 
@@ -93,9 +115,9 @@ def myClick():
             for j in range(numRows):
                 if i*numRows+j>=maxFigs: break
                 # embed matplotlib figure
-                canvas = FigureCanvasTkAgg(figureList[i*numRows+j][0], master=frame)
-                canvas.draw()
-                canvas.get_tk_widget().grid(row=j, column=i, padx=2, pady=2)
+                figureCanvas = FigureCanvasTkAgg(figureList[i*numRows+j][0], master=frame)
+                figureCanvas.draw()
+                figureCanvas.get_tk_widget().grid(row=j, column=i, padx=2, pady=2)
 
         startTime = time.time()
         initialLoad = False
@@ -177,32 +199,36 @@ def enlarge_plots():
 button_2 = Button(canvas, command=(enlarge_plots), width= 40, height = 3, text= "Enlarge Visualizations")
 canvas.create_window(150, 660 + 24*scrollBarShown, window=button_2)
 
+# store canvas elements being created for removal later
+canvasDelete = []
+
 # if visualizations are enabled, create feedback questions
 if len(selections) > 0:
-    canvas.create_text(12*6, 80.0, anchor="nw", text="Helpfulness of\nvisualizations:", fill="#000000", font=("Roboto", -24), justify=CENTER)
+    canvasDelete.append(canvas.create_text(12*6, 80.0, anchor="nw", text="Helpfulness of\nvisualizations:", fill="#000000", font=("Roboto", -24), justify=CENTER))
 
     # helpfulness labels
     width = 105
     for radioLabel in ['Not very\nhelpful','Somewhat\nhelpful','Very\nhelpful']:
-        canvas.create_text(width, 140, anchor="n", text=radioLabel, fill="#000000", font=("Roboto", -18), justify = CENTER)
+        canvasDelete.append(canvas.create_text(width, 140, anchor="n", text=radioLabel, fill="#000000", font=("Roboto", -18), justify = CENTER))
         width+=80
 
     # create all radiobuttons for each visualization
     height = 210
     for visual in selections:
         l = Label(window,text=visual[0],anchor=W,justify = LEFT,bg="#D2D2D2",font=("Roboto", -18))
-        canvas.create_window(1, height, anchor=W, window=l)
+        canvasDelete.append(canvas.create_window(1, height, anchor=W, window=l))
 
         for i in range(3):
             r = Radiobutton(window, value = i+1, variable=visual[1], bg="#D2D2D2")
             idx = canvas.create_window(108 + i*80, height + 2, window=r)
+            canvasDelete.append(idx)
             canvas.tag_lower(idx)
 
         height += 35
 
 # create prediction confidence radio buttons & labels
 height = 480
-canvas.create_text(12, height, anchor="nw", text="Prediction Confidence:", fill="#000000", font=("Roboto", -24))
+canvasDelete.append(canvas.create_text(12, height, anchor="nw", text="Prediction Confidence:", fill="#000000", font=("Roboto", -24)))
 confidence = StringVar()
 confidence.set(None)
 scale = (('High Confidence', 'High Confidence'),
@@ -212,7 +238,7 @@ scale = (('High Confidence', 'High Confidence'),
 height+=50
 for x in scale:
     r2 = Radiobutton(window, text=x[0], value=x[1], variable=confidence, anchor=W, justify = LEFT, bg="#D2D2D2", font=("Roboto", -18))
-    canvas.create_window(20, height, anchor=W, window=r2)
+    canvasDelete.append(canvas.create_window(20, height, anchor=W, window=r2))
     height += 30
 
 def exitProgram():
