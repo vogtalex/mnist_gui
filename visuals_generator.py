@@ -48,6 +48,7 @@ exlabels = np.load(os.path.join(npys,examples,displaySubset,'testlabels.npy'),mm
 exoutput = np.load(os.path.join(npys,examples,displaySubset,'advoutput.npy'),mmap_mode='r').astype(np.float64)
 exdata = np.load(os.path.join(npys,examples,displaySubset,'advdata.npy'),mmap_mode='r').astype(np.float64)
 data = np.load(os.path.join(npys, examples,displaySubset, 'data.npy'),mmap_mode='r').astype(np.float64)
+pc = np.load(os.path.join(npys, examples,displaySubset, 'pc.npy'),mmap_mode='r').astype(np.float64)
 
 images = exdata.reshape(exdata.shape[:-1]+(28,28))
 images_unattacked = data.reshape(data.shape[:-1]+(28,28))
@@ -206,7 +207,7 @@ def blitgenerateTSNEPlots():
     for label in lgnd.legendHandles:
         label._sizes = [30]
 
-    colorLim = (4,13)
+    colorLim = (4,14)
 
     # manually create colorbar before second scatterplot has been made
     getTSNE.fig.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(vmin=colorLim[0],vmax=colorLim[1]),cmap='viridis'),cax=getTSNE.ax3)
@@ -234,7 +235,7 @@ epsilonStepSize = config["General"]["epsilonStepSize"]
 sigFigs = len(repr(float(epsilonStepSize)).split('.')[1].rstrip('0'))
 epsilonList = generateEpsilonList(epsilonStepSize,maxEpsilon)
 def blitGenerateHistograms():
-    r=(5,16)
+    r=(4,14)
     b=150
 
     def genHist(idx, eps, height = None):
@@ -432,11 +433,10 @@ def buildTrajectoryCostReg(idx):
         if not localIdx:
              temp = images[__trajectoryCostReg.startIdx + batchNum*batch_size:__trajectoryCostReg.startIdx + (batchNum+1)*batch_size]
              __trajectoryCostReg.batchData = torch.unsqueeze(torch.from_numpy(temp),1).to(torch.float)
-             __trajectoryCostReg.pc = __trajectoryCostReg.cost_reg(__trajectoryCostReg.batchData).detach().cpu().numpy()
+             __trajectoryCostReg.pc = pc[__trajectoryCostReg.startIdx + batchNum*batch_size:__trajectoryCostReg.startIdx + (batchNum+1)*batch_size]
              __trajectoryCostReg.rounded_pc = round_cost(__trajectoryCostReg.pc)
 
         exp = torch.unsqueeze(__trajectoryCostReg.batchData[localIdx], 0)
-        # get cost of current index
         cost = __trajectoryCostReg.rounded_pc[localIdx]
 
         # create models and perform Reconstruction for current example
@@ -469,12 +469,6 @@ def buildTrajectoryCostReg(idx):
 
     __trajectoryCostReg.fig = plt.figure(tight_layout=True)
     __trajectoryCostReg.fig.set_size_inches(6/scaler, 4/scaler)
-    # load cost regression model
-    __trajectoryCostReg.cost_reg = MNISTCost()
-    __trajectoryCostReg.cost_reg.load_state_dict(torch.load('./model/MNIST-Cost_est_l2.pth',map_location=torch.device(device)))
-    __trajectoryCostReg.cost_reg.to(device)
-    # train mode is required for some strange reason, cost regression model does not work properly under eval mode
-    __trajectoryCostReg.cost_reg.train()
 
     # important to set start index for relative indexing into batch
     __trajectoryCostReg.startIdx = idx

@@ -2,6 +2,7 @@ import os
 import torch
 from torch.utils.data import DataLoader
 from functions import shuffle_together, generateEpsilonList, PGD_attack
+from mnist_cost import MNISTCost
 import numpy as np
 import torch.nn as nn
 from torchvision import datasets, transforms
@@ -105,6 +106,11 @@ def gen_adv_features_examples(numSubsets,subsetSize):
 
     currentSubset = 0
 
+    cost_reg = MNISTCost()
+    cost_reg.load_state_dict(torch.load('./model/MNIST-Cost_est_l2.pth',map_location=torch.device(device)))
+    cost_reg.to(device)
+    cost_reg.train()
+
     for data, target in test_loader:
         cnt += 1
         # skip until last 10% of dataset (so it's separate dataset from "test" set)
@@ -120,6 +126,7 @@ def gen_adv_features_examples(numSubsets,subsetSize):
             labels = []
             out_data = np.array([])
             out_output = np.array([])
+            out_pc = np.array([])
             data_subset_whole = np.array([])
 
             for eps in subset_eps:
@@ -135,8 +142,7 @@ def gen_adv_features_examples(numSubsets,subsetSize):
 
                 # append model output to outputs for subset
                 output = model(attackedImg)
-                output_np = output.data.cpu().numpy()
-                out_output = np.vstack([out_output,output_np]) if out_output.size else output_np
+                out_output = np.vstack([out_output,output.data.cpu().numpy()]) if out_output.size else output.data.cpu().numpy()
 
                 labels = np.append(labels,target_subset.cpu().numpy())
 
@@ -150,11 +156,16 @@ def gen_adv_features_examples(numSubsets,subsetSize):
                 data_subset = torch.flatten(data_subset,0,1)
                 data_subset_whole = np.vstack([data_subset_whole,data_subset.cpu().numpy()]) if data_subset_whole.size else data_subset.cpu().numpy()
 
+                reshapedData = attackedImg.reshape(attackedImg.shape[:-1]+(28,28))
+                batchData = torch.unsqueeze(reshapedData,1).to(torch.float)
+                pc = cost_reg(batchData).detach().cpu().numpy().flatten()
+                out_pc = np.append(out_pc,pc) if out_pc.size else pc
+
                 # increment index by fraction of subset, based on how many epsilons the subset is being split into
                 idx += 1/len(subset_eps)
 
             # shuffle all output arrays with same randomness (since they're all same length, results in same shuffle)
-            shuffle_together(labels,out_data,out_output,data_subset_whole)
+            shuffle_together(labels,out_data,out_output,data_subset_whole,out_pc)
 
             # save all generated arrays for subset
             print(f"Generated subset {currentSubset}")
@@ -166,6 +177,7 @@ def gen_adv_features_examples(numSubsets,subsetSize):
             np.save(os.path.join(outputDir,'examples',f'subset{currentSubset}',"advoutput.npy"), out_output, allow_pickle=False)
             np.save(os.path.join(outputDir,'examples',f'subset{currentSubset}',"advdata.npy"), out_data, allow_pickle=False)
             np.save(os.path.join(outputDir,'examples',f'subset{currentSubset}',"data.npy"), data_subset_whole, allow_pickle=False)
+            np.save(os.path.join(outputDir,'examples',f'subset{currentSubset}',"pc.npy"), out_pc, allow_pickle=False)
 
             currentSubset += 1
 
@@ -176,10 +188,10 @@ except OSError as e:
     print("Error: %s : %s" % (outputDir, e.strerror))
 os.mkdir(outputDir)
 
+# generate requested number of subsets of requested size
+gen_adv_features_examples(config['Model']['numSubsets'],config['Model']['subsetSize'])
+
 # generate full epsilon sets for known data
 for eps in generateEpsilonList(config["General"]["epsilonStepSize"], config["General"]["maxEpsilon"]):
     print(f"Generating epsilon {eps} data")
     gen_adv_features_test(eps)
-
-# generate requested number of subsets of requested size
-gen_adv_features_examples(config['Model']['numSubsets'],config['Model']['subsetSize'])
