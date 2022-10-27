@@ -21,7 +21,7 @@ use_cuda = True
 # epsilons for subset to be generated with
 subset_eps = [3,6]
 
-### import model from variable directory and import it
+### import model from variable directory
 # split file into name and path
 head,tail = os.path.split(config['Model']['modelDir'])
 # temporarily add directory where python file is present to path
@@ -48,10 +48,7 @@ model = MadryNet()
 model.load_state_dict(torch.load(pretrained_model,map_location=device))
 model.to(device)
 
-# Creates a random(?) seed
-random_seed = 1
 torch.backends.cudnn.enabled = False # I don't know what this does
-torch.manual_seed(random_seed)
 
 loss_fn = nn.functional.cross_entropy
 
@@ -106,6 +103,7 @@ def gen_adv_features_examples(numSubsets,subsetSize):
 
     currentSubset = 0
 
+    # load cost estimator
     cost_reg = MNISTCost()
     cost_reg.load_state_dict(torch.load('./model/MNIST-Cost_est_l2.pth',map_location=torch.device(device)))
     cost_reg.to(device)
@@ -156,6 +154,7 @@ def gen_adv_features_examples(numSubsets,subsetSize):
                 data_subset = torch.flatten(data_subset,0,1)
                 data_subset_whole = np.vstack([data_subset_whole,data_subset.cpu().numpy()]) if data_subset_whole.size else data_subset.cpu().numpy()
 
+                # append cost estimates to output for subset
                 reshapedData = attackedImg.reshape(attackedImg.shape[:-1]+(28,28))
                 batchData = torch.unsqueeze(reshapedData,1).to(torch.float)
                 pc = cost_reg(batchData).detach().cpu().numpy().flatten()
@@ -167,11 +166,12 @@ def gen_adv_features_examples(numSubsets,subsetSize):
             # shuffle all output arrays with same randomness (since they're all same length, results in same shuffle)
             shuffle_together(labels,out_data,out_output,data_subset_whole,out_pc)
 
-            # save all generated arrays for subset
             print(f"Generated subset {currentSubset}")
+            # make examples folder if it doesn't already exist
             folderPath = os.path.join(outputDir,'examples')
             if not os.path.isdir(folderPath):
                 os.mkdir(folderPath)
+            # save all generated arrays for subset
             os.mkdir(os.path.join(outputDir,'examples',f'subset{currentSubset}'))
             np.save(os.path.join(outputDir,'examples',f'subset{currentSubset}',"testlabels.npy"), labels, allow_pickle=False)
             np.save(os.path.join(outputDir,'examples',f'subset{currentSubset}',"advoutput.npy"), out_output, allow_pickle=False)

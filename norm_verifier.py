@@ -3,8 +3,6 @@ import os
 import matplotlib.pyplot as plt
 import json
 
-limit = 9000
-
 with open('config.json') as f:
     config = json.load(f)
 
@@ -12,13 +10,13 @@ npys = config['Model']['outputDir']
 displaySubset = f"subset{config['General']['displaySubset']}"
 idx = config["General"]["startIdx"]
 
-# open unattacked and attacked versions of the same image
-exdata1 = np.load(os.path.join(npys,'examples',displaySubset,'data.npy')).astype(np.float64)[:limit]
+# open unattacked and attacked versions of the same image and display them
+exdata1 = np.load(os.path.join(npys,'examples',displaySubset,'data.npy')).astype(np.float64)
 img = exdata1[idx].reshape((28,28))
 plt.figure()
 plt.imshow(img, cmap='gray')
 
-exdata2 = np.load(os.path.join(npys,'examples',displaySubset,'advdata.npy')).astype(np.float64)[:limit]
+exdata2 = np.load(os.path.join(npys,'examples',displaySubset,'advdata.npy')).astype(np.float64)
 img = exdata2[idx].reshape((28,28))
 plt.figure()
 plt.imshow(img, cmap='gray')

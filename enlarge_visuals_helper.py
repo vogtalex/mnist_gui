@@ -36,6 +36,7 @@ class enlargeVisuals():
     self.figureList = figureList
     self.currentEmbed = None
     self.maxPlots = len(figureList)
+    self.fig = None
 
     # generate initial plot
     self.embedPlot(self.figureList[self.currPlot][0])
@@ -50,12 +51,12 @@ class enlargeVisuals():
     self.root.bind("<Right>",lambda e:self.nextPlot(1))
 
     # create x limit sliders. bind updateXAxis to mouse release so it's only called when slider is released
-    self.period_slider = Scale(master = self.root, from_=5, to_=16, resolution=0.50, orient='horizontal', length= 500, width = 30, label = "X-Axis Lower Bound", takefocus=False)
+    self.period_slider = Scale(master = self.root, from_=4, to_=14, resolution=0.50, orient='horizontal', length= 500, width = 30, label = "X-Axis Lower Bound", takefocus=False)
     self.period_slider.bind("<ButtonRelease-1>", self.updateXAxis)
     self.period_slider.set(0)
     self.period_slider.grid(row=1, column = 1)
 
-    self.period_slider2 = Scale(master = self.root, from_=5, to_=16, resolution=0.50, orient='horizontal', length= 500, width = 30, label = "X-Axis Upper Bound", takefocus=False)
+    self.period_slider2 = Scale(master = self.root, from_=4, to_=14, resolution=0.50, orient='horizontal', length= 500, width = 30, label = "X-Axis Upper Bound", takefocus=False)
     self.period_slider2.bind("<ButtonRelease-1>", self.updateXAxis)
     self.period_slider2.set(16)
     self.period_slider2.grid(row=1, column = 2)
@@ -66,23 +67,25 @@ class enlargeVisuals():
         # get x limits from sliders and update limits for all subplots
         xMin = self.period_slider.get()
         xMax = self.period_slider2.get()
-        for ax in self.figureList[self.currPlot][0].axes:
+        for ax in self.fig.axes:
             ax.set_xlim(xMin, xMax)
-        self.embedPlot(self.figureList[self.currPlot][0])
+        self.fig.canvas.draw()
 
   def nextPlot(self, dir):
     # go to next plot based on which button was pressed, wrapping around if it goes below 0 or above max
     self.currPlot = (self.currPlot + dir) % self.maxPlots
-    # update plots x axis if allowed in visualization creation, else just embed it
-    if self.figureList[self.currPlot][1]:
-        self.updateXAxis(0)
-    else:
-        self.embedPlot(self.figureList[self.currPlot][0])
+
+    self.embedPlot(self.figureList[self.currPlot][0])
 
   def embedPlot(self, fig):
     # pickle/unpickle to make the figure a new figure to avoid this bug: https://github.com/matplotlib/matplotlib/issues/23809
-    fig = pickle.loads(pickle.dumps(fig))
     temp = self.currentEmbed if self.currentEmbed else None
+    fig = pickle.loads(pickle.dumps(fig))
+    self.fig = fig
+
+    # if allowed, update x axis
+    if self.figureList[self.currPlot][1]:
+        self.updateXAxis(0)
 
     # if figure is TSNE increase the size of points in the figure
     if fig.get_label() == 'TSNE':

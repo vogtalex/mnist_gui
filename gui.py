@@ -10,7 +10,12 @@ from visuals_generator import buildTrajectoryCostReg, getTrueLabel, getAttackStr
 from enlarge_visuals_helper import enlargeVisuals, loadFigures
 
 # define how many examples of each visualization type are wanted
+# (all visualizations w/ feedback, all visualizations no feedback, no visualizations no feedback)
 visualization_split = [10,5,10]
+
+# rows/cols of canvases to show on main page
+numRows = 2
+numCols = 2
 
 with open('config.json') as f:
    config = json.load(f)
@@ -28,8 +33,6 @@ maxEpsilon = config["General"]["maxEpsilon"]
 epsilonStepSize = config["General"]["epsilonStepSize"]
 epsilonList = generateEpsilonList(epsilonStepSize,maxEpsilon)
 
-numRows = 2
-numCols = 2
 def myClick():
     global imgIdx,figureList,initialLoad,startTime,current_mode
 
@@ -62,6 +65,7 @@ def myClick():
 
         imgIdx += 1
 
+        # if image index passes subset gracefully exit program
         if imgIdx > config["Model"]["subsetSize"]:
             print("End of experiment run")
             exitProgram()
@@ -154,17 +158,17 @@ global frame
 frame = Frame(scrollCanvas)
 frame.grid(row=0,column=0, sticky="n")
 
+# populate matplotlib canvases
 myClick()
 
 # add frame w/ visualizations to canvas
 scrollCanvas.create_window(0, 0, anchor=NW, window=frame)
-
 frame.update_idletasks()
 
 # Configuring scrollable area of canvas
 scrollCanvas.config(scrollregion=scrollCanvas.bbox("all"))
 
-# if scrollbar is shown, bind vertical scroll to horizontal scroll bar
+# if scrollbar is shown, bind vertical scroll to scroll bar
 scrollBarShown = min(numRows*numCols,len(figureList))>4
 if scrollBarShown:
     scrollCanvas.bind_all('<MouseWheel>', lambda event: scrollCanvas.xview_scroll(int(-1*(event.delta/120)), "units"))
@@ -204,16 +208,17 @@ canvasDelete = []
 
 # if visualizations are enabled, create feedback questions
 if len(selections) > 0:
-    canvasDelete.append(canvas.create_text(12*6, 80.0, anchor="nw", text="Helpfulness of\nvisualizations:", fill="#000000", font=("Roboto", -24), justify=CENTER))
+    canvasDelete.append(canvas.create_text(12, 80.0, anchor="nw", text="How significantly did \nthe visualizations impact \nyour decision:", fill="#000000", font=("Roboto", -24), justify=LEFT))
 
     # helpfulness labels
     width = 105
-    for radioLabel in ['Not very\nhelpful','Somewhat\nhelpful','Very\nhelpful']:
-        canvasDelete.append(canvas.create_text(width, 140, anchor="n", text=radioLabel, fill="#000000", font=("Roboto", -18), justify = CENTER))
+    height = 180
+    for radioLabel in ['Not very\nimpactful','Somewhat\nimpactful','Very\nimpactful']:
+        canvasDelete.append(canvas.create_text(width, height, anchor="n", text=radioLabel, fill="#000000", font=("Roboto", -18), justify = CENTER))
         width+=80
 
-    # create all radiobuttons for each visualization
-    height = 210
+    # create all radiobuttons & labels for each visualization
+    height += 70
     for visual in selections:
         l = Label(window,text=visual[0],anchor=W,justify = LEFT,bg="#D2D2D2",font=("Roboto", -18))
         canvasDelete.append(canvas.create_window(1, height, anchor=W, window=l))

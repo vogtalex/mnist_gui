@@ -43,7 +43,7 @@ d=50
 max_epsilon = 6
 batch_size = 10 # MUST NOT BE LOWER THAN 10
 
-#example data
+#load data for example subset
 exlabels = np.load(os.path.join(npys,examples,displaySubset,'testlabels.npy'),mmap_mode='r').astype(np.float64)
 exoutput = np.load(os.path.join(npys,examples,displaySubset,'advoutput.npy'),mmap_mode='r').astype(np.float64)
 exdata = np.load(os.path.join(npys,examples,displaySubset,'advdata.npy'),mmap_mode='r').astype(np.float64)
@@ -58,7 +58,7 @@ labels = list(map(int,set(exlabels)))
 
 testlabels = np.load(os.path.join(npys,'testlabels.npy'),mmap_mode='r').astype(np.float64)
 
-# Generates an unattacked image
+# Generates a plot w/ the unattacked image
 def generateUnattackedImage(idx):
     fig = plt.figure(tight_layout=True)
     fig.set_size_inches(6/scaler, 4/scaler)
@@ -81,11 +81,11 @@ get_data = cached_get_data()
 def getTrueLabel(idx):
     return exlabels[idx]
 
-# get l2 norm between attacked example and unattacked example
+# calculate l2 norm between attacked example and unattacked example
 def getAttackStrength(idx):
     return np.linalg.norm(data[idx]-exdata[idx])
 
-# cache the data for the nearest points as the same data will always be called at least twice if histogram is enabled
+# find the k nearest points to example at idx, calulcate norms, & get norms
 def cached_find_nearest():
     cache = {}
     def __findNearest(exdata,exoutput,advdata,idx,epsilon):
@@ -98,6 +98,7 @@ def cached_find_nearest():
             top = np.argpartition(norms, k-1)
             # cache norms of all data, the nearest k points, and the predicted label
             cache[(idx,epsilon)] = (norms, top[0:k], label)
+            return (norms, top[0:k], label)
         return cache[(idx,epsilon)]
     return __findNearest
 findNearest = cached_find_nearest()
@@ -134,7 +135,6 @@ def blitGenerateUnlabeledImage():
         return genUImg.fig
 
     genUImg.advdata = get_data(npys,'e0')
-    _,_,prediction = findNearest(exdata,exoutput,genUImg.advdata,0,-1)
 
     genUImg.fig = plt.figure(tight_layout=True)
     genUImg.fig.set_size_inches(6/scaler, 4/scaler)
@@ -162,7 +162,7 @@ def blitgenerateTSNEPlots():
 
         # change array for scatterplot so it'll recolor and change offsets of cb so the closest 10 points will be in their new positions
         getTSNE.scatterPlot.set_array(norms)
-        getTSNE.cb.set_offsets([ [getTSNE.X_2d[i,0], getTSNE.X_2d[i,1]] for i in idxs ])
+        getTSNE.cb.set_offsets(getTSNE.X_2d[idxs])
 
         # redraw artists
         getTSNE.ax2.draw_artist(getTSNE.scatterPlot)
@@ -212,7 +212,7 @@ def blitgenerateTSNEPlots():
     # manually create colorbar before second scatterplot has been made
     getTSNE.fig.colorbar(matplotlib.cm.ScalarMappable(norm=matplotlib.colors.Normalize(vmin=colorLim[0],vmax=colorLim[1]),cmap='viridis'),cax=getTSNE.ax3)
 
-    # store bounding boxes of scatterplot background and draw figure
+    # draw figure and save background of scatterplot
     getTSNE.fig.canvas.draw()
     getTSNE.background = getTSNE.fig.canvas.copy_from_bbox(getTSNE.ax2.bbox)
 
@@ -233,6 +233,7 @@ maxEpsilon = config["General"]["maxEpsilon"]
 epsilonStepSize = config["General"]["epsilonStepSize"]
 # finds # of significant figures after the decimal place of the step size
 sigFigs = len(repr(float(epsilonStepSize)).split('.')[1].rstrip('0'))
+
 epsilonList = generateEpsilonList(epsilonStepSize,maxEpsilon)
 def blitGenerateHistograms():
     r=(4,14)
@@ -316,6 +317,7 @@ def blitGenerateHistograms():
 
         # get index of epsilon in list for line color
         colorIdx = epsilonList.index(epsilon)
+
         fig, axs = plt.subplots(10)
         fig.set_size_inches(6/scaler, 4/scaler)
         histObjs = []
