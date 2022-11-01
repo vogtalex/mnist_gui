@@ -11,7 +11,7 @@ from enlarge_visuals_helper import enlargeVisuals, loadFigures
 
 # define how many examples of each visualization type are wanted
 # (all visualizations w/ feedback, all visualizations no feedback, no visualizations no feedback)
-visualization_split = [10,5,10]
+visualization_split = [2,10,5,10]
 
 # rows/cols of canvases to show on main page
 numRows = 2
@@ -32,6 +32,17 @@ imgIdx = config["General"]["startIdx"]
 maxEpsilon = config["General"]["maxEpsilon"]
 epsilonStepSize = config["General"]["epsilonStepSize"]
 epsilonList = generateEpsilonList(epsilonStepSize,maxEpsilon)
+
+def popup(msg,parent):
+    popup = Toplevel()
+    popup.wm_title("!")
+    label = Label(popup, text=msg, font="Roboto")
+    label.pack(side="top", fill="x", pady=10)
+    B1 = Button(popup, text="Okay", command = popup.destroy)
+    B1.pack()
+    popup.protocol("WM_DELETE_WINDOW", lambda: popup.destroy())
+
+    parent.wait_window(popup)
 
 def myClick():
     global imgIdx,figureList,initialLoad,startTime,current_mode
@@ -63,22 +74,27 @@ def myClick():
             item[1].set(-1)
         confidence.set(None)
 
+        if current_mode==0:
+            popup(f"The previous example was a: {int(getTrueLabel(imgIdx))}",window)
+
         imgIdx += 1
 
         # if image index passes subset gracefully exit program
         if imgIdx > config["Model"]["subsetSize"]:
-            print("End of experiment run")
+            popup("End of experiment run",window)
             exitProgram()
 
         # if user has hit threshold for current mode, transition and update what's active on the screen.
         if current_mode < len(transitions) and imgIdx > transitions[current_mode]-1:
             current_mode+=1
             if current_mode==1:
+                print("Exiting training mode")
+            elif current_mode==2:
                 print("switching to no feedback")
                 # remove elements from canvas which are no longer necessary
                 for element in canvasDelete:
                     canvas.delete(element)
-            elif current_mode==2:
+            elif current_mode==3:
                 print("switching to no visualizations")
                 # disable visualizations in config and remove matplotlib canvases
                 config["BoxPlot"]["enabled"]=False
@@ -87,9 +103,13 @@ def myClick():
                 config["Histogram"]["enabled"]=False
                 while len(frame.winfo_children())>1:
                     frame.winfo_children()[1].destroy()
+            elif current_mode==4:
+                popup("End of experiment run",window)
+                exitProgram()
 
         figureList = loadFigures(epsilonList, imgIdx, maxEpsilon, config)
         startTime = time.time()
+
     # on initial load
     else:
         # create title row for data
