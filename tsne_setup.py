@@ -116,7 +116,7 @@ def gen_adv_features_examples(numSubsets,subsetSize):
 
         idx=0
         # if generating new subset would index out of batch, or if all subsets are generated, exit loop
-        while((idx+1)*subsetSize < batchSize*0.1 and currentSubset<numSubsets):
+        while((idx+1)*subsetSize < len(test_loader.dataset)*0.1 and currentSubset<numSubsets):
             labels = []
             out_data = np.array([])
             out_output = np.array([])
