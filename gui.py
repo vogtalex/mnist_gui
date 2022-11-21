@@ -50,7 +50,7 @@ def myClick():
     if not initialLoad:
         endTime = time.time()
         # verify the user has entered all currently visible fields
-        if entry_1.get()=="" or current_mode==0 and (confidence.get()=="None" or any([item[1].get()==-1 for item in selections])):
+        if entry_1.get()=="" or current_mode<2 and (confidence.get()=="None" or any([item[1].get()==-1 for item in selections])):
             return
 
         userData = []
